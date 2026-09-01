@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Shared.Telemetry/Shared.Telemetry.csproj" />
+  <Project Path="Shared.UI/Shared.UI.csproj" />
+</Solution>
