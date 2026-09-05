@@ -21,8 +21,8 @@
        .shell-header still runs them through linear-gradient(), and this
        theme is meant to have zero visible gradients - see the explicit
        flat-background overrides below for the same reason. */
-    --lcars-header-start: #3c3c3c;
-    --lcars-header-end: #3c3c3c;
+    --lcars-header-start: #323233;
+    --lcars-header-end: #323233;
     --lcars-menu: #252526;
     --lcars-content: #1e1e1e;
     --lcars-actionrail-start: #007acc;
@@ -30,8 +30,23 @@
     --lcars-footer-start: #007acc;
     --lcars-footer-end: #007acc;
     --lcars-text-dark: #d4d4d4;
-    --lcars-text-light: #ffffff;
+    --lcars-text-light: #cccccc;
     --app-font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+
+    /* Visual Studio's title bar is compact, not a 175px band of
+       decorative content - this is what actually gives the shell a
+       "VS" silhouette rather than just VS colors painted on the LCARS
+       proportions. Menu/actionrail also shrink to match VS's tighter,
+       icon-driven chrome. Only takes effect where an app's own layout
+       doesn't hard-code pixel values against the old header height
+       (see Jabasoft.Shared/README.md's porting notes once this theme
+       is adopted elsewhere - TabStudio/LocalAiStudio's ShellHeader
+       currently do exactly that, so they need their own follow-up, not
+       just this variable, before this fits them too). */
+    --lcars-header-height: 40px;
+    --lcars-footer-height: 24px;
+    --lcars-menu-width: 200px;
+    --lcars-actionrail-width: 32px;
 }
 
 /* Belt and braces: override the gradient rules themselves too, in case a
@@ -45,9 +60,22 @@
     background: var(--lcars-actionrail-start);
 }
 
+/* VS Code marks the active list item with a left accent bar on a
+   subtly-tinted row, not a solid fill block - the base rule already
+   gives every nav link/button a transparent 3px left border (added
+   below) so this only has to swap the border color in, not restructure
+   the element. */
+:root[data-theme="vs"] .shell-menu .nav a,
+:root[data-theme="vs"] .shell-menu .nav button {
+    border-left: 3px solid transparent;
+    padding-left: 11px; /* 14px original minus the 3px border, so text doesn't shift */
+}
+
 :root[data-theme="vs"] .shell-menu .nav a.active,
 :root[data-theme="vs"] .shell-menu .nav button.active {
     background: #094771;
+    border-left-color: #007acc;
+    font-weight: normal;
 }
 
 :root[data-theme="vs"] .shell-menu .nav a:hover,
