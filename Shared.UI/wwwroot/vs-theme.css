@@ -1,0 +1,66 @@
+/* Alternate skin for jabasoft-theme.css's design tokens - loosely modelled
+   on Visual Studio's dark theme (editor/sidebar dark grays, #007acc accent
+   blue), deliberately gradient-free (see the explicit flat-background
+   overrides below). Lives here, next to jabasoft-theme.css, so any
+   JabaSoft app can opt in later the same way it already opts into the
+   base theme: reference this file + theme.js, add a toggle button. Only
+   redefines the same --lcars-* custom properties jabasoft-theme.css
+   already defines on :root, scoped under :root[data-theme="vs"] - so
+   every existing rule that reads var(--lcars-*) re-themes automatically,
+   with zero layout duplication.
+
+   Currently referenced only by Jabasoft (its shell/dashboard/styleguide
+   pages, and the Stijlgids page's local dummy-page copies) while the
+   look is still being tuned - not yet wired into TabStudio or
+   LocalAiStudio's own layout. See Jabasoft.Shared/README.md for how an
+   app adopts it once the theme is approved. */
+
+:root[data-theme="vs"] {
+    --lcars-black: #1e1e1e;
+    /* header-start/-end kept identical on purpose: jabasoft-theme.css's
+       .shell-header still runs them through linear-gradient(), and this
+       theme is meant to have zero visible gradients - see the explicit
+       flat-background overrides below for the same reason. */
+    --lcars-header-start: #3c3c3c;
+    --lcars-header-end: #3c3c3c;
+    --lcars-menu: #252526;
+    --lcars-content: #1e1e1e;
+    --lcars-actionrail-start: #007acc;
+    --lcars-actionrail-end: #007acc;
+    --lcars-footer-start: #007acc;
+    --lcars-footer-end: #007acc;
+    --lcars-text-dark: #d4d4d4;
+    --lcars-text-light: #ffffff;
+    --app-font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+/* Belt and braces: override the gradient rules themselves too, in case a
+   flat two-stop gradient ever isn't good enough (e.g. a browser rendering
+   quirk at the exact stop boundary). No gradients anywhere in this theme. */
+:root[data-theme="vs"] .shell-header {
+    background: var(--lcars-header-start);
+}
+
+:root[data-theme="vs"] .styleguide-preview-header {
+    background: var(--lcars-actionrail-start);
+}
+
+:root[data-theme="vs"] .shell-menu .nav a.active,
+:root[data-theme="vs"] .shell-menu .nav button.active {
+    background: #094771;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a:hover,
+:root[data-theme="vs"] .shell-menu .nav button:hover {
+    background: #2a2d2e;
+    color: #ffffff;
+}
+
+:root[data-theme="vs"] .token-usage-dashboard th,
+:root[data-theme="vs"] .token-usage-dashboard td {
+    border-bottom-color: #3c3c3c;
+}
+
+:root[data-theme="vs"] .token-usage-dashboard th {
+    color: #9cdcfe;
+}
