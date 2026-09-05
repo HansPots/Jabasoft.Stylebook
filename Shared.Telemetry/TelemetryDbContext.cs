@@ -4,7 +4,7 @@ using Shared.Telemetry.Configurations;
 namespace Shared.Telemetry;
 
 /// <summary>
-/// The shared "JabaSoftTelemetry" database - deliberately its own database,
+/// The shared "JabasoftBase" database - deliberately its own database,
 /// separate from any single app's own data (TabStudio's song library,
 /// LocalAiStudio's analysis results, etc.), so every JabaSoft app can point
 /// at the same connection string and log into the same

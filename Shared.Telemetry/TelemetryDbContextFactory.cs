@@ -8,7 +8,7 @@ namespace Shared.Telemetry;
 /// ("dotnet ef migrations add", "dotnet ef database update"). Reads the
 /// connection string from JABASOFT_TELEMETRY_CONNECTION_STRING when set
 /// (matches how a consuming app resolves it, e.g.
-/// ConnectionStrings:JabaSoftTelemetry in appsettings.json), otherwise
+/// ConnectionStrings:JabasoftBase in appsettings.json), otherwise
 /// falls back to the default local SQL Server instance.
 /// </summary>
 public sealed class TelemetryDbContextFactory : IDesignTimeDbContextFactory<TelemetryDbContext>
@@ -16,7 +16,7 @@ public sealed class TelemetryDbContextFactory : IDesignTimeDbContextFactory<Tele
     private const string ConnectionStringEnvironmentVariable = "JABASOFT_TELEMETRY_CONNECTION_STRING";
 
     private const string DefaultConnectionString =
-        "Server=localhost;Database=JabaSoftTelemetry;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
+        "Server=localhost;Database=JabasoftBase;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
 
     public TelemetryDbContext CreateDbContext(string[] args)
     {
