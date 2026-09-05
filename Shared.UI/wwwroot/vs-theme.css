@@ -92,3 +92,78 @@
 :root[data-theme="vs"] .token-usage-dashboard th {
     color: #9cdcfe;
 }
+
+/* ============================================================
+   TabStudio/LocalAiStudio's own ShellMenu
+
+   Their ShellMenu.razor.css draws a completely separate pill-button
+   design (--rose/--panel/--peach/--orange/--gold, all local custom
+   properties scoped to .shell-menu) instead of the shared ".shell-menu
+   .nav" rules above - same situation as ShellHeader's info cards.
+   Redefining those local custom properties here still wins: Blazor's
+   CSS isolation adds a scope attribute to the component's own
+   ".shell-menu" selector, but an attribute selector plus a class is
+   still only 2 selectors of specificity, and this rule
+   (:root[data-theme="vs"] .shell-menu) is 3 - regardless of the actual
+   scope hash, which this deliberately never has to match. The pill
+   shape itself (rounded corners, 48px fixed height, colored fill) is
+   flattened separately below since Visual Studio's list items aren't
+   pills.
+   ============================================================ */
+:root[data-theme="vs"] .shell-menu {
+    --black: #3c3c3c;
+    --panel: transparent;
+    --rose: #252526;
+    --peach: #cccccc;
+    --orange: #007acc;
+    --purple: #9cdcfe;
+    --gold: #007acc;
+    border-radius: 0;
+    padding: 4px 0 0;
+}
+
+:root[data-theme="vs"] .shell-menu .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a,
+:root[data-theme="vs"] .shell-menu .nav button {
+    height: auto;
+    padding: 7px 12px 7px 9px;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 0;
+    font-weight: 400;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a.active,
+:root[data-theme="vs"] .shell-menu .nav button.active {
+    background: #094771;
+    border-left-color: var(--orange);
+    color: #ffffff;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a.active .nav-icon,
+:root[data-theme="vs"] .shell-menu .nav button.active .nav-icon {
+    color: #ffffff;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a:hover,
+:root[data-theme="vs"] .shell-menu .nav button:hover {
+    background: #2a2d2e;
+    color: #ffffff;
+}
+
+:root[data-theme="vs"] .shell-menu .nav a:hover .nav-icon,
+:root[data-theme="vs"] .shell-menu .nav button:hover .nav-icon {
+    color: #ffffff;
+}
+
+:root[data-theme="vs"] .shell-menu .sidebar-foot {
+    border-radius: 0;
+    border-top: 1px solid #3c3c3c;
+    background: transparent;
+    color: #858585;
+}
