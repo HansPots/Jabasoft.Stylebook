@@ -175,32 +175,6 @@ a {
     font-size: 11px;
 }
 
-/* ---------- token usage dashboard (Blazor component + Jabasoft WPF page) ---------- */
-
-.token-usage-dashboard table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--app-font-family);
-    font-size: 13px;
-}
-
-.token-usage-dashboard th,
-.token-usage-dashboard td {
-    text-align: left;
-    padding: 6px 10px;
-    border-bottom: 1px solid #ccc7ba;
-}
-
-.token-usage-dashboard th {
-    color: var(--lcars-actionrail-start);
-    text-transform: uppercase;
-    font-size: 11px;
-}
-
-.token-usage-dashboard .app-total {
-    font-weight: bold;
-}
-
 /* ---------- Blazor framework defaults (validation, error boundary) ---------- */
 
 .valid.modified:not([type=checkbox]) {

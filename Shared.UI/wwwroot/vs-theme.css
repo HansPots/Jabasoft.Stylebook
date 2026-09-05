@@ -84,15 +84,6 @@
     color: #ffffff;
 }
 
-:root[data-theme="vs"] .token-usage-dashboard th,
-:root[data-theme="vs"] .token-usage-dashboard td {
-    border-bottom-color: #3c3c3c;
-}
-
-:root[data-theme="vs"] .token-usage-dashboard th {
-    color: #9cdcfe;
-}
-
 /* ============================================================
    TabStudio/LocalAiStudio's own ShellMenu
 
