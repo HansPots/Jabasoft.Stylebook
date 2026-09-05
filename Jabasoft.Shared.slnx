@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Shared.Telemetry/Shared.Telemetry.csproj" />
   <Project Path="Shared.UI/Shared.UI.csproj" />
+  <Project Path="Jabasoft.Base/Jabasoft.Base.csproj" />
 </Solution>

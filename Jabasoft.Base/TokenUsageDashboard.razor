@@ -1,8 +1,9 @@
 @* ============================================================
    TokenUsageDashboard — shared token-usage view, embeddable by any
-   JabaSoft Blazor app. Pass Application to show just that app's own
-   usage (e.g. TabStudio, LocalAiStudio); leave it null to show every
-   app (used by a future cross-app overview).
+   JabaSoft app, Blazor Server or Blazor Hybrid alike (see Jabasoft's
+   own BlazorWebView-hosted usage). Pass Application to show just that
+   app's own usage (e.g. TabStudio, LocalAiStudio); leave it null to
+   show every app (Jabasoft's cross-app overview).
    ============================================================ *@
 @using Shared.Telemetry
 @inject ITokenUsageRepository TokenUsageRepository
