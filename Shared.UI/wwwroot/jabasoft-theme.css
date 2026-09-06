@@ -134,6 +134,22 @@ a {
     color: var(--lcars-text-dark);
 }
 
+/* ---------- "Home" link back to Jabasoft, only when embedded there ----------
+   TabStudio/LocalAiStudio add a "Home" item to their own ShellMenu (see
+   embed.js) that's only meaningful when the app is running inside
+   Jabasoft's content iframe (Jabasoft then gives it the whole window, no
+   Jabasoft chrome at all - clicking Home is the only way back). Hidden by
+   default so it doesn't show up for someone using the app standalone in a
+   real browser tab; embed.js adds .jbs-embedded to <html> when embedded. */
+
+.jbs-home-link {
+    display: none !important;
+}
+
+html.jbs-embedded .jbs-home-link {
+    display: flex !important;
+}
+
 /* ---------- shared nav look (Jabasoft WPF shell menu; Blazor apps keep
    their own ShellMenu.razor.css structure but may reuse these classes) ---------- */
 
