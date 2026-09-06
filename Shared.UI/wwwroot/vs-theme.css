@@ -12,7 +12,7 @@
    Currently referenced only by Jabasoft (its shell/dashboard/styleguide
    pages, and the Stijlgids page's local dummy-page copies) while the
    look is still being tuned - not yet wired into TabStudio or
-   LocalAiStudio's own layout. See Jabasoft.Shared/README.md for how an
+   LocalAiStudio's own layout. See Jabasoft.Stylebook/README.md for how an
    app adopts it once the theme is approved. */
 
 :root[data-theme="vs"] {
@@ -39,7 +39,7 @@
        proportions. Menu/actionrail also shrink to match VS's tighter,
        icon-driven chrome. Only takes effect where an app's own layout
        doesn't hard-code pixel values against the old header height
-       (see Jabasoft.Shared/README.md's porting notes once this theme
+       (see Jabasoft.Stylebook/README.md's porting notes once this theme
        is adopted elsewhere - TabStudio/LocalAiStudio's ShellHeader
        currently do exactly that, so they need their own follow-up, not
        just this variable, before this fits them too). */

@@ -1,4 +1,4 @@
-# Jabasoft.Shared
+# Jabasoft.Stylebook
 
 Gedeelde class libraries voor de hele JabaSoft-familie (`JabaSoft.TabStudio`,
 `JabaSoft.LocalAiStudio`, `Jabasoft`, en toekomstige apps). Bevat geen eigen
@@ -30,8 +30,8 @@ verwijzen naar deze projecten via een relatief projectpad, niet via NuGet
 (geen NuGet-feed nodig zolang alles lokaal naast elkaar staat):
 
 ```xml
-<ProjectReference Include="..\..\Jabasoft.Shared\Shared.Telemetry\Shared.Telemetry.csproj" />
-<ProjectReference Include="..\..\Jabasoft.Shared\Shared.UI\Shared.UI.csproj" />
+<ProjectReference Include="..\..\Jabasoft.Stylebook\Shared.Telemetry\Shared.Telemetry.csproj" />
+<ProjectReference Include="..\..\Jabasoft.Stylebook\Shared.UI\Shared.UI.csproj" />
 ```
 
 ### Shared.Telemetry aansluiten
