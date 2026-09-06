@@ -6,7 +6,7 @@ apps). De design-tokens staan in `wwwroot/jabasoft-theme.css` in dit
 project — dat is het enige bestand dat de daadwerkelijke waarden bevat.
 Elke app laadt dat bestand rechtstreeks (geen kopie, zie `README.md`).
 
-Oorspronkelijk geschreven voor `JabaSoftLocalAiStudio.Web`; nu de
+Oorspronkelijk geschreven voor `JabaSoft.LocalAiStudio/LocalAiStudio.Web`; nu de
 gedeelde standaard voor de hele JabaSoft-familie.
 
 ## Ontwerpprincipes

@@ -36,7 +36,7 @@
     --lcars-font: 'Consolas', 'Courier New', monospace;
 
     /* Interface font/size: an app may override this per-request via an
-       inline style on .shell (see JabaSoftLocalAiStudio's Settings page
+       inline style on .shell (see JabaSoft.LocalAiStudio's Settings page
        for the pattern). The values here are just the fallback. */
     --app-font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
     --app-font-size: 16px;

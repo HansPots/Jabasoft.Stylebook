@@ -3,7 +3,7 @@ namespace Shared.Telemetry;
 /// <summary>
 /// A single recorded LLM call's token usage, timestamped so usage can be
 /// charted over time. Deliberately a log (one row per call), not a running
-/// total: unlike JabaSoftLocalAiStudio's original single-counter
+/// total: unlike JabaSoft.LocalAiStudio's original single-counter
 /// TokenUsageTotal, this table is shared across every JabaSoft app writing
 /// to the same database, so <see cref="Application"/> identifies the
 /// source and a per-row <see cref="Timestamp"/> is what makes a usage

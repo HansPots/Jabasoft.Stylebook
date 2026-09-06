@@ -1,7 +1,7 @@
 # Jabasoft.Shared
 
 Gedeelde class libraries voor de hele JabaSoft-familie (`JabaSoft.TabStudio`,
-`JabaSoftLocalAiStudio`, `Jabasoft`, en toekomstige apps). Bevat geen eigen
+`JabaSoft.LocalAiStudio`, `Jabasoft`, en toekomstige apps). Bevat geen eigen
 uitvoerbare app — alleen herbruikbare projecten waar andere JabaSoft-repos
 naar verwijzen.
 
