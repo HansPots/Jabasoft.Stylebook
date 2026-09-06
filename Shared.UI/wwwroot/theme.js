@@ -24,6 +24,21 @@
         } else {
             document.documentElement.removeAttribute("data-theme");
         }
+        syncControls();
+    }
+
+    // Keeps any Thema picker on the page (see settings-page.css's
+    // .theme-picker - a radio per theme, marked with data-theme-option)
+    // in sync with the actual applied theme. Called after every theme
+    // change and exposed as .sync() for a Blazor page to call from
+    // OnAfterRenderAsync, since a server-rendered re-render doesn't know
+    // about this client-only, per-origin localStorage state.
+    function syncControls() {
+        var current = document.documentElement.getAttribute("data-theme") === "vs" ? "vs" : "lcars";
+        var controls = document.querySelectorAll("[data-theme-option]");
+        for (var i = 0; i < controls.length; i++) {
+            controls[i].checked = controls[i].getAttribute("data-theme-option") === current;
+        }
     }
 
     function setTheme(theme) {
@@ -35,6 +50,7 @@
         applyStoredTheme();
     }
 
-    window.jabasoftTheme = { apply: applyStoredTheme, set: setTheme };
+    window.jabasoftTheme = { apply: applyStoredTheme, set: setTheme, sync: syncControls };
     applyStoredTheme();
+    document.addEventListener("DOMContentLoaded", syncControls);
 })();

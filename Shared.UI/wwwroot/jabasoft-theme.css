@@ -150,46 +150,9 @@ html.jbs-embedded .jbs-home-link {
     display: flex !important;
 }
 
-/* ---------- shared nav look (Jabasoft WPF shell menu; Blazor apps keep
-   their own ShellMenu.razor.css structure but may reuse these classes) ---------- */
-
-.shell-menu .nav {
-    display: flex;
-    flex-direction: column;
-}
-
-.shell-menu .nav a,
-.shell-menu .nav button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: transparent;
-    border: none;
-    color: var(--lcars-text-light);
-    font-family: var(--app-font-family);
-    font-size: 14px;
-    text-align: left;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.shell-menu .nav a:hover,
-.shell-menu .nav button:hover {
-    background: var(--lcars-footer-start);
-    color: var(--lcars-text-dark);
-}
-
-.shell-menu .nav a.active,
-.shell-menu .nav button.active {
-    font-weight: bold;
-}
-
-.shell-menu .sidebar-foot {
-    color: var(--lcars-footer-start);
-    padding: 8px 14px;
-    font-size: 11px;
-}
+/* The actual shared shell-menu look (rose sidebar, icon buttons, gold
+   strip) lives in shell-menu.css - link it alongside this file, don't
+   duplicate its rules here. */
 
 /* ---------- Blazor framework defaults (validation, error boundary) ---------- */
 

@@ -104,15 +104,22 @@ app.MapPost("/api/components", async (ComponentCreateRequest request) =>
     var safeName = ToSafeComponentName(request.Name);
     await WriteFileWithRetryAsync(Path.Combine(componentsFolder, $"{safeName}.html"), request.Html ?? string.Empty);
 
+    // A new component starts from the real, currently-applied CSS of the
+    // element the user pointed at (see styleguide.js's snapshotComputedCss)
+    // rather than blank - that's the whole reason "Selecteer element"
+    // targets a live element instead of asking for hand-typed markup. A
+    // re-save under an existing name (picking the same thing again) never
+    // touches the CSS file already there, so in-progress edits survive.
     var cssPath = Path.Combine(componentsFolder, $"{safeName}.css");
     if (!File.Exists(cssPath))
     {
-        await WriteFileWithRetryAsync(cssPath, string.Empty);
+        await WriteFileWithRetryAsync(cssPath, request.StartingCss ?? string.Empty);
     }
 
+    var group = string.IsNullOrWhiteSpace(request.Group) ? "Overig" : request.Group;
     var index = await ReadComponentIndexAsync(componentsIndexPath);
     index.RemoveAll(c => c.Name.Equals(safeName, StringComparison.OrdinalIgnoreCase));
-    index.Add(new ComponentInfo(safeName, request.SourceApp ?? "", request.SourcePath ?? "", DateTimeOffset.UtcNow));
+    index.Add(new ComponentInfo(safeName, request.SourceApp ?? "", request.SourcePath ?? "", DateTimeOffset.UtcNow, group));
     await WriteFileWithRetryAsync(componentsIndexPath, JsonSerializer.Serialize(index));
 
     return Results.Ok(new { name = safeName });
@@ -138,6 +145,33 @@ app.MapPut("/api/components/{name}/css", async (string name, HttpRequest request
     return Results.Ok();
 });
 
+app.MapDelete("/api/components/{name}", async (string name) =>
+{
+    var safeName = ToSafeComponentName(name);
+
+    var index = await ReadComponentIndexAsync(componentsIndexPath);
+    var removed = index.RemoveAll(c => c.Name.Equals(safeName, StringComparison.OrdinalIgnoreCase)) > 0;
+    if (!removed)
+    {
+        return Results.NotFound();
+    }
+
+    await WriteFileWithRetryAsync(componentsIndexPath, JsonSerializer.Serialize(index));
+
+    var htmlPath = Path.Combine(componentsFolder, $"{safeName}.html");
+    var cssPath = Path.Combine(componentsFolder, $"{safeName}.css");
+    if (File.Exists(htmlPath))
+    {
+        File.Delete(htmlPath);
+    }
+    if (File.Exists(cssPath))
+    {
+        File.Delete(cssPath);
+    }
+
+    return Results.Ok();
+});
+
 app.MapPost("/api/components/{name}/generate-css", async (string name, ComponentGenerateCssRequest request, IAiBrokerClient broker) =>
 {
     var safeName = ToSafeComponentName(name);
@@ -156,12 +190,18 @@ app.MapPost("/api/components/{name}/generate-css", async (string name, Component
     var rootBlockEnd = themeExcerpt.IndexOf('}');
     var themeTokens = rootBlockEnd > 0 ? themeExcerpt[..(rootBlockEnd + 1)] : themeExcerpt;
 
+    var hasCurrentCss = !string.IsNullOrWhiteSpace(request.CurrentCss);
+
     var systemPrompt =
         "Je schrijft CSS voor één UI-component van de JabaSoft-huisstijl. " +
         "Gebruik de opgegeven kleur-/spacing-tokens (CSS custom properties) waar passend. " +
+        (hasCurrentCss
+            ? "Er is al bestaande CSS voor dit component - gebruik die als basis en verander ALLEEN wat de instructie vraagt; laat elke andere regel/waarde ongewijzigd staan. Geef de volledige, bijgewerkte CSS terug (niet alleen het gewijzigde stuk). "
+            : string.Empty) +
         "Antwoord ALLEEN met de CSS, geen uitleg, geen markdown-codeblok.";
     var userPrompt =
         $"HTML van het component:\n{html}\n\n" +
+        (hasCurrentCss ? $"Huidige CSS van dit component (basis - alleen aanpassen wat gevraagd wordt):\n{request.CurrentCss}\n\n" : string.Empty) +
         $"Beschikbare tokens uit jabasoft-theme.css:\n{themeTokens}\n\n" +
         $"Instructies: {(string.IsNullOrWhiteSpace(request.Instructions) ? "maak een nette, opgeruimde stijl passend bij de huisstijl." : request.Instructions)}";
 

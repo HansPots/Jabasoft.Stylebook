@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>Stijlgids</title>
     <link rel="stylesheet" href="/_content/Shared.UI/jabasoft-theme.css" />
+    <link rel="stylesheet" href="/_content/Shared.UI/shell-menu.css" />
+    <link rel="stylesheet" href="/_content/Shared.UI/settings-page.css" />
     <link rel="stylesheet" href="/_content/Shared.UI/vs-theme.css" />
     <link rel="stylesheet" href="styleguide.css" />
     <script src="/_content/Shared.UI/theme.js"></script>
@@ -12,14 +14,26 @@
 <body>
     <div class="styleguide">
         <aside class="styleguide-nav">
-            <div class="styleguide-nav-header">
-                <div class="styleguide-nav-tabs">
-                    <button id="tab-pages" type="button" class="nav-tab active">Pagina's</button>
-                    <button id="tab-components" type="button" class="nav-tab">Componenten</button>
-                    <button id="tab-settings" type="button" class="nav-tab">Instellingen</button>
-                </div>
-                <div class="styleguide-nav-actions">
-                    <button id="home-btn" type="button" title="Terug naar Jabasoft" class="jbs-home-link">&#8962;</button>
+            <div class="shell-menu">
+                <nav class="nav">
+                    <button id="home-btn" type="button" title="Terug naar Jabasoft" class="jbs-home-link">
+                        <span class="nav-icon icon-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg></span>
+                        Home
+                    </button>
+                    <button id="tab-pages" type="button" class="nav-tab active">
+                        <span class="nav-icon icon-grid"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2" /><rect x="13" y="3" width="8" height="8" rx="2" /><rect x="3" y="13" width="8" height="8" rx="2" /><rect x="13" y="13" width="8" height="8" rx="2" /></svg></span>
+                        Pagina's
+                    </button>
+                    <button id="tab-components" type="button" class="nav-tab">
+                        <span class="nav-icon icon-code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 3 12 8 18" /><polyline points="16 6 21 12 16 18" /></svg></span>
+                        Componenten
+                    </button>
+                    <button id="tab-settings" type="button" class="nav-tab">
+                        <span class="nav-icon icon-gear"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.4 3.5c0-.4 0-.8-.1-1.1l1.8-1.4-1.8-3-2.1.9a7 7 0 0 0-1.9-1.1L16 4h-4l-.3 2.3a7 7 0 0 0-1.9 1.1l-2.1-.9-1.8 3 1.8 1.4a7.7 7.7 0 0 0 0 2.2L3.9 14.6l1.8 3 2.1-.9a7 7 0 0 0 1.9 1.1L10 20h4l.3-2.2a7 7 0 0 0 1.9-1.1l2.1.9 1.8-3-1.8-1.4c.1-.4.1-.8.1-1.2z" /></svg></span>
+                        Instellingen
+                    </button>
+                </nav>
+                <div class="sidebar-foot">
                     <button id="refresh-btn" type="button" title="Pagina's verversen">&#8635;</button>
                 </div>
             </div>
@@ -53,7 +67,6 @@
                 <span id="component-panel-title">Component</span>
                 <button id="save-component-css-btn" type="button">Opslaan</button>
             </div>
-            <iframe id="component-preview" title="Componentvoorbeeld"></iframe>
             <textarea id="component-css-editor" spellcheck="false" placeholder="Eigen CSS voor dit component..."></textarea>
             <div id="component-css-status" class="styleguide-css-status"></div>
             <div class="component-ai">
@@ -62,8 +75,22 @@
             </div>
             <button id="materialize-btn" type="button" class="materialize-btn">Maak Blazor-component</button>
             <div id="materialize-result" class="styleguide-css-status"></div>
+            <button id="delete-component-btn" type="button" class="delete-component-btn">Component verwijderen</button>
         </aside>
         <aside class="styleguide-css" id="settings-panel" hidden>
+            <div class="settings-group settings-group-inset">
+                <h2>Thema</h2>
+                <div class="settings-field theme-picker">
+                    <label>
+                        <input type="radio" name="jbs-theme" data-theme-option="lcars" onchange="window.jabasoftTheme.set('lcars')" />
+                        LCARS
+                    </label>
+                    <label>
+                        <input type="radio" name="jbs-theme" data-theme-option="vs" onchange="window.jabasoftTheme.set('vs')" />
+                        VS Code
+                    </label>
+                </div>
+            </div>
             <div class="styleguide-css-header">
                 <span>AI Connector</span>
                 <button id="ai-settings-save-btn" type="button">Opslaan</button>
@@ -100,6 +127,14 @@
             <button id="picker-parent-btn" type="button">&uarr; Bovenliggend element</button>
         </div>
         <input id="picker-name-input" type="text" placeholder="Naam (bv. InfoBlok)" />
+        <select id="picker-group-select">
+            <option value="Header">Header</option>
+            <option value="Menu">Menu</option>
+            <option value="Content">Content</option>
+            <option value="Actionrail">Actionrail</option>
+            <option value="Footer">Footer</option>
+            <option value="Overig" selected>Overig</option>
+        </select>
         <div class="floating-panel-actions">
             <button id="picker-save-btn" type="button">Opslaan als component</button>
             <button id="picker-cancel-btn" type="button">Annuleren</button>

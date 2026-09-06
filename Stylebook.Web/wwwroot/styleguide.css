@@ -30,6 +30,18 @@ html, body {
     opacity: 1;
 }
 
+/* While dragging a splitter, iframes must stop capturing mouse events -
+   otherwise mousemove goes to the iframe's own document instead of ours
+   the moment the cursor crosses over it, making the drag feel like it
+   "sticks" and only resumes once the cursor leaves the iframe again. */
+body.splitter-dragging iframe {
+    pointer-events: none;
+}
+
+body.splitter-dragging {
+    user-select: none;
+}
+
 .styleguide-nav {
     background: var(--lcars-black);
     color: var(--lcars-text-light);
@@ -38,51 +50,49 @@ html, body {
     overflow-y: auto;
 }
 
-.styleguide-nav-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: 12px;
-    color: var(--lcars-footer-start);
-    border-bottom: 1px solid #333;
+/* The shell-menu block here is the same rose-sidebar look every other
+   JabaSoft app uses for its left menu (see Shared.UI/wwwroot/shell-menu.css),
+   just embedded at the top of this nav column instead of filling a whole
+   sidebar of its own - Pagina's/Componenten/Instellingen play the role
+   the other apps' page links play, switching what's shown below. */
+.styleguide-nav .shell-menu {
+    flex: 0 0 auto;
+    border-radius: 0 0 30px 0;
     position: sticky;
     top: 0;
-    background: var(--lcars-black);
+    z-index: 1;
 }
 
-/* Scoped to .styleguide-nav-actions (not the whole header) so this
-   fixed-size icon-button style doesn't also clobber the .nav-tab
-   buttons (Pagina's/Componenten/Instellingen) that live in the same
-   header - .styleguide-nav-header button would beat .nav-tab's own
-   styling on specificity alone and squash the tab labels into a
-   26x26 box. */
-.styleguide-nav-actions button {
-    background: var(--lcars-actionrail-start);
-    color: var(--lcars-text-light);
+.styleguide-nav .sidebar-foot button {
+    background: transparent;
     border: none;
-    border-radius: 4px;
-    width: 26px;
-    height: 26px;
-    cursor: pointer;
-    font-size: 14px;
+    color: var(--black);
+    font-size: 16px;
     line-height: 1;
+    cursor: pointer;
 }
 
-.styleguide-nav-actions button:disabled {
+.styleguide-nav .sidebar-foot button:disabled {
     opacity: 0.5;
     cursor: default;
 }
 
-.app-group {
-    padding: 8px 0;
+/* ---------- collapsible group (Pagina's app groups, Componenten groups) ---------- */
+
+.collapsible-group {
     border-bottom: 1px solid #222;
 }
 
-.app-group-title {
-    padding: 4px 12px;
+.collapsible-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
     font-weight: bold;
     font-size: 11px;
     text-transform: uppercase;
@@ -94,7 +104,20 @@ html, body {
     color: var(--lcars-actionrail-start);
 }
 
-.app-group button.page-link {
+.collapsible-group-header:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.collapsible-group-chevron {
+    display: inline-block;
+    transition: transform 0.1s ease-in-out;
+}
+
+.collapsible-group-chevron.open {
+    transform: rotate(90deg);
+}
+
+.collapsible-group-body button.page-link {
     display: block;
     width: 100%;
     text-align: left;
@@ -107,12 +130,12 @@ html, body {
     font-family: var(--app-font-family);
 }
 
-.app-group button.page-link:hover {
+.collapsible-group-body button.page-link:hover {
     background: var(--lcars-footer-start);
     color: var(--lcars-text-dark);
 }
 
-.app-group button.page-link.active {
+.collapsible-group-body button.page-link.active {
     font-weight: bold;
     color: var(--lcars-footer-start);
 }
@@ -142,6 +165,11 @@ html, body {
     text-decoration: none;
     color: var(--lcars-text-dark);
     font-size: 18px;
+}
+
+.styleguide-preview-header a.disabled {
+    opacity: 0.35;
+    pointer-events: none;
 }
 
 .styleguide-preview iframe {
@@ -213,36 +241,6 @@ html, body {
     color: var(--lcars-footer-start);
 }
 
-/* ---------- nav tabs (Pagina's / Componenten) ---------- */
-
-.styleguide-nav-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 6px;
-}
-
-.nav-tab {
-    background: transparent;
-    border: none;
-    color: #999;
-    font-size: 11px;
-    font-weight: bold;
-    text-transform: uppercase;
-    padding: 4px 2px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.nav-tab.active {
-    color: var(--lcars-footer-start);
-    border-bottom: 2px solid var(--lcars-footer-start);
-}
-
-.styleguide-nav-actions {
-    display: flex;
-    gap: 6px;
-}
-
 /* ---------- preview toolbar (Selecteer element / Toon regio's) ---------- */
 
 .styleguide-preview-tools {
@@ -272,7 +270,12 @@ html, body {
     color: var(--lcars-text-light);
 }
 
-/* ---------- Instellingen tab: AI Connector form ---------- */
+/* ---------- Instellingen tab: Thema + AI Connector form ---------- */
+
+.settings-group-inset {
+    margin: 12px 12px 0;
+    width: auto;
+}
 
 .settings-form {
     display: flex;
@@ -292,17 +295,66 @@ html, body {
     font-size: 12px;
 }
 
+/* ---------- component list (name + edit/place icons per row) ---------- */
+
+.component-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 12px;
+}
+
+.component-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.component-row.active .component-name {
+    font-weight: bold;
+    color: var(--lcars-footer-start);
+}
+
+.component-name {
+    color: var(--lcars-text-light);
+    font-size: 13px;
+    font-family: var(--app-font-family);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.component-row-actions {
+    display: flex;
+    gap: 4px;
+    flex: 0 0 auto;
+}
+
+.icon-btn {
+    background: transparent;
+    border: 1px solid var(--lcars-actionrail-start);
+    color: var(--lcars-text-light);
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+    background: var(--lcars-actionrail-start);
+}
+
+.icon-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+    border-color: #444;
+}
+
 /* ---------- component detail panel ---------- */
 
 .component-panel {
     overflow-y: auto;
-}
-
-#component-preview {
-    height: 160px;
-    border: 0;
-    border-bottom: 1px solid var(--lcars-actionrail-start);
-    background: white;
 }
 
 .component-ai {
@@ -338,6 +390,22 @@ html, body {
 
 .materialize-btn {
     margin: 0 12px 6px;
+}
+
+.delete-component-btn {
+    margin: 12px 12px 12px;
+    padding: 8px 10px;
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid #ff6b6b;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.delete-component-btn:hover {
+    background: #ff6b6b;
+    color: #1b1b1b;
 }
 
 /* ---------- floating panels (element-picker confirmation, AI settings) ---------- */

@@ -1,0 +1,143 @@
+/* ============================================================
+   Shared shell menu — the rose sidebar navigation (icon buttons,
+   rounded corners, gold strip at the bottom) used by every JabaSoft
+   app's left menu (TabStudio, LocalAiStudio, Stylebook, and any
+   future app). Edit this file only; do not copy these rules into an
+   app's own CSS - that's exactly the drift this file replaces (it
+   used to live duplicated in each app's ShellMenu.razor.css).
+
+   Consumed by:
+   - ASP.NET Core / Blazor apps: <link href="_content/Shared.UI/shell-menu.css">
+   - The Jabasoft WPF shell: loaded directly from this file's folder,
+     same as jabasoft-theme.css.
+
+   COLOR VARIABLES (on .shell-menu, only valid here):
+     --black    border line above the gold strip at the bottom
+     --panel    background of the nav buttons
+     --rose     background of the whole sidebar
+     --peach    text/icon color of non-active buttons
+     --orange   text/icon color + border color of the active button
+     --purple   color of the chat/database icons
+     --gold     bottom strip of the sidebar
+
+   An app's OWN menu file (e.g. ShellMenu.razor.css) should contain at
+   most its own layout quirks (grid-area, sizing) - never a copy of
+   the rules below.
+   ============================================================ */
+
+.shell-menu {
+    --black: #030305;
+    --panel: #08080d;
+    --rose: #c95b5d;
+    --peach: #ffac8a;
+    --orange: #ff9700;
+    --purple: #8980e8;
+    --gold: #c9a227;
+
+    grid-area: menu;
+    position: relative;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 12px 0;
+    border-radius: 30px 0 0 42px;
+    background: var(--rose);
+    color: var(--peach);
+    font-family: var(--app-font-family);
+    overflow: hidden;
+}
+
+.shell-menu .nav {
+    display: grid;
+    gap: 8px;
+}
+
+.shell-menu .nav button,
+.shell-menu .nav a {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    border: 2px solid transparent;
+    border-radius: 18px 18px 18px 0;
+    background: var(--panel);
+    color: var(--peach);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.shell-menu .nav button.active,
+.shell-menu .nav a.active {
+    background: var(--panel);
+    color: var(--peach);
+    border-color: transparent;
+}
+
+.shell-menu .nav button:hover,
+.shell-menu .nav a:hover {
+    background: var(--orange);
+    color: var(--black);
+}
+
+.shell-menu .nav button:hover .nav-icon,
+.shell-menu .nav a:hover .nav-icon {
+    color: var(--black);
+}
+
+.shell-menu .nav-icon {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shell-menu .nav-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.shell-menu .icon-grid {
+    color: #f7f7fb;
+}
+
+.shell-menu .icon-network {
+    color: var(--orange);
+}
+
+.shell-menu .icon-folder,
+.shell-menu .icon-search,
+.shell-menu .icon-gear {
+    color: var(--peach);
+}
+
+.shell-menu .icon-chat,
+.shell-menu .icon-db {
+    color: var(--purple);
+}
+
+.shell-menu .nav button.active .nav-icon,
+.shell-menu .nav a.active .nav-icon {
+    color: var(--orange);
+}
+
+.shell-menu .sidebar-foot {
+    height: 47px;
+    margin: auto -12px 0;
+    padding: 0 10px 7px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    border-top: 5px solid var(--black);
+    border-radius: 0 0 0 42px;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 10px;
+    font-weight: 700;
+}
