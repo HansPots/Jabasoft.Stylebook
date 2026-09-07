@@ -42,7 +42,7 @@
     cursor: pointer;
 }
 
-svg {
+.menubutton-jbs-snap-svg {
     color: rgb(255, 151, 0);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -55,7 +55,7 @@ svg {
     cursor: pointer;
 }
 
-rect {
+.menubutton-jbs-snap-rect {
     color: rgb(255, 151, 0);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;

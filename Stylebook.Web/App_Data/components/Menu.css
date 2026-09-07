@@ -73,7 +73,7 @@
     cursor: pointer;
 }
 
-svg {
+.menu-jbs-snap-svg {
     color: rgb(255, 172, 138);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -86,7 +86,7 @@ svg {
     cursor: pointer;
 }
 
-path {
+.menu-jbs-snap-path {
     color: rgb(255, 172, 138);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -141,7 +141,7 @@ path {
     cursor: pointer;
 }
 
-rect {
+.menu-jbs-snap-rect {
     color: rgb(255, 151, 0);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -198,7 +198,7 @@ rect {
     cursor: pointer;
 }
 
-polyline {
+.menu-jbs-snap-polyline {
     color: rgb(255, 172, 138);
     font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -251,7 +251,7 @@ polyline {
     height: 47px;
 }
 
-button {
+.menu-jbs-snap-button {
     color: rgb(3, 3, 5);
     font-family: Arial;
     font-size: 16px;

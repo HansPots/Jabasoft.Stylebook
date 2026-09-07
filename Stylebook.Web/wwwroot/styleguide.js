@@ -910,7 +910,28 @@
         if (el.classList && el.classList.length > 0) {
             return "." + Array.prototype.slice.call(el.classList).join(".");
         }
-        return el.tagName.toLowerCase();
+
+        // A class-less element (e.g. a bare <span>, or the <svg>/<rect>
+        // inside an icon) has no class for renameCssSelectors to namespace
+        // later - a raw tag-name selector like "span" would fall through
+        // untouched, and being both unscoped (matches every OTHER span on
+        // the whole page, not just this one) and extremely low-specificity
+        // (any more specific rule elsewhere - including the very page this
+        // gets materialized back into - keeps winning over it), that's
+        // exactly the "I ask for a position change and nothing happens,
+        // because outside CSS is still influencing this element" bug.
+        // Giving it a synthetic class instead makes it a normal, ownable
+        // selector: buildClassRenameMap/renameElementClasses pick it up
+        // like any other class, since as of this line it genuinely IS one.
+        // Named after the tag alone (not per-element unique) so multiple
+        // class-less elements of the same tag (e.g. four <rect>s in an
+        // icon) still collapse into the one shared rule the "first
+        // matching element wins" comment below already promises for
+        // classed elements - not a new per-tag limitation, just the
+        // existing one made scoped instead of leaky.
+        var synthetic = "jbs-snap-" + el.tagName.toLowerCase();
+        el.classList.add(synthetic);
+        return "." + synthetic;
     }
 
     // One rule per unique selector (first matching element wins) - elements
