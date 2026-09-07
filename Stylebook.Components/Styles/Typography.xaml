@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Spacing scale - the WPF equivalent of jabasoft-theme.css's
+         lcars-space base unit. Declared as Thickness (not a plain
+         number): Padding/Margin properties need a Thickness, and
+         {StaticResource} hands the resource object straight to the
+         property without running the string-to-Thickness conversion a
+         literal like Padding="16" gets for free - so a Double resource
+         here throws at runtime ('16' is not a valid value for property
+         'Padding') instead of silently working. Uniform on all 4 sides;
+         add a *_Thickness variant with its own value if a component ever
+         needs asymmetric spacing. -->
+    <Thickness x:Key="SpaceXSmall">4</Thickness>
+    <Thickness x:Key="SpaceSmall">8</Thickness>
+    <Thickness x:Key="SpaceMedium">16</Thickness>
+    <Thickness x:Key="SpaceLarge">24</Thickness>
+
+    <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
+    <sys:Double x:Key="FontSizeSmall">12</sys:Double>
+    <sys:Double x:Key="FontSizeBody">14</sys:Double>
+    <sys:Double x:Key="FontSizeTitle">18</sys:Double>
+
+</ResourceDictionary>

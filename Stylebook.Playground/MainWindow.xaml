@@ -1,0 +1,28 @@
+<Window x:Class="Stylebook.Playground.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
+        mc:Ignorable="d"
+        Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
+        Height="450" Width="800"
+        Background="{DynamicResource BackgroundBrush}">
+
+    <!--
+        Gallery: elk component uit Stylebook.Components krijgt hier een
+        plek met wat voorbeelddata, puur om te zien of het klopt terwijl
+        je het bouwt. Geen picker, geen opslaan, geen AI - dat komt in de
+        definitieve Stylebook-app. Nieuw component toevoegen? Gewoon een
+        <controls:Xxx .../> hieronder erbij.
+    -->
+    <StackPanel Margin="24">
+        <controls:Card Title="Voorbeeldkaart" Width="280" HorizontalAlignment="Left">
+            <TextBlock Text="Dit is de content-slot - hier kan willekeurige inhoud staan."
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       FontFamily="{StaticResource AppFontFamily}"
+                       FontSize="{StaticResource FontSizeBody}"
+                       TextWrapping="Wrap" />
+        </controls:Card>
+    </StackPanel>
+</Window>

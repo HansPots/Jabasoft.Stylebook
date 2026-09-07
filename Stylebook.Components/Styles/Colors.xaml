@@ -1,0 +1,33 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Design tokens - the WPF equivalent of CSS custom properties (the
+        lcars-header-start style tokens in the old jabasoft-theme.css).
+        Every component in this library reads colors from HERE via
+        {DynamicResource ...}, never a literal Color/Brush - so changing
+        the palette for the whole family means editing this one file.
+
+        DynamicResource (not StaticResource): lets a theme swap happen at
+        runtime by replacing this dictionary's values, the same way the
+        old jabasoft-theme.css/vs-theme.css pair could be switched live.
+        Not needed yet, but costs nothing to default to.
+    -->
+
+    <Color x:Key="AccentColor">#4A7FE8</Color>
+    <Color x:Key="AccentColorDark">#2F5FC7</Color>
+    <Color x:Key="BackgroundColor">#1B1B1F</Color>
+    <Color x:Key="SurfaceColor">#26262B</Color>
+    <Color x:Key="BorderColor">#3A3A40</Color>
+    <Color x:Key="TextPrimaryColor">#F2F2F2</Color>
+    <Color x:Key="TextMutedColor">#A0A0A8</Color>
+
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentColorDark}" />
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+
+</ResourceDictionary>
