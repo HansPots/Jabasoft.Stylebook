@@ -6,23 +6,46 @@
         xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
-        Height="450" Width="800"
+        Height="1080" Width="1920"
         Background="{DynamicResource BackgroundBrush}">
 
     <!--
-        Gallery: elk component uit Stylebook.Components krijgt hier een
-        plek met wat voorbeelddata, puur om te zien of het klopt terwijl
-        je het bouwt. Geen picker, geen opslaan, geen AI - dat komt in de
-        definitieve Stylebook-app. Nieuw component toevoegen? Gewoon een
-        <controls:Xxx .../> hieronder erbij.
+        Vaste indeling van het style-venster: links een 256px strook voor
+        het menu (welke component/stijl je bekijkt), rechts het style-
+        oppervlak zelf waar de daadwerkelijke styling te zien is. De
+        definitieve Stylebook-app krijgt dezelfde twee-koloms opzet; dit
+        is de tijdelijke, werkende versie ervan.
     -->
-    <StackPanel Margin="24">
-        <controls:Card Title="Voorbeeldkaart" Width="280" HorizontalAlignment="Left">
-            <TextBlock Text="Dit is de content-slot - hier kan willekeurige inhoud staan."
-                       Foreground="{DynamicResource TextMutedBrush}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       FontSize="{StaticResource FontSizeBody}"
-                       TextWrapping="Wrap" />
-        </controls:Card>
-    </StackPanel>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="256" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Menu-strook -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,1,0">
+            <StackPanel Margin="{StaticResource SpaceMedium}">
+                <TextBlock Text="MENU"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="{StaticResource FontSizeSmall}"
+                           Margin="0,0,0,16" />
+                <!-- Menu-items komen hier, zodra er meerdere secties/componenten zijn om tussen te wisselen. -->
+            </StackPanel>
+        </Border>
+
+        <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te staan -->
+        <StackPanel Grid.Column="1" Margin="{StaticResource SpaceLarge}">
+            <controls:Card Title="Voorbeeldkaart" Width="280" HorizontalAlignment="Left">
+                <TextBlock Text="Dit is de content-slot - hier kan willekeurige inhoud staan."
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           FontFamily="{StaticResource AppFontFamily}"
+                           FontSize="{StaticResource FontSizeBody}"
+                           TextWrapping="Wrap" />
+            </controls:Card>
+        </StackPanel>
+    </Grid>
 </Window>
