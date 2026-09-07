@@ -2,14 +2,16 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        The single entry point every consuming app merges in - the WPF
-        equivalent of linking jabasoft-theme.css. Consuming an app just
-        needs:
+        The shared entry point every consuming app merges in - the WPF
+        equivalent of linking jabasoft-theme.css. Consuming an app needs
+        this AND a starting color theme, both merged directly at the
+        Application.Resources level (see the comment below on why):
 
             <Application.Resources>
                 <ResourceDictionary>
                     <ResourceDictionary.MergedDictionaries>
                         <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                        <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Dark.xaml" />
                     </ResourceDictionary.MergedDictionaries>
                 </ResourceDictionary>
             </Application.Resources>
@@ -17,10 +19,18 @@
         New shared Style for a control (see Controls/*.xaml) gets added
         here as another MergedDictionary entry - never copy a Style's XAML
         into an app itself, same discipline as the old shared *.css files.
+
+        Colors are NOT merged in here on purpose. Runtime theme swapping
+        (Theming/ThemeManager.cs) replaces a dictionary entry directly in
+        Application.Resources.MergedDictionaries - WPF only reliably
+        re-resolves {DynamicResource} across the app when that swap
+        happens at that top level, not on a dictionary nested this deep.
+        So every consuming app merges Theme.xaml for typography/shared
+        styles AND one Styles/Themes/*.xaml directly, side by side - see
+        App.xaml.
     -->
 
     <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="Colors.xaml" />
         <ResourceDictionary Source="Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 

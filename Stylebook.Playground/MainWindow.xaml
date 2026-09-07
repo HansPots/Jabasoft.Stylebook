@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
+        xmlns:theming="clr-namespace:Stylebook.Components.Theming;assembly=Stylebook.Components"
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
         Height="1080" Width="1920"
@@ -34,6 +35,17 @@
                            FontSize="{StaticResource FontSizeSmall}"
                            Margin="0,0,0,16" />
                 <!-- Menu-items komen hier, zodra er meerdere secties/componenten zijn om tussen te wisselen. -->
+
+                <Button x:Name="ThemeToggleButton"
+                        Content="Wissel thema"
+                        Click="ThemeToggleButton_Click"
+                        Margin="0,16,0,0"
+                        Padding="{StaticResource SpaceSmall}"
+                        Background="{DynamicResource AccentBrush}"
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        FontFamily="{StaticResource AppFontFamily}"
+                        FontSize="{StaticResource FontSizeSmall}"
+                        BorderThickness="0" />
             </StackPanel>
         </Border>
 

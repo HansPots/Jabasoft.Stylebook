@@ -6,9 +6,13 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- The one shared theme every real app will merge in too
+                <!-- Shared typography/styles every real app merges in too
                      - see Stylebook.Components/Styles/Theme.xaml. -->
                 <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <!-- Starting color theme - kept as its own top-level entry
+                     (not nested inside Theme.xaml) so Theming/ThemeManager
+                     can swap it live, see that class for why. -->
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Dark.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

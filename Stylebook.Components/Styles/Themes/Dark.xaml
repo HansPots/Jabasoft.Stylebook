@@ -2,16 +2,13 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        Design tokens - the WPF equivalent of CSS custom properties (the
-        lcars-header-start style tokens in the old jabasoft-theme.css).
-        Every component in this library reads colors from HERE via
-        {DynamicResource ...}, never a literal Color/Brush - so changing
-        the palette for the whole family means editing this one file.
-
-        DynamicResource (not StaticResource): lets a theme swap happen at
-        runtime by replacing this dictionary's values, the same way the
-        old jabasoft-theme.css/vs-theme.css pair could be switched live.
-        Not needed yet, but costs nothing to default to.
+        Donker thema (standaard). Levert dezelfde sleutel-set als
+        Light.xaml in deze map - Theming/ThemeManager.cs verwisselt op
+        naam, dus elk thema-bestand moet exact dezelfde x:Key's hebben.
+        Componenten refereren nooit rechtstreeks naar Dark/Light, alleen
+        naar de gedeelde namen (AccentBrush, SurfaceBrush, ...) via
+        {DynamicResource ...} - dat is wat het live wisselen mogelijk
+        maakt.
     -->
 
     <Color x:Key="AccentColor">#4A7FE8</Color>
