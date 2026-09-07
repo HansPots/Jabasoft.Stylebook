@@ -11,6 +11,11 @@ html, body {
 .styleguide {
     display: grid;
     grid-template-columns: 280px 6px 1fr 6px 380px;
+    /* Row 1 (nav/preview/right-panel) takes whatever's left, row 2 is the
+       horizontal splitter, row 3 is the shared editor band - both span
+       every column (see #splitter-editor/#editor-band below), so nothing
+       about row 1's own five columns needs to change. */
+    grid-template-rows: 1fr 6px 260px;
     height: 100vh;
     background: var(--lcars-content);
     color: var(--lcars-text-dark);
@@ -23,6 +28,50 @@ html, body {
     cursor: col-resize;
     background: var(--lcars-actionrail-start);
     opacity: 0.35;
+}
+
+.splitter-row {
+    cursor: row-resize;
+    grid-column: 1 / -1;
+}
+
+#editor-band {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #1b1b1b;
+    border-top: 2px solid var(--lcars-actionrail-start);
+}
+
+#editor-diff-toolbar:not([hidden]) {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 12px;
+    background: var(--lcars-actionrail-start);
+    color: var(--lcars-text-light);
+    font-size: 12px;
+    font-weight: bold;
+}
+
+#editor-diff-toolbar button {
+    background: var(--lcars-footer-start);
+    color: var(--lcars-text-dark);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#editor-container,
+#editor-diff-container {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
 }
 
 .splitter:hover,
@@ -177,12 +226,6 @@ body.splitter-dragging {
     border: 0;
     width: 100%;
     background: white;
-}
-
-#editor-container {
-    flex: 1;
-    width: 100%;
-    min-height: 0;
 }
 
 .styleguide-css {

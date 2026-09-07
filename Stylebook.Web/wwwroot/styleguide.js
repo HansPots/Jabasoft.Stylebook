@@ -8,13 +8,11 @@
     var previewOpen = document.getElementById("preview-open");
     var homeBtn = document.getElementById("home-btn");
     var refreshBtn = document.getElementById("refresh-btn");
-    var cssEditor = document.getElementById("css-editor");
     var saveCssBtn = document.getElementById("save-css-btn");
     var cssStatus = document.getElementById("css-status");
     var themePanel = document.getElementById("theme-panel");
     var componentPanel = document.getElementById("component-panel");
     var componentPanelTitle = document.getElementById("component-panel-title");
-    var componentCssEditor = document.getElementById("component-css-editor");
     var componentCssStatus = document.getElementById("component-css-status");
     var saveComponentCssBtn = document.getElementById("save-component-css-btn");
     var aiInstructions = document.getElementById("ai-instructions");
@@ -25,11 +23,12 @@
     var tabPages = document.getElementById("tab-pages");
     var tabComponents = document.getElementById("tab-components");
     var tabSettings = document.getElementById("tab-settings");
-    var tabEditor = document.getElementById("tab-editor");
     var settingsList = document.getElementById("settings-list");
     var settingsPanel = document.getElementById("settings-panel");
-    var editorList = document.getElementById("editor-list");
     var editorContainer = document.getElementById("editor-container");
+    var editorDiffContainer = document.getElementById("editor-diff-container");
+    var editorDiffToolbar = document.getElementById("editor-diff-toolbar");
+    var closeDiffBtn = document.getElementById("close-diff-btn");
     var selectElementBtn = document.getElementById("select-element-btn");
     var showRegionsBtn = document.getElementById("show-regions-btn");
     var pickerPanel = document.getElementById("picker-panel");
@@ -48,6 +47,7 @@
     var aiSettingsSaveBtn = document.getElementById("ai-settings-save-btn");
     var splitter1 = document.getElementById("splitter-1");
     var splitter2 = document.getElementById("splitter-2");
+    var splitterEditor = document.getElementById("splitter-editor");
     var styleguideEl = document.querySelector(".styleguide");
 
     var lastApps = null;
@@ -247,6 +247,7 @@
     }
 
     function loadCss() {
+        hideDiffView();
         cssStatus.textContent = "Laden...";
         fetch("/api/theme-css")
             .then(function (response) {
@@ -256,8 +257,10 @@
                 return response.text();
             })
             .then(function (text) {
-                cssEditor.value = text;
-                cssStatus.textContent = "";
+                return withEditor(function (editor) {
+                    editor.setValue(text);
+                    cssStatus.textContent = "";
+                });
             })
             .catch(function (err) {
                 cssStatus.textContent = "Kon jabasoft-theme.css niet laden: " + err;
@@ -267,10 +270,12 @@
     function saveCss() {
         cssStatus.textContent = "Opslaan...";
         saveCssBtn.disabled = true;
-        fetch("/api/theme-css", {
-            method: "PUT",
-            headers: { "Content-Type": "text/plain" },
-            body: cssEditor.value,
+        withEditor(function (editor) {
+            return fetch("/api/theme-css", {
+                method: "PUT",
+                headers: { "Content-Type": "text/plain" },
+                body: editor.getValue(),
+            });
         })
             .then(function (response) {
                 if (!response.ok) {
@@ -296,16 +301,12 @@
         tabPages.classList.remove("active");
         tabComponents.classList.remove("active");
         tabSettings.classList.remove("active");
-        tabEditor.classList.remove("active");
         appGroups.hidden = true;
         componentList.hidden = true;
         settingsList.hidden = true;
-        editorList.hidden = true;
         themePanel.hidden = true;
         componentPanel.hidden = true;
         settingsPanel.hidden = true;
-        editorContainer.hidden = true;
-        previewFrame.hidden = false;
     }
 
     function showPagesTab() {
@@ -347,48 +348,67 @@
         loadAiSettings();
     }
 
-    // ============================================================
-    // Editor: proof-of-concept tab for the shared Monaco wrapper
-    // (Shared.UI/wwwroot/jabasoft-editor.js) - not wired to any save
-    // action yet, just here to see/try the editor itself. Once this looks
-    // right, the real integration is replacing #css-editor/
-    // #component-css-editor above with the same window.jabasoftEditor.create(...).
-    // ============================================================
-
-    var editorInstance = null;
-    var editorInitPromise = null;
-
-    function showEditorTab() {
-        deactivateAllTabs();
-        tabEditor.classList.add("active");
-        editorList.hidden = false;
-        selectElementBtn.disabled = true;
-        showRegionsBtn.disabled = true;
-        previewFrame.hidden = true;
-        editorContainer.hidden = false;
-        previewTitle.textContent = "Editor (test)";
-        previewOpen.classList.add("disabled");
-
-        if (!editorInitPromise) {
-            editorInitPromise = window.jabasoftEditor.create(editorContainer, {
-                language: "css",
-                value:
-                    "/* Test-editor - nog niet gekoppeld aan opslaan.\n" +
-                    "   Typ hier gerust wat CSS om de editor te proberen. */\n\n" +
-                    ".voorbeeld {\n" +
-                    "    color: var(--lcars-footer-start);\n" +
-                    "}\n",
-            }).then(function (editor) {
-                editorInstance = editor;
-                return editor;
-            });
-        }
-    }
-
     tabPages.addEventListener("click", showPagesTab);
     tabComponents.addEventListener("click", showComponentsTab);
     tabSettings.addEventListener("click", showSettingsTab);
-    tabEditor.addEventListener("click", showEditorTab);
+
+    // ============================================================
+    // Shared editor band (bottom, full width - see #editor-band in
+    // index.html/styleguide.css): one Monaco instance for the whole app,
+    // reused for whichever CSS is currently relevant - jabasoft-theme.css
+    // on Pagina's (see loadCss/saveCss), or a component's own CSS on
+    // Componenten (see editComponent/saveComponentCss/generateComponentCss).
+    // Created once, up front, so it's simply already there under whichever
+    // panel needs it - not created/torn down per tab.
+    // ============================================================
+
+    var sharedEditor = null;
+    var sharedEditorReady = window.jabasoftEditor.create(editorContainer, { language: "css", value: "" });
+    sharedEditorReady.then(function (editor) {
+        sharedEditor = editor;
+    });
+
+    // Everything that reads/writes CSS awaits this first, so it never
+    // matters whether Monaco (loaded from a CDN, see jabasoft-editor.js)
+    // has actually finished loading yet by the time e.g. loadCss() runs
+    // right at startup.
+    function withEditor(callback) {
+        return sharedEditorReady.then(callback);
+    }
+
+    // Read-only diff view shown automatically right after a successful AI
+    // CSS-generatie (see generateComponentCss), comparing the CSS from just
+    // before that call against the AI's proposal - dismissed via
+    // close-diff-btn, or implicitly whenever the user switches to a
+    // different component/page's CSS (see hideDiffView calls in
+    // editComponent/loadCss) so a stale diff never lingers.
+    var diffEditorInstance = null;
+
+    function showDiffView(originalCss, modifiedCss) {
+        hideDiffView();
+        window.jabasoftEditor.createDiff(editorDiffContainer, {
+            original: originalCss,
+            modified: modifiedCss,
+            language: "css",
+        }).then(function (diffEditor) {
+            diffEditorInstance = diffEditor;
+        });
+        editorContainer.hidden = true;
+        editorDiffContainer.hidden = false;
+        editorDiffToolbar.hidden = false;
+    }
+
+    function hideDiffView() {
+        if (diffEditorInstance) {
+            diffEditorInstance.dispose();
+            diffEditorInstance = null;
+        }
+        editorContainer.hidden = false;
+        editorDiffContainer.hidden = true;
+        editorDiffToolbar.hidden = true;
+    }
+
+    closeDiffBtn.addEventListener("click", hideDiffView);
 
     // ============================================================
     // Componenten: lijst + eigen preview/CSS-editor/AI-generatie/materialize
@@ -502,6 +522,7 @@
     }
 
     function editComponent(name) {
+        hideDiffView();
         currentComponentName = name;
         componentPanelTitle.textContent = name;
         componentPanel.hidden = false;
@@ -514,9 +535,11 @@
         ]).then(function (results) {
             var html = results[0];
             var css = results[1];
-            componentCssEditor.value = css;
-            componentCssStatus.textContent = "";
-            renderComponentPreview(name, html, css);
+            return withEditor(function (editor) {
+                editor.setValue(css);
+                componentCssStatus.textContent = "";
+                renderComponentPreview(name, html, css);
+            });
         }).catch(function (err) {
             componentCssStatus.textContent = "Kon component niet laden: " + err;
         });
@@ -594,21 +617,23 @@
 
         componentCssStatus.textContent = "Opslaan...";
         saveComponentCssBtn.disabled = true;
-        fetch("/api/components/" + currentComponentName + "/css", {
-            method: "PUT",
-            headers: { "Content-Type": "text/plain" },
-            body: componentCssEditor.value,
-        })
-            .then(function (response) {
+        withEditor(function (editor) {
+            var css = editor.getValue();
+            return fetch("/api/components/" + currentComponentName + "/css", {
+                method: "PUT",
+                headers: { "Content-Type": "text/plain" },
+                body: css,
+            }).then(function (response) {
                 if (!response.ok) {
                     throw new Error("HTTP " + response.status);
                 }
                 componentCssStatus.textContent = "Opgeslagen.";
                 fetch("/api/components/" + currentComponentName + "/html?t=" + Date.now())
                     .then(function (r) { return r.text(); })
-                    .then(function (html) { renderComponentPreview(currentComponentName, html, componentCssEditor.value); });
+                    .then(function (html) { renderComponentPreview(currentComponentName, html, css); });
                 setTimeout(function () { componentCssStatus.textContent = ""; }, 2000);
-            })
+            });
+        })
             .catch(function (err) {
                 componentCssStatus.textContent = "Opslaan mislukt: " + err;
             })
@@ -624,23 +649,27 @@
 
         generateCssBtn.disabled = true;
         componentCssStatus.textContent = "AI denkt na...";
-        fetch("/api/components/" + currentComponentName + "/generate-css", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ instructions: aiInstructions.value, currentCss: componentCssEditor.value }),
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (result) {
-                if (result.success) {
-                    componentCssEditor.value = result.css;
-                    componentCssStatus.textContent = "Voorstel geladen - controleer en klik Opslaan.";
-                    fetch("/api/components/" + currentComponentName + "/html?t=" + Date.now())
-                        .then(function (r) { return r.text(); })
-                        .then(function (html) { renderComponentPreview(currentComponentName, html, result.css); });
-                } else {
-                    componentCssStatus.textContent = "AI-generatie mislukt: " + result.errorMessage;
-                }
+        withEditor(function (editor) {
+            var beforeCss = editor.getValue();
+            return fetch("/api/components/" + currentComponentName + "/generate-css", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ instructions: aiInstructions.value, currentCss: beforeCss }),
             })
+                .then(function (r) { return r.json(); })
+                .then(function (result) {
+                    if (result.success) {
+                        editor.setValue(result.css);
+                        componentCssStatus.textContent = "Voorstel geladen - controleer en klik Opslaan.";
+                        fetch("/api/components/" + currentComponentName + "/html?t=" + Date.now())
+                            .then(function (r) { return r.text(); })
+                            .then(function (html) { renderComponentPreview(currentComponentName, html, result.css); });
+                        showDiffView(beforeCss, result.css);
+                    } else {
+                        componentCssStatus.textContent = "AI-generatie mislukt: " + result.errorMessage;
+                    }
+                });
+        })
             .catch(function (err) {
                 componentCssStatus.textContent = "AI-generatie mislukt: " + err;
             })
@@ -1217,9 +1246,11 @@
 
     var navWidth = 280;
     var panelWidth = 380;
+    var editorHeight = 260;
 
     function applyGridTemplate() {
         styleguideEl.style.gridTemplateColumns = navWidth + "px 6px 1fr 6px " + panelWidth + "px";
+        styleguideEl.style.gridTemplateRows = "1fr 6px " + editorHeight + "px";
     }
 
     function setupSplitter(el, onDrag) {
@@ -1250,12 +1281,47 @@
         });
     }
 
+    // Same idea as setupSplitter, but dragging vertically (row-resize) to
+    // change the shared editor band's height instead of a column's width.
+    function setupRowSplitter(el, onDrag) {
+        el.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            var startY = e.clientY;
+            var startHeight = editorHeight;
+            el.classList.add("dragging");
+            document.body.classList.add("splitter-dragging");
+            document.body.style.cursor = "row-resize";
+
+            function onMove(ev) {
+                onDrag(ev.clientY - startY, startHeight);
+                applyGridTemplate();
+            }
+
+            function onUp() {
+                el.classList.remove("dragging");
+                document.body.classList.remove("splitter-dragging");
+                document.body.style.cursor = "";
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+            }
+
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        });
+    }
+
     setupSplitter(splitter1, function (dx, startNav) {
         navWidth = Math.max(160, Math.min(500, startNav + dx));
     });
 
     setupSplitter(splitter2, function (dx, startNav, startPanel) {
         panelWidth = Math.max(260, Math.min(700, startPanel - dx));
+    });
+
+    // Splitter sits ABOVE the editor band: dragging it down (positive dy)
+    // shrinks the editor, dragging it up grows it.
+    setupRowSplitter(splitterEditor, function (dy, startHeight) {
+        editorHeight = Math.max(120, Math.min(700, startHeight - dy));
     });
 
     // First open: capture copies right away (covers the case where none

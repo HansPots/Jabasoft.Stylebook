@@ -112,5 +112,43 @@
                 return editor;
             });
         },
+
+        /**
+         * Read-only side-by-side diff view (original vs modified) - for
+         * reviewing an AI-generated change before deciding whether to keep
+         * it, not for further editing. Same options.path/options.language
+         * convention as create(). Returns a Promise<monaco.editor.IDiffEditor>;
+         * call .dispose() on it when you're done with the diff (e.g. when
+         * hiding the panel) to free the two extra models Monaco creates
+         * for the original/modified sides.
+         */
+        createDiff: function (container, options) {
+            var el = typeof container === "string" ? document.getElementById(container) : container;
+            options = options || {};
+
+            return loadMonaco().then(function (monaco) {
+                var diffEditor = monaco.editor.createDiffEditor(el, {
+                    theme: currentThemeName(),
+                    automaticLayout: true,
+                    readOnly: true,
+                    renderSideBySide: true,
+                    minimap: { enabled: false },
+                    fontSize: 13,
+                });
+
+                var language = options.language || "css";
+                diffEditor.setModel({
+                    original: monaco.editor.createModel(options.original || "", language),
+                    modified: monaco.editor.createModel(options.modified || "", language),
+                });
+
+                var observer = new MutationObserver(function () {
+                    monaco.editor.setTheme(currentThemeName());
+                });
+                observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+                return diffEditor;
+            });
+        },
     };
 })();

@@ -33,10 +33,6 @@
                         <span class="nav-icon icon-gear"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.4 3.5c0-.4 0-.8-.1-1.1l1.8-1.4-1.8-3-2.1.9a7 7 0 0 0-1.9-1.1L16 4h-4l-.3 2.3a7 7 0 0 0-1.9 1.1l-2.1-.9-1.8 3 1.8 1.4a7.7 7.7 0 0 0 0 2.2L3.9 14.6l1.8 3 2.1-.9a7 7 0 0 0 1.9 1.1L10 20h4l.3-2.2a7 7 0 0 0 1.9-1.1l2.1.9 1.8-3-1.8-1.4c.1-.4.1-.8.1-1.2z" /></svg></span>
                         Instellingen
                     </button>
-                    <button id="tab-editor" type="button" class="nav-tab">
-                        <span class="nav-icon icon-code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" /><path d="M9 9h6M9 13h6M9 17h3" /></svg></span>
-                        Editor
-                    </button>
                 </nav>
                 <div class="sidebar-foot">
                     <button id="refresh-btn" type="button" title="Pagina's verversen">&#8635;</button>
@@ -45,7 +41,6 @@
             <div id="app-groups"></div>
             <div id="component-list" hidden></div>
             <div id="settings-list" class="styleguide-nav-empty" hidden>AI Connector</div>
-            <div id="editor-list" class="styleguide-nav-empty" hidden>Test-editor - nog niet gekoppeld aan opslaan.</div>
         </aside>
         <div class="splitter" id="splitter-1"></div>
         <main class="styleguide-preview">
@@ -58,7 +53,6 @@
                 </div>
             </div>
             <iframe id="preview-frame" title="Paginavoorbeeld"></iframe>
-            <div id="editor-container" hidden></div>
         </main>
         <div class="splitter" id="splitter-2"></div>
         <aside class="styleguide-css" id="theme-panel">
@@ -66,7 +60,6 @@
                 <span>jabasoft-theme.css</span>
                 <button id="save-css-btn" type="button">Opslaan</button>
             </div>
-            <textarea id="css-editor" spellcheck="false"></textarea>
             <div id="css-status" class="styleguide-css-status"></div>
         </aside>
         <aside class="styleguide-css component-panel" id="component-panel" hidden>
@@ -74,7 +67,6 @@
                 <span id="component-panel-title">Component</span>
                 <button id="save-component-css-btn" type="button">Opslaan</button>
             </div>
-            <textarea id="component-css-editor" spellcheck="false" placeholder="Eigen CSS voor dit component..."></textarea>
             <div id="component-css-status" class="styleguide-css-status"></div>
             <div class="component-ai">
                 <textarea id="ai-instructions" placeholder="Instructies voor AI (optioneel)"></textarea>
@@ -125,6 +117,15 @@
             </div>
             <div id="ai-settings-status" class="styleguide-css-status"></div>
         </aside>
+        <div class="splitter splitter-row" id="splitter-editor"></div>
+        <div id="editor-band">
+            <div id="editor-diff-toolbar" hidden>
+                <span>Verschil met de versie van vóór dit AI-voorstel</span>
+                <button id="close-diff-btn" type="button">Terug naar editor</button>
+            </div>
+            <div id="editor-container"></div>
+            <div id="editor-diff-container" hidden></div>
+        </div>
     </div>
 
     <div id="picker-panel" class="floating-panel" hidden>
