@@ -489,22 +489,27 @@
         return sharedEditorReady.then(callback);
     }
 
-    // Read-only diff view shown automatically right after a successful AI
-    // CSS-generatie (see generateComponentCss), comparing the CSS from just
-    // before that call against the AI's proposal - dismissed via
-    // close-diff-btn, or implicitly whenever the user switches to a
-    // different component/page's CSS (see hideDiffView calls in
-    // editComponent/loadCss) so a stale diff never lingers.
+    // Diff view shown automatically right after a successful AI CSS-
+    // generatie (see generateComponentCss), comparing the CSS from just
+    // before that call (left, read-only) against the AI's proposal (right,
+    // editable - reuses the shared editor's own model, see createDiff's
+    // modifiedModel option, so a hand-edit made here is already "in" the
+    // shared editor - nothing extra to sync when the diff closes).
+    // Dismissed via close-diff-btn, or implicitly whenever the user
+    // switches to a different component/page's CSS (see hideDiffView calls
+    // in editComponent/loadCss) so a stale diff never lingers.
     var diffEditorInstance = null;
 
-    function showDiffView(originalCss, modifiedCss) {
+    function showDiffView(originalCss) {
         hideDiffView();
-        window.jabasoftEditor.createDiff(editorDiffContainer, {
-            original: originalCss,
-            modified: modifiedCss,
-            language: "css",
-        }).then(function (diffEditor) {
-            diffEditorInstance = diffEditor;
+        withEditor(function (editor) {
+            window.jabasoftEditor.createDiff(editorDiffContainer, {
+                original: originalCss,
+                modifiedModel: editor.getModel(),
+                language: "css",
+            }).then(function (diffEditor) {
+                diffEditorInstance = diffEditor;
+            });
         });
         editorContainer.hidden = true;
         editorDiffContainer.hidden = false;
@@ -513,7 +518,16 @@
 
     function hideDiffView() {
         if (diffEditorInstance) {
+            // Only the "original" side's model was created just for this
+            // diff (see createDiff) - the "modified" side IS the shared
+            // editor's own model, still in use after the diff closes, so
+            // disposing the diff editor widget itself must not take that
+            // down with it.
+            var models = diffEditorInstance.getModel();
             diffEditorInstance.dispose();
+            if (models && models.original) {
+                models.original.dispose();
+            }
             diffEditorInstance = null;
         }
         editorContainer.hidden = false;
@@ -782,7 +796,7 @@
                         fetch("/api/components/" + currentComponentName + "/html?t=" + Date.now())
                             .then(function (r) { return r.text(); })
                             .then(function (html) { renderComponentPreview(currentComponentName, html, result.css); });
-                        showDiffView(beforeCss, result.css);
+                        showDiffView(beforeCss);
                         logActivity("AI-voorstel geladen: " + currentComponentName);
                         pollTokenSummary();
                     } else {

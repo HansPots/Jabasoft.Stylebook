@@ -114,13 +114,26 @@
         },
 
         /**
-         * Read-only side-by-side diff view (original vs modified) - for
-         * reviewing an AI-generated change before deciding whether to keep
-         * it, not for further editing. Same options.path/options.language
-         * convention as create(). Returns a Promise<monaco.editor.IDiffEditor>;
-         * call .dispose() on it when you're done with the diff (e.g. when
-         * hiding the panel) to free the two extra models Monaco creates
-         * for the original/modified sides.
+         * Side-by-side diff view (original vs modified) - for reviewing an
+         * AI-generated change before deciding whether to keep it. The
+         * original (left) side is always read-only; the modified (right)
+         * side is editable, so a proposal can be tweaked by hand right
+         * there instead of having to close the diff first. Same
+         * options.path/options.language convention as create(). Returns a
+         * Promise<monaco.editor.IDiffEditor>; call .dispose() on it when
+         * you're done with the diff (e.g. when hiding the panel) - unless
+         * options.modifiedModel was passed in (see below), this also frees
+         * the two models Monaco created for the original/modified sides.
+         *
+         * options.modifiedModel (optional): reuse an EXISTING model (e.g.
+         * a live create()'d editor's own model) for the modified side,
+         * instead of creating a fresh one from options.modified. Since
+         * it's the same model object, edits made here show up immediately
+         * in whatever other editor is also displaying it - e.g. Stylebook
+         * keeps its single shared editor's model showing underneath the
+         * diff, so closing the diff (which just hides/disposes the diff
+         * *editor*, not this shared model) leaves any hand-edits intact.
+         * Do not call .dispose() on a modifiedModel you didn't create.
          */
         createDiff: function (container, options) {
             var el = typeof container === "string" ? document.getElementById(container) : container;
@@ -130,7 +143,8 @@
                 var diffEditor = monaco.editor.createDiffEditor(el, {
                     theme: currentThemeName(),
                     automaticLayout: true,
-                    readOnly: true,
+                    readOnly: false,
+                    originalEditable: false,
                     renderSideBySide: true,
                     minimap: { enabled: false },
                     fontSize: 13,
@@ -139,7 +153,7 @@
                 var language = options.language || "css";
                 diffEditor.setModel({
                     original: monaco.editor.createModel(options.original || "", language),
-                    modified: monaco.editor.createModel(options.modified || "", language),
+                    modified: options.modifiedModel || monaco.editor.createModel(options.modified || "", language),
                 });
 
                 var observer = new MutationObserver(function () {
