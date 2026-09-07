@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="styleguide.css" />
     <script src="/_content/Shared.UI/theme.js"></script>
     <script src="/_content/Shared.UI/embed.js"></script>
+    <script src="/_content/Shared.UI/jabasoft-editor.js"></script>
 </head>
 <body>
     <div class="styleguide">
@@ -32,6 +33,10 @@
                         <span class="nav-icon icon-gear"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.4 3.5c0-.4 0-.8-.1-1.1l1.8-1.4-1.8-3-2.1.9a7 7 0 0 0-1.9-1.1L16 4h-4l-.3 2.3a7 7 0 0 0-1.9 1.1l-2.1-.9-1.8 3 1.8 1.4a7.7 7.7 0 0 0 0 2.2L3.9 14.6l1.8 3 2.1-.9a7 7 0 0 0 1.9 1.1L10 20h4l.3-2.2a7 7 0 0 0 1.9-1.1l2.1.9 1.8-3-1.8-1.4c.1-.4.1-.8.1-1.2z" /></svg></span>
                         Instellingen
                     </button>
+                    <button id="tab-editor" type="button" class="nav-tab">
+                        <span class="nav-icon icon-code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" /><path d="M9 9h6M9 13h6M9 17h3" /></svg></span>
+                        Editor
+                    </button>
                 </nav>
                 <div class="sidebar-foot">
                     <button id="refresh-btn" type="button" title="Pagina's verversen">&#8635;</button>
@@ -40,6 +45,7 @@
             <div id="app-groups"></div>
             <div id="component-list" hidden></div>
             <div id="settings-list" class="styleguide-nav-empty" hidden>AI Connector</div>
+            <div id="editor-list" class="styleguide-nav-empty" hidden>Test-editor - nog niet gekoppeld aan opslaan.</div>
         </aside>
         <div class="splitter" id="splitter-1"></div>
         <main class="styleguide-preview">
@@ -52,6 +58,7 @@
                 </div>
             </div>
             <iframe id="preview-frame" title="Paginavoorbeeld"></iframe>
+            <div id="editor-container" hidden></div>
         </main>
         <div class="splitter" id="splitter-2"></div>
         <aside class="styleguide-css" id="theme-panel">

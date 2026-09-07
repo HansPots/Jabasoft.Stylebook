@@ -25,8 +25,11 @@
     var tabPages = document.getElementById("tab-pages");
     var tabComponents = document.getElementById("tab-components");
     var tabSettings = document.getElementById("tab-settings");
+    var tabEditor = document.getElementById("tab-editor");
     var settingsList = document.getElementById("settings-list");
     var settingsPanel = document.getElementById("settings-panel");
+    var editorList = document.getElementById("editor-list");
+    var editorContainer = document.getElementById("editor-container");
     var selectElementBtn = document.getElementById("select-element-btn");
     var showRegionsBtn = document.getElementById("show-regions-btn");
     var pickerPanel = document.getElementById("picker-panel");
@@ -293,12 +296,16 @@
         tabPages.classList.remove("active");
         tabComponents.classList.remove("active");
         tabSettings.classList.remove("active");
+        tabEditor.classList.remove("active");
         appGroups.hidden = true;
         componentList.hidden = true;
         settingsList.hidden = true;
+        editorList.hidden = true;
         themePanel.hidden = true;
         componentPanel.hidden = true;
         settingsPanel.hidden = true;
+        editorContainer.hidden = true;
+        previewFrame.hidden = false;
     }
 
     function showPagesTab() {
@@ -340,9 +347,48 @@
         loadAiSettings();
     }
 
+    // ============================================================
+    // Editor: proof-of-concept tab for the shared Monaco wrapper
+    // (Shared.UI/wwwroot/jabasoft-editor.js) - not wired to any save
+    // action yet, just here to see/try the editor itself. Once this looks
+    // right, the real integration is replacing #css-editor/
+    // #component-css-editor above with the same window.jabasoftEditor.create(...).
+    // ============================================================
+
+    var editorInstance = null;
+    var editorInitPromise = null;
+
+    function showEditorTab() {
+        deactivateAllTabs();
+        tabEditor.classList.add("active");
+        editorList.hidden = false;
+        selectElementBtn.disabled = true;
+        showRegionsBtn.disabled = true;
+        previewFrame.hidden = true;
+        editorContainer.hidden = false;
+        previewTitle.textContent = "Editor (test)";
+        previewOpen.classList.add("disabled");
+
+        if (!editorInitPromise) {
+            editorInitPromise = window.jabasoftEditor.create(editorContainer, {
+                language: "css",
+                value:
+                    "/* Test-editor - nog niet gekoppeld aan opslaan.\n" +
+                    "   Typ hier gerust wat CSS om de editor te proberen. */\n\n" +
+                    ".voorbeeld {\n" +
+                    "    color: var(--lcars-footer-start);\n" +
+                    "}\n",
+            }).then(function (editor) {
+                editorInstance = editor;
+                return editor;
+            });
+        }
+    }
+
     tabPages.addEventListener("click", showPagesTab);
     tabComponents.addEventListener("click", showComponentsTab);
     tabSettings.addEventListener("click", showSettingsTab);
+    tabEditor.addEventListener("click", showEditorTab);
 
     // ============================================================
     // Componenten: lijst + eigen preview/CSS-editor/AI-generatie/materialize
@@ -696,6 +742,18 @@
         "opacity", "cursor",
     ];
 
+    // Values that mean "browser default, author never actually set this" -
+    // skipping them is what keeps the snapshot (and, since it becomes the
+    // component's saved CSS, every future "Genereer CSS met AI" prompt that
+    // sends it back as the current CSS) from ballooning into a wall of
+    // noise a local model then takes minutes to chew through for no
+    // benefit - a real "GenerateCss timed out" this caused, not the model
+    // struggling with the actual question.
+    var SNAPSHOT_BORING_VALUES = {
+        "none": true, "normal": true, "auto": true, "nowrap": true, "static": true,
+        "0px": true, "rgba(0, 0, 0, 0)": true, "visible": true, "1": true,
+    };
+
     function buildSnapshotSelector(el) {
         if (el.classList && el.classList.length > 0) {
             return "." + Array.prototype.slice.call(el.classList).join(".");
@@ -722,10 +780,47 @@
             seenSelectors[selector] = true;
 
             var style = win.getComputedStyle(el);
+            var values = {};
+            CSS_SNAPSHOT_PROPERTIES.forEach(function (prop) {
+                values[prop] = style.getPropertyValue(prop);
+            });
+
+            // A border side with no visible line makes its own width/color
+            // meaningless - emitting them anyway is pure noise (three extra
+            // lines per side, times four sides, on almost every element).
+            ["top", "right", "bottom", "left"].forEach(function (side) {
+                if (values["border-" + side + "-style"] === "none") {
+                    delete values["border-" + side + "-width"];
+                    delete values["border-" + side + "-color"];
+                }
+            });
+            // Same idea: no background image makes its position/size/repeat
+            // meaningless.
+            if (values["background-image"] === "none") {
+                delete values["background-position"];
+                delete values["background-size"];
+                delete values["background-repeat"];
+            }
+
+            // padding/margin are judged as a GROUP of 4, not per side: a
+            // lone "padding-top: 9px" with no visible "padding-bottom"
+            // reads as nothing-to-see-here, but it's exactly this kind of
+            // asymmetry that makes something look "not centered" - if the
+            // 4 sides aren't all equal, keep all 4 explicit (0px included)
+            // so the imbalance is visible instead of silently dropped.
+            var forceKeep = {};
+            ["padding", "margin"].forEach(function (prefix) {
+                var props = ["top", "right", "bottom", "left"].map(function (side) { return prefix + "-" + side; });
+                var allSame = props.every(function (p) { return values[p] === values[props[0]]; });
+                if (!allSame) {
+                    props.forEach(function (p) { forceKeep[p] = true; });
+                }
+            });
+
             var lines = [];
             CSS_SNAPSHOT_PROPERTIES.forEach(function (prop) {
-                var value = style.getPropertyValue(prop);
-                if (value) {
+                var value = values[prop];
+                if (value && (!SNAPSHOT_BORING_VALUES[value] || forceKeep[prop])) {
                     lines.push("    " + prop + ": " + value + ";");
                 }
             });
@@ -736,6 +831,81 @@
         });
 
         return blocks.join("\n\n");
+    }
+
+    // Mirrors Program.cs's ToSafeComponentName (letters/digits only) so the
+    // class-renaming namespace matches the actual saved component name.
+    function ToSafeComponentNameClientSide(name) {
+        var safe = name.replace(/[^a-zA-Z0-9]/g, "");
+        return safe || "Component";
+    }
+
+    // Namespacing: a saved component's classes are the ORIGINAL generic
+    // ones from the real page (".head-card", ".card-title", ...) - fine
+    // for the isolated preview, but not actually self-contained: two
+    // components that happen to share a class collide, and materializing
+    // back into a real page leaves it still exposed to whatever that
+    // page's own global CSS does with the same class name. Prefixing
+    // every class with the component's own name at save time (the same
+    // action that creates the component, not a later step) makes each
+    // component's CSS genuinely its own.
+    function buildClassRenameMap(rootEl, namespace) {
+        var elements = [rootEl].concat(Array.prototype.slice.call(rootEl.querySelectorAll("*")));
+        var map = {};
+        elements.forEach(function (el) {
+            if (!el.classList) {
+                return;
+            }
+            Array.prototype.slice.call(el.classList).forEach(function (c) {
+                if (!map[c]) {
+                    map[c] = namespace + "-" + c;
+                }
+            });
+        });
+        return map;
+    }
+
+    // Works on a clone so the live preview page itself is never mutated.
+    function renameElementClasses(rootEl, renameMap) {
+        var clone = rootEl.cloneNode(true);
+        var elements = [clone].concat(Array.prototype.slice.call(clone.querySelectorAll("*")));
+        elements.forEach(function (el) {
+            if (!el.classList || el.classList.length === 0) {
+                return;
+            }
+            var oldClasses = Array.prototype.slice.call(el.classList);
+            el.className = oldClasses.map(function (c) { return renameMap[c] || c; }).join(" ");
+        });
+        return clone;
+    }
+
+    // snapshotComputedCss's blocks are always "<selector> {\n...\n}",
+    // joined by a blank line - only the selector (the block's first line,
+    // up to " {") needs renaming, never touched inside property values
+    // (a blind find/replace over the whole CSS text risks matching inside
+    // a value like "0.5" or a font name).
+    function renameCssSelectors(cssText, renameMap) {
+        if (!cssText) {
+            return cssText;
+        }
+
+        return cssText.split("\n\n").map(function (block) {
+            var braceIndex = block.indexOf(" {");
+            if (braceIndex === -1) {
+                return block;
+            }
+
+            var selector = block.slice(0, braceIndex);
+            var rest = block.slice(braceIndex);
+            var renamedSelector = selector.split(".").map(function (part, i) {
+                // Splitting ".head-card.other" on "." gives ["", "head-card",
+                // "other"] - the empty first part (or a bare tag name with
+                // no leading dot) is left as-is, every class part gets mapped.
+                return i === 0 ? part : (renameMap[part] || part);
+            }).join(".");
+
+            return renamedSelector + rest;
+        }).join("\n\n");
     }
 
     function onPickerHover(e) {
@@ -844,17 +1014,23 @@
         }
 
         stripPickerArtifacts(pickerSelectedEl);
+
+        var namespace = ToSafeComponentNameClientSide(name).toLowerCase();
+        var renameMap = buildClassRenameMap(pickerSelectedEl, namespace);
+        var renamedHtml = renameElementClasses(pickerSelectedEl, renameMap).outerHTML;
+        var renamedCss = renameCssSelectors(pickerStartingCss, renameMap);
+
         pickerSaveBtn.disabled = true;
         fetch("/api/components", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 name: name,
-                html: pickerSelectedEl.outerHTML,
+                html: renamedHtml,
                 sourceApp: currentApp ? (currentApp.displayName || "") : "",
                 sourcePath: currentPage ? currentPage.path : "",
                 group: pickerGroupSelect.value,
-                startingCss: pickerStartingCss,
+                startingCss: renamedCss,
             }),
         })
             .then(function (r) { return r.json(); })

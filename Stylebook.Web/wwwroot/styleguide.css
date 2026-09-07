@@ -179,6 +179,12 @@ body.splitter-dragging {
     background: white;
 }
 
+#editor-container {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+}
+
 .styleguide-css {
     flex-direction: column;
     background: #1b1b1b;
