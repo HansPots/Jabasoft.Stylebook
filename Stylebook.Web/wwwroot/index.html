@@ -5,15 +5,62 @@
     <title>Stijlgids</title>
     <link rel="stylesheet" href="/_content/Shared.UI/jabasoft-theme.css" />
     <link rel="stylesheet" href="/_content/Shared.UI/shell-menu.css" />
+    <link rel="stylesheet" href="/_content/Shared.UI/shell-header.css" />
+    <link rel="stylesheet" href="/_content/Shared.UI/shell-footer.css" />
     <link rel="stylesheet" href="/_content/Shared.UI/settings-page.css" />
     <link rel="stylesheet" href="/_content/Shared.UI/vs-theme.css" />
     <link rel="stylesheet" href="styleguide.css" />
     <script src="/_content/Shared.UI/theme.js"></script>
     <script src="/_content/Shared.UI/embed.js"></script>
     <script src="/_content/Shared.UI/jabasoft-editor.js"></script>
+    <script src="/_content/Shared.UI/window-controls.js"></script>
 </head>
 <body>
     <div class="styleguide">
+        <header class="shell-header">
+            <div class="brand">
+                <span class="brand-mark"></span>
+                <div>
+                    <div class="brand-title">STYLEBOOK</div>
+                    <div class="brand-subtitle">STYLE &amp; COMPONENT STUDIO</div>
+                </div>
+            </div>
+            <div class="signal">
+                <div class="strip peach"></div>
+                <div class="strip rose"></div>
+            </div>
+            <div class="controls">
+                <button class="theme-toggle" title="Thema wisselen" onclick="window.jabasoftTheme && window.jabasoftTheme.set(document.documentElement.getAttribute('data-theme') === 'vs' ? 'lcars' : 'vs')">Thema</button>
+                <button class="min" aria-label="Minimize" onclick="jabaSoftWindowControls.minimize()">−</button>
+                <button class="max" aria-label="Maximize" onclick="jabaSoftWindowControls.toggleFullscreen()">□</button>
+                <button class="close" aria-label="Close" onclick="jabaSoftWindowControls.close()">×</button>
+            </div>
+            <div class="header-panels">
+                <section class="head-card">
+                    <div class="card-title">Huidig tabblad</div>
+                    <div class="breadcrumb" id="header-tab">
+                        <span>Pagina's</span>
+                    </div>
+                </section>
+                <section class="head-card">
+                    <div class="card-title">Actief onderdeel</div>
+                    <div class="info-value" id="header-active-item">—</div>
+                </section>
+                <section class="head-card">
+                    <div class="card-title">Tokens</div>
+                    <div class="token-counts">
+                        <span class="token-count"><span class="token-count-label">Totaal</span><span id="header-tokens-total">—</span></span>
+                        <span class="token-count"><span class="token-count-label">Verzoeken</span><span id="header-tokens-requests">—</span></span>
+                    </div>
+                </section>
+                <section class="head-card">
+                    <div class="card-title">Activiteit</div>
+                    <div class="log-scroll" id="header-activity-log">
+                        <div class="log-line log-empty">Nog niets gelogd.</div>
+                    </div>
+                </section>
+            </div>
+        </header>
         <aside class="styleguide-nav">
             <div class="shell-menu">
                 <nav class="nav">
@@ -126,6 +173,19 @@
             <div id="editor-container"></div>
             <div id="editor-diff-container" hidden></div>
         </div>
+        <footer class="shell-footer">
+            <div class="footer-status">
+                <span class="dot dot-success" id="footer-status-dot"></span>
+                <span>SYSTEM HEALTH</span>
+                <b id="footer-status-label">Gereed</b>
+            </div>
+            <div class="meters">
+                <div class="meter"><b id="footer-cpu">CPU&nbsp; —</b><i id="footer-cpu-bar" style="--progress: 0%"></i></div>
+                <div class="meter"><b id="footer-ram">RAM&nbsp; —</b><i id="footer-ram-bar" style="--progress: 0%"></i></div>
+                <div class="meter"><b id="footer-vram">MODEL VRAM&nbsp; —</b><i id="footer-vram-bar" style="--progress: 0%"></i></div>
+                <div class="meter queue"><b id="footer-components">COMPONENTEN&nbsp; —</b><i style="--progress: 0%"></i></div>
+            </div>
+        </footer>
     </div>
 
     <div id="picker-panel" class="floating-panel" hidden>

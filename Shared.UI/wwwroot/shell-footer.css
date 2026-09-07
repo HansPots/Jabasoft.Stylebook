@@ -1,0 +1,149 @@
+/* ============================================================
+   shell-footer.css — the "SYSTEM HEALTH" status pill + 4 meter tiles
+   bottom bar. Originally built as LocalAiStudio.Web's ShellFooter.razor
+   (component-scoped CSS) and ported to TabStudio verbatim; this file is
+   the single shared copy for every OTHER (non-Blazor) app that wants the
+   identical look - currently Jabasoft (the WPF shell) and Stylebook.
+   Load it after jabasoft-theme.css, same as shell-header.css.
+
+   Markup this expects:
+
+     <footer class="shell-footer">
+       <div class="footer-status">
+         <span class="dot dot-idle"></span>
+         <span>SYSTEM HEALTH</span>
+         <b>Ready</b>
+       </div>
+       <div class="meters">
+         <div class="meter"><b>CPU&nbsp; 12%</b><i style="--progress: 12%"></i></div>
+         <div class="meter"> ... 3 more ... </div>
+       </div>
+     </footer>
+
+   .dot's class controls the status color: dot-idle (grey) / dot-running
+   (orange) / dot-success (green) / dot-error (red).
+   .meter i's inline "--progress" custom property (a CSS length or
+   percentage) drives the bar fill via .meter i::before's width.
+   The last meter can get an extra "queue" class for the orange/dark
+   variant (used by LocalAiStudio's Embedding Queue tile).
+
+   COLOR VARIABLES (below, on .shell-footer, only valid here):
+     --rose     background of the "System Health" block on the left
+     --orange   status dot (running) + background of a ".queue" meter
+     --purple   background of a plain meter
+     --green    status dot (success)
+     --red      status dot (error)
+     --grey     status dot (idle)
+   ============================================================ */
+
+.shell-footer {
+    --rose: #c95b5d;
+    --orange: #ff9700;
+    --purple: #8980e8;
+    --green: #48e278;
+    --red: #ff5c5c;
+    --grey: #8a8a90;
+
+    grid-area: footer;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: start;
+    gap: 5px;
+    padding: var(--lcars-space);
+    min-height: 0;
+    color: #fff;
+    font-family: var(--app-font-family);
+}
+
+.shell-footer .footer-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 31px;
+    padding: 0 18px;
+    border-radius: 20px;
+    background: var(--rose);
+    color: #fff;
+    font-size: 11px;
+}
+
+.shell-footer .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--grey);
+    transition: background-color 0.2s ease;
+}
+
+.shell-footer .dot.dot-idle {
+    background: var(--grey);
+}
+
+.shell-footer .dot.dot-running {
+    background: var(--orange);
+}
+
+.shell-footer .dot.dot-success {
+    background: var(--green);
+}
+
+.shell-footer .dot.dot-error {
+    background: var(--red);
+}
+
+.shell-footer .meters {
+    grid-column: 2 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    height: 31px;
+    gap: 5px;
+    align-items: stretch;
+}
+
+.shell-footer .meter {
+    height: 31px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border-radius: 20px;
+    background: var(--purple);
+    font-size: 12px;
+}
+
+.shell-footer .meter b {
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.shell-footer .meter i {
+    position: relative;
+    height: 2px;
+    flex: 1;
+    border-radius: 4px;
+    background: #535562;
+}
+
+.shell-footer .meter i::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: var(--progress, 0%);
+    height: 4px;
+    border-radius: 4px;
+    background: #171421;
+    transform: translateY(-50%);
+}
+
+.shell-footer .meter.queue {
+    background: var(--orange);
+    color: #08080b;
+}
+
+@media (max-width: 1500px) {
+    .shell-footer {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}

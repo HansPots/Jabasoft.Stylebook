@@ -1,5 +1,8 @@
 using System.Text.Json;
 using Jabasoft.Base.AiBroker;
+using Jabasoft.Base.SystemStats;
+using Microsoft.EntityFrameworkCore;
+using Shared.Telemetry;
 using Stylebook.Web;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +27,42 @@ builder.Services.AddHttpClient<IAiBrokerClient, AiBrokerClient>(c =>
 // doesn't delay Stylebook's own startup.
 _ = AiBrokerProcessLauncher.EnsureRunningAsync();
 
+// Shell header/footer (index.html + styleguide.js): live CPU/RAM/model VRAM
+// for the footer meters, and Stylebook's own token-usage total (recorded by
+// Jabasoft.Broker under Application="Stylebook" - see generate-css below)
+// for the header's "Tokens" card. Same shared telemetry database every
+// JabaSoft app points at - Stylebook only reads it here, Jabasoft.App's own
+// startup is what applies migrations.
+var telemetryConnectionString = builder.Configuration.GetConnectionString("JabasoftBase")
+    ?? "Server=localhost;Database=JabasoftBase;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
+builder.Services.AddDbContext<TelemetryDbContext>(options => options.UseSqlServer(telemetryConnectionString));
+builder.Services.AddScoped<ITokenUsageRepository, TokenUsageRepository>();
+builder.Services.AddSingleton<ISystemStatsService, WindowsSystemStatsService>();
+
 var app = builder.Build();
+
+app.MapGet("/api/system-stats", async (ISystemStatsService stats, CancellationToken ct) =>
+{
+    var snapshot = await stats.GetSnapshotAsync(ct);
+    return Results.Ok(snapshot);
+});
+
+app.MapGet("/api/token-summary", async (ITokenUsageRepository tokenUsage, CancellationToken ct) =>
+{
+    try
+    {
+        var entries = await tokenUsage.GetEntriesAsync("Stylebook", DateTimeOffset.MinValue, ct);
+        var totalTokens = entries.Sum(entry => entry.TotalTokens);
+        return Results.Ok(new { totalTokens, requestCount = entries.Count });
+    }
+    catch
+    {
+        // Database not reachable yet (e.g. Stylebook started before
+        // Jabasoft.App has applied migrations) - show zeros rather than
+        // failing the whole header.
+        return Results.Ok(new { totalTokens = 0L, requestCount = 0 });
+    }
+});
 
 // Same anti-clickjacking override TabStudio.Web/LocalAiStudio.Web use -
 // Stylebook is embedded in the Jabasoft shell's <iframe>, a different

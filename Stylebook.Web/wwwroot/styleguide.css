@@ -11,15 +11,39 @@ html, body {
 .styleguide {
     display: grid;
     grid-template-columns: 280px 6px 1fr 6px 380px;
-    /* Row 1 (nav/preview/right-panel) takes whatever's left, row 2 is the
-       horizontal splitter, row 3 is the shared editor band - both span
-       every column (see #splitter-editor/#editor-band below), so nothing
-       about row 1's own five columns needs to change. */
-    grid-template-rows: 1fr 6px 260px;
+    /* No grid-template-areas here (unlike jabasoft-theme.css's .shell) -
+       plain row-by-row auto-placement instead. .shell-header/.shell-footer
+       and .splitter-row/#editor-band all set grid-column: 1 / -1 with no
+       explicit grid-row, so the auto-placement algorithm gives each of
+       them its own full-width row in source order: header first (row 1,
+       since it's the first child and needs every column), then the five
+       nav/preview/right-panel items auto-fill row 2 one per column, then
+       splitter-editor/editor-band/footer each claim the next free full
+       row (3/4/5) in turn - see #splitter-editor/#editor-band below. */
+    grid-template-rows: 175px 1fr 6px 260px 43px;
     height: 100vh;
     background: var(--lcars-content);
     color: var(--lcars-text-dark);
     font-family: var(--app-font-family);
+}
+
+/* shell-header.css/shell-footer.css set "grid-area: header"/"footer" (for
+   jabasoft-theme.css's .shell, which DOES define those named areas) - this
+   grid has no grid-template-areas at all, so an unmatched named grid-row
+   reference like that doesn't fall back to plain auto-placement, it
+   collapses both into the same implicit trailing row instead. Pin explicit
+   row numbers here (matching .styleguide's grid-template-rows above) to
+   override grid-area's row contribution; grid-column: 1 / -1 already wins
+   on specificity alone (two classes vs. shell-header.css's one), this just
+   makes both longhands agree with the row list at a glance. */
+.styleguide > .shell-header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+.styleguide > .shell-footer {
+    grid-column: 1 / -1;
+    grid-row: 5;
 }
 
 /* Draggable dividers between nav/preview/right-panel - see the

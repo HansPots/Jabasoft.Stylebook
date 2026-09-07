@@ -1,0 +1,404 @@
+/* ============================================================
+   shell-header.css — the "JabaSoft AI Studio"-style title bar: a
+   brand block, a glowing signal strip, window controls, and 4 info
+   cards. Originally built as LocalAiStudio.Web's ShellHeader.razor
+   (component-scoped CSS) and ported to TabStudio verbatim; this file
+   is the single shared copy for every OTHER (non-Blazor) app that
+   wants the identical look - currently Jabasoft (the WPF shell) and
+   Stylebook. Load it after jabasoft-theme.css/shell-menu.css, same
+   as shell-menu.css/settings-page.css.
+
+   Markup this expects (see Jabasoft's shell.html or Stylebook's
+   index.html for a live example):
+
+     <header class="shell-header">
+       <div class="brand">
+         <span class="brand-mark"></span>
+         <div>
+           <div class="brand-title">...</div>
+           <div class="brand-subtitle">...</div>
+         </div>
+       </div>
+       <div class="signal">
+         <div class="strip peach"></div>
+         <div class="strip rose"></div>
+       </div>
+       <div class="controls">
+         <button class="theme-toggle">Thema</button>
+         <!-- min/max/close buttons only make sense for an app running in
+              its own chromeless browser window - see Shared.UI's
+              window-controls.js. A native OS window (e.g. Jabasoft's WPF
+              host) already has real window chrome and should leave
+              these out. -->
+       </div>
+       <div class="header-panels">
+         <section class="head-card"> ... 4 of these ... </section>
+       </div>
+     </header>
+
+   COLOR VARIABLES (below, on .shell-header, only valid here):
+     --black    header background
+     --panel    background of the 4 info cards
+     --border   thin border around the cards
+     --orange   primary accent color (logo, title, window buttons)
+     --peach    light accent color (values in the cards, brand logo)
+     --rose     right part of the glowing "signal" strip
+     --purple   card title bars
+     --muted    dimmed text (breadcrumb)
+
+   NOTE: unlike the rest of jabasoft-theme.css, this header's colors are
+   hardcoded rather than derived from the --lcars- family of vs-theme
+   tokens (carried over as-is from the original ShellHeader.razor.css) - it looks the
+   same under both the LCARS and VS themes. vs-theme.css's compact
+   --lcars-header-height (40px) has no effect here since this file sets
+   its own fixed grid-template-rows.
+   ============================================================ */
+
+.shell-header {
+    --black: #030305;
+    --panel: #08080d;
+    --border: #8f5fc0;
+    --orange: #ff9700;
+    --peach: #ffac8a;
+    --rose: #c95b5d;
+    --purple: #8980e8;
+    --muted: #cac9dc;
+
+    grid-area: header;
+    display: grid;
+    grid-template-columns: 364px minmax(280px, 1fr) 143px;
+    grid-template-rows: 44px 1fr;
+    grid-template-areas:
+        "brand   signal   controls"
+        "panels  panels   panels";
+    height: 100%;
+    background: var(--black);
+    color: #fff;
+    font-family: var(--app-font-family);
+    overflow: hidden;
+}
+
+.shell-header button {
+    font: inherit;
+}
+
+/* ---------- logo block (left, full header height) ---------- */
+
+.shell-header .brand {
+    grid-area: brand;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding-top: 4px;
+    background: #08080d;
+}
+
+.shell-header .brand-mark {
+    position: relative;
+    width: 128px;
+    height: 36px;
+    border-radius: 31px 0 0;
+    background: linear-gradient(90deg,
+        var(--peach) 0%,
+        var(--peach) 24%,
+        var(--orange) 40%,
+        var(--orange) 100%);
+}
+
+.shell-header .brand-mark::after {
+    content: "";
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 32%;
+    height: calc(175px - 50px);
+    border-radius: 0 0 0 30px;
+    background: var(--purple);
+}
+
+.shell-header .brand-title {
+    color: var(--orange);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: .92;
+    white-space: nowrap;
+}
+
+.shell-header .brand-subtitle {
+    margin-top: 2px;
+    color: var(--orange);
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ---------- glowing signal strip (middle, narrow row) ---------- */
+
+.shell-header .signal {
+    grid-area: signal;
+    align-self: center;
+    position: relative;
+    display: flex;
+    margin-left: 20px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: linear-gradient(90deg,
+        var(--peach) 0%,
+        var(--peach) 48%,
+        var(--rose) 68%,
+        var(--rose) 100%);
+}
+
+.shell-header .strip {
+    height: 100%;
+}
+
+.shell-header .strip.peach {
+    flex: 0.58 1 0;
+    background: transparent;
+}
+
+.shell-header .strip.rose {
+    flex: 0.42 1 0;
+    background: transparent;
+}
+
+.shell-header .signal::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, .55) 8%, transparent 16%);
+    background-size: 250% 100%;
+    background-position: -120% 0;
+    mix-blend-mode: overlay;
+    animation: shell-header-signal-sweep 6s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes shell-header-signal-sweep {
+    0% {
+        background-position: -120% 0;
+    }
+
+    45% {
+        background-position: 220% 0;
+    }
+
+    100% {
+        background-position: 220% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shell-header .signal::after {
+        animation: none;
+    }
+}
+
+/* ---------- window buttons (right, full header height) ---------- */
+
+.shell-header .controls {
+    grid-area: controls;
+    display: flex;
+    align-self: start;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0;
+    height: 44px;
+    color: var(--orange);
+    font-size: 24px;
+    line-height: 1;
+}
+
+.shell-header .controls button {
+    width: 28px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.shell-header .controls .theme-toggle {
+    width: auto;
+    padding: 0 10px;
+    margin-right: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.shell-header .controls .theme-toggle:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.shell-header .controls .max {
+    font-size: 20px;
+}
+
+/* ---------- info cards (middle, bottom row) ---------- */
+
+.shell-header .header-panels {
+    grid-area: panels;
+    height: 100%;
+    /* Without this, a grid item's automatic minimum height is its content's
+       natural size - so a card with a lot of log lines would silently grow
+       this row (and the whole 175px-tall header with it) instead of being
+       capped and scrolling internally. Same reasoning as min-height: 0 on
+       .head-card and .log-scroll below. */
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 41px;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 0 0 49px;
+}
+
+.shell-header .header-panels::after {
+    content: "";
+    height: 100%;
+    border-radius: 0 0 30px 0;
+    background: var(--purple);
+}
+
+.shell-header .head-card {
+    height: 100%;
+    padding: 8px 10px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.shell-header .card-title {
+    flex: 0 0 32px;
+    width: 100%;
+    height: 32px;
+    padding: 9px 14px 0;
+    border-radius: 6px 6px 0 0;
+    background: var(--purple);
+    color: #08080c;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.shell-header .log-scroll {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--purple) transparent;
+}
+
+.shell-header .log-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shell-header .log-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.shell-header .log-scroll::-webkit-scrollbar-thumb {
+    background: var(--purple);
+    border-radius: 3px;
+}
+
+.shell-header .log-line {
+    flex: 0 0 auto;
+    color: var(--peach);
+    font-size: 12px;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shell-header .log-line.log-empty {
+    color: var(--muted);
+}
+
+.shell-header .info-value {
+    min-width: 0;
+    color: var(--peach);
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shell-header .token-counts {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.shell-header .token-count {
+    min-width: 0;
+    color: var(--peach);
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shell-header .token-count-label {
+    display: inline-block;
+    min-width: 48px;
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 10.5px;
+    text-transform: uppercase;
+}
+
+.shell-header .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shell-header .breadcrumb .sep {
+    color: var(--border);
+}
+
+.shell-header .breadcrumb .current {
+    color: var(--peach);
+    font-weight: 700;
+}

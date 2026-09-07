@@ -29,6 +29,18 @@
     var editorDiffContainer = document.getElementById("editor-diff-container");
     var editorDiffToolbar = document.getElementById("editor-diff-toolbar");
     var closeDiffBtn = document.getElementById("close-diff-btn");
+    var headerTab = document.getElementById("header-tab");
+    var headerActiveItem = document.getElementById("header-active-item");
+    var headerTokensTotal = document.getElementById("header-tokens-total");
+    var headerTokensRequests = document.getElementById("header-tokens-requests");
+    var headerActivityLog = document.getElementById("header-activity-log");
+    var footerCpu = document.getElementById("footer-cpu");
+    var footerCpuBar = document.getElementById("footer-cpu-bar");
+    var footerRam = document.getElementById("footer-ram");
+    var footerRamBar = document.getElementById("footer-ram-bar");
+    var footerVram = document.getElementById("footer-vram");
+    var footerVramBar = document.getElementById("footer-vram-bar");
+    var footerComponents = document.getElementById("footer-components");
     var selectElementBtn = document.getElementById("select-element-btn");
     var showRegionsBtn = document.getElementById("show-regions-btn");
     var pickerPanel = document.getElementById("picker-panel");
@@ -76,6 +88,100 @@
     });
 
     // ============================================================
+    // Shell header/footer: "Huidig tabblad"/"Actief onderdeel" cards,
+    // rolling activity log, live Tokens/CPU/RAM/VRAM/Componenten - see
+    // Shared.UI/shell-header.css + shell-footer.css for the markup/
+    // styling these feed (same shape as LocalAiStudio's ShellHeader/
+    // ShellFooter, driven from plain JS here instead of Blazor state).
+    // ============================================================
+
+    var activityLines = [];
+
+    function logActivity(text) {
+        activityLines.push(text);
+        if (activityLines.length > 50) {
+            activityLines.shift();
+        }
+
+        headerActivityLog.innerHTML = "";
+        activityLines.forEach(function (line) {
+            var div = document.createElement("div");
+            div.className = "log-line";
+            div.textContent = line;
+            headerActivityLog.appendChild(div);
+        });
+        headerActivityLog.scrollTop = headerActivityLog.scrollHeight;
+    }
+
+    function setHeaderTab(tabLabel) {
+        headerTab.innerHTML = "";
+        var span = document.createElement("span");
+        span.textContent = tabLabel;
+        headerTab.appendChild(span);
+    }
+
+    function setActiveItem(text) {
+        headerActiveItem.textContent = text || "—";
+    }
+
+    function toGiB(bytes) {
+        return bytes / 1024 / 1024 / 1024;
+    }
+
+    function formatCount(value) {
+        // "." as the thousands separator regardless of the OS locale - same
+        // reasoning as LocalAiStudio's ShellHeader.FormatTokens: a Dutch
+        // "46.683" read the other way (as a decimal point) looks like a
+        // frozen/broken counter.
+        return value.toLocaleString("en-US").replace(/,/g, ".");
+    }
+
+    function pollSystemStats() {
+        fetch("/api/system-stats")
+            .then(function (r) { return r.json(); })
+            .then(function (stats) {
+                var cpuPercent = Math.round(stats.cpuPercent) + "%";
+                footerCpu.textContent = "CPU  " + cpuPercent;
+                footerCpuBar.style.setProperty("--progress", cpuPercent);
+
+                var ramUsed = toGiB(stats.ramUsedBytes).toFixed(1);
+                var ramTotal = toGiB(stats.ramTotalBytes).toFixed(1);
+                footerRam.textContent = "RAM  " + ramUsed + " / " + ramTotal + " GB";
+                footerRamBar.style.setProperty("--progress", (stats.ramTotalBytes ? (stats.ramUsedBytes / stats.ramTotalBytes * 100) : 0) + "%");
+
+                if (stats.vramUsedBytes != null && stats.vramTotalBytes != null) {
+                    var vramUsed = toGiB(stats.vramUsedBytes).toFixed(1);
+                    var vramTotal = toGiB(stats.vramTotalBytes).toFixed(1);
+                    footerVram.textContent = "MODEL VRAM  " + vramUsed + " / " + vramTotal + " GB";
+                    footerVramBar.style.setProperty("--progress", (stats.vramUsedBytes / stats.vramTotalBytes * 100) + "%");
+                } else {
+                    footerVram.textContent = "MODEL VRAM  n.b.";
+                    footerVramBar.style.setProperty("--progress", "0%");
+                }
+            })
+            .catch(function () {
+                // Transient read failure - keep showing the last known values.
+            });
+    }
+
+    function pollTokenSummary() {
+        fetch("/api/token-summary")
+            .then(function (r) { return r.json(); })
+            .then(function (summary) {
+                headerTokensTotal.textContent = formatCount(summary.totalTokens);
+                headerTokensRequests.textContent = formatCount(summary.requestCount);
+            })
+            .catch(function () {
+                // Transient read failure - keep showing the last known values.
+            });
+    }
+
+    pollSystemStats();
+    pollTokenSummary();
+    setInterval(pollSystemStats, 5000);
+    setInterval(pollTokenSummary, 20000);
+
+    // ============================================================
     // Pagina's (unchanged behavior, see loadPage/renderApps/refreshPages)
     // ============================================================
 
@@ -99,6 +205,8 @@
             btn.classList.add("active");
         }
 
+        setActiveItem((app.displayName || "") + " — " + (page.label || page.path));
+        logActivity("Pagina geopend: " + (page.label || page.path));
         updatePlaceButtonsState();
     }
 
@@ -283,6 +391,7 @@
                 }
                 cssStatus.textContent = "Opgeslagen. Voorbeeld wordt herladen...";
                 previewFrame.src = previewFrame.src;
+                logActivity("jabasoft-theme.css opgeslagen");
                 setTimeout(function () { cssStatus.textContent = ""; }, 2000);
             })
             .catch(function (err) {
@@ -316,6 +425,7 @@
         themePanel.hidden = false;
         selectElementBtn.disabled = false;
         showRegionsBtn.disabled = false;
+        setHeaderTab("Pagina's");
 
         // Editing a component (see editComponent) points the main preview
         // at an isolated component instead of a page - "Selecteer element"/
@@ -335,6 +445,7 @@
         // not on a component's own isolated preview.
         selectElementBtn.disabled = true;
         showRegionsBtn.disabled = true;
+        setHeaderTab("Componenten");
         fetchComponents();
     }
 
@@ -345,6 +456,8 @@
         settingsPanel.hidden = false;
         selectElementBtn.disabled = true;
         showRegionsBtn.disabled = true;
+        setHeaderTab("Instellingen");
+        setActiveItem("AI Connector");
         loadAiSettings();
     }
 
@@ -433,6 +546,7 @@
     function renderComponents(components) {
         componentList.innerHTML = "";
         components = components || [];
+        footerComponents.textContent = "COMPONENTEN  " + formatCount(components.length);
 
         var byGroup = {};
         FIXED_COMPONENT_GROUPS.forEach(function (g) { byGroup[g] = []; });
@@ -528,6 +642,8 @@
         componentPanel.hidden = false;
         materializeResult.textContent = "";
         componentCssStatus.textContent = "Laden...";
+        setActiveItem(name);
+        logActivity("Component geopend: " + name);
 
         Promise.all([
             fetch("/api/components/" + name + "/html?t=" + Date.now()).then(function (r) { return r.text(); }),
@@ -628,6 +744,7 @@
                     throw new Error("HTTP " + response.status);
                 }
                 componentCssStatus.textContent = "Opgeslagen.";
+                logActivity("CSS opgeslagen: " + currentComponentName);
                 fetch("/api/components/" + currentComponentName + "/html?t=" + Date.now())
                     .then(function (r) { return r.text(); })
                     .then(function (html) { renderComponentPreview(currentComponentName, html, css); });
@@ -649,6 +766,7 @@
 
         generateCssBtn.disabled = true;
         componentCssStatus.textContent = "AI denkt na...";
+        logActivity("AI-CSS aangevraagd: " + currentComponentName);
         withEditor(function (editor) {
             var beforeCss = editor.getValue();
             return fetch("/api/components/" + currentComponentName + "/generate-css", {
@@ -665,8 +783,11 @@
                             .then(function (r) { return r.text(); })
                             .then(function (html) { renderComponentPreview(currentComponentName, html, result.css); });
                         showDiffView(beforeCss, result.css);
+                        logActivity("AI-voorstel geladen: " + currentComponentName);
+                        pollTokenSummary();
                     } else {
                         componentCssStatus.textContent = "AI-generatie mislukt: " + result.errorMessage;
+                        logActivity("AI-generatie mislukt: " + currentComponentName);
                     }
                 });
         })
@@ -690,6 +811,7 @@
             .then(function (result) {
                 materializeResult.textContent =
                     "Aangemaakt: " + result.razorPath + " — plaats " + result.usageSnippet + " op de pagina waar je 'm wilt.";
+                logActivity("Blazor-component gemaakt: " + currentComponentName);
             })
             .catch(function (err) {
                 materializeResult.textContent = "Mislukt: " + err;
@@ -715,6 +837,7 @@
                 if (!response.ok) {
                     throw new Error("HTTP " + response.status);
                 }
+                logActivity("Component verwijderd: " + name);
                 currentComponentName = null;
                 componentPanel.hidden = true;
                 fetchComponents();
@@ -1250,7 +1373,12 @@
 
     function applyGridTemplate() {
         styleguideEl.style.gridTemplateColumns = navWidth + "px 6px 1fr 6px " + panelWidth + "px";
-        styleguideEl.style.gridTemplateRows = "1fr 6px " + editorHeight + "px";
+        // Must list all 5 rows (header/content/splitter/editor-band/footer -
+        // see styleguide.css's .styleguide comment) even though only the
+        // editor-band height ever changes here - overwriting the inline
+        // style with just 3 values would silently drop the header/footer
+        // row sizes on the very first splitter drag.
+        styleguideEl.style.gridTemplateRows = "175px 1fr 6px " + editorHeight + "px 43px";
     }
 
     function setupSplitter(el, onDrag) {
