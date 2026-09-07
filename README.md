@@ -1,27 +1,48 @@
 # Jabasoft.Stylebook
 
 Gedeelde class libraries voor de hele JabaSoft-familie (`JabaSoft.TabStudio`,
-`JabaSoft.LocalAiStudio`, `Jabasoft`, en toekomstige apps). Bevat geen eigen
-uitvoerbare app — alleen herbruikbare projecten waar andere JabaSoft-repos
-naar verwijzen.
+`JabaSoft.LocalAiStudio`, `Jabasoft`, en toekomstige apps), plus **Stylebook.Web**
+— een eigen, uitvoerbare app: de Stijlgids/component-bibliotheek-tool
+(pagina's bekijken, elementen aanwijzen en als herbruikbaar component
+opslaan, CSS bewerken/genereren met AI, materialiseren naar een echt
+Blazor-component in `Jabasoft.Base`).
+
+> Voor een stap-voor-stap herbouwplan van de hele JabaSoft-familie (met
+> geleerde lessen/valkuilen) zie `C:\Repos\Bewaren\JabaSoft-Herbouw\`.
 
 ## Projecten
 
 ### Shared.Telemetry
 
-Losstaande database (`JabaSoftTelemetry`) voor LLM-tokengebruik, gedeeld
-door alle apps. Elke rij is één LLM-call met tijdstip en app-naam. Zie
-`Shared.Telemetry/README.md`.
+Losstaande database (`JabasoftBase`) voor LLM-tokengebruik, gedeeld door
+alle apps. Elke rij is één LLM-call met tijdstip en app-naam. Zie
+`Shared.Telemetry/README.md`. (Het herbruikbare token-verbruiksscherm zelf,
+`TokenUsageOverview.razor`, staat in `Jabasoft.Base` — niet hier.)
 
 ### Shared.UI
 
-Razor Class Library met de huisstijl:
-- `wwwroot/jabasoft-theme.css` — het enige canonieke CSS-bestand van de hele
-  familie. Niet kopiëren; altijd rechtstreeks laden (zie hieronder).
+Razor Class Library met de huisstijl — de ENE plek waar deze bestanden
+bestaan, nooit gekopieerd naar een app's eigen wwwroot:
+- `wwwroot/jabasoft-theme.css` — de LCARS-basisstijl (kleurtokens, spacing,
+  de `.shell`-grid-basis).
+- `wwwroot/vs-theme.css` — het Visual Studio-thema, gelijkwaardig aan LCARS
+  (geen "extra"), geactiveerd via `data-theme="vs"` op `<html>`.
+- `wwwroot/shell-menu.css` — de rose-sidebar-menuvorm die elke app deelt;
+  een app overschrijft alleen de kleur-CSS-variabelen voor een eigen palet.
+- `wwwroot/settings-page.css` — de gedeelde Settings-pagina-kaarten-look,
+  inclusief de `.theme-picker` (LCARS/VS Code-keuze, altijd de eerste
+  sectie op een Settings-pagina).
+- `wwwroot/theme.js` — leest/schrijft het gekozen thema (`localStorage`),
+  `window.jabasoftTheme = {apply, set, sync}`.
+- `wwwroot/embed.js` — brug voor apps die embedded in Jabasoft's shell
+  draaien (`window.jabasoftEmbed = {isEmbedded, goHome}`).
 - `docs/STYLEBOOK.md` — het huisstijlhandboek: de geschreven regels achter
   de tokens in `jabasoft-theme.css`.
-- `TokenUsageDashboard.razor` — herbruikbare Blazor-component die
-  tokenverbruik toont (per app, of over alle apps heen).
+
+### Stylebook.Web
+
+Zie de eigen documentatie in `Stylebook.Web/` (of het herbouwplan) voor de
+werking van de Pagina's-/Componenten-/Instellingen-tabs.
 
 ## Hergebruik door een andere app
 
@@ -37,7 +58,7 @@ verwijzen naar deze projecten via een relatief projectpad, niet via NuGet
 ### Shared.Telemetry aansluiten
 
 1. Voeg de projectverwijzing hierboven toe.
-2. Zet dezelfde connection string (`ConnectionStrings:JabaSoftTelemetry` in
+2. Zet dezelfde connection string (`ConnectionStrings:JabasoftBase` in
    `appsettings.json`) — alle apps moeten naar dezelfde database wijzen.
 3. Registreer `TelemetryDbContext` en `ITokenUsageRepository` in
    `Program.cs` (zie `TabStudio.Web/Program.cs` in `JabaSoft.TabStudio` voor
@@ -50,8 +71,11 @@ verwijzen naar deze projecten via een relatief projectpad, niet via NuGet
 2. Voeg in de hoofdlayout toe: `<link rel="stylesheet" href="_content/Shared.UI/jabasoft-theme.css">`.
 3. Verwijder lokale kopieën van de `--lcars-*`-tokens en de `.shell*`-regels
    uit de eigen `app.css` — die komen nu uit het gedeelde bestand.
-4. Gebruik `<TokenUsageDashboard Application="JouwAppNaam" />` voor een
-   token-verbruikpagina in de app zelf.
+4. Voeg (in de app die het toont) een `ProjectReference` naar
+   `Jabasoft.Base` toe en gebruik `<TokenUsageOverview />` voor een
+   token-verbruikpagina — dit component staat in `Jabasoft.Base`, niet in
+   dit repo (optioneel: `Lookback` als `TimeSpan`-parameter, default 30
+   dagen).
 
 De Jabasoft WPF-shell (niet ASP.NET Core) laadt `jabasoft-theme.css`
 rechtstreeks van schijf via `CoreWebView2.SetVirtualHostNameToFolderMapping`

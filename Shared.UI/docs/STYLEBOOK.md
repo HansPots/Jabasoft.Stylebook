@@ -105,12 +105,12 @@ gewone HTML in een WebView2) gebruikt dezelfde classes.
 
 ## Token-verbruik dashboard
 
-- De gedeelde `TokenUsageDashboard.razor`-component (dit project) toont
-  verbruik per app in een tabel: kolommen model, prompt-tokens,
-  completion-tokens, totaal — met een vetgedrukte apptotaal-rij.
+- De gedeelde `TokenUsageOverview.razor`-component staat in `Jabasoft.Base`
+  (niet in dit project) en toont totalen plus per-week inklapbare details.
 - Stijl staat onder `.token-usage-dashboard` in `jabasoft-theme.css`.
-- De Jabasoft WPF-shell gebruikt dezelfde classes in zijn eigen
-  `dashboard.html` (geen Blazor, wel dezelfde HTML-structuur/CSS-klassen).
+- De Jabasoft WPF-shell toont dit via een eigen, losstaande `BlazorWebView`
+  (niet een HTML-pagina) die dezelfde `TokenUsageOverview.razor`-component
+  rechtstreeks host — geen aparte HTML/CSS-kopie.
 
 ## Typografie
 
