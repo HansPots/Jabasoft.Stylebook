@@ -38,14 +38,41 @@
         </Border>
 
         <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te staan -->
-        <StackPanel Grid.Column="1" Margin="{StaticResource SpaceLarge}">
-            <controls:Card Title="Voorbeeldkaart" Width="280" HorizontalAlignment="Left">
-                <TextBlock Text="Dit is de content-slot - hier kan willekeurige inhoud staan."
-                           Foreground="{DynamicResource TextMutedBrush}"
+        <Grid Grid.Column="1">
+            <controls:Basis>
+                <controls:Basis.HeaderContent>
+                    <TextBlock Text="Header"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="{StaticResource FontSizeTitle}" />
+                </controls:Basis.HeaderContent>
+                <controls:Basis.MenuContent>
+                    <TextBlock Text="Menu"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="{StaticResource FontSizeBody}" />
+                </controls:Basis.MenuContent>
+                <controls:Basis.ActionContent>
+                    <TextBlock Text="Actie"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="{StaticResource FontSizeSmall}"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center" />
+                </controls:Basis.ActionContent>
+                <controls:Basis.FooterContent>
+                    <TextBlock Text="Footer"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="{StaticResource FontSizeBody}" />
+                </controls:Basis.FooterContent>
+
+                <!-- Impliciete child content -> MainContent, zie ContentProperty op Basis -->
+                <TextBlock Text="Inhoud"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="{StaticResource FontSizeBody}"
-                           TextWrapping="Wrap" />
-            </controls:Card>
-        </StackPanel>
+                           FontSize="{StaticResource FontSizeTitle}" />
+            </controls:Basis>
+        </Grid>
     </Grid>
 </Window>

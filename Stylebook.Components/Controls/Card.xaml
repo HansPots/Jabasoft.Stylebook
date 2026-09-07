@@ -17,9 +17,10 @@
 
           - Everything between <controls:Card>...</controls:Card> tags -
             arbitrary WPF content (text, another component, a whole
-            layout), rendered by the ContentPresenter below. Same idea as
-            Razor's @ChildContent / a Blazor RenderFragment, or a web
-            component's <slot>.
+            layout), routed to the Body property (see Card.xaml.cs) and
+            rendered by the ContentPresenter below. Same idea as Razor's
+            @ChildContent / a Blazor RenderFragment, or a web component's
+            <slot>.
 
         Colors/spacing all come from {DynamicResource ...} pointing at
         Styles/Colors.xaml + Typography.xaml - never a literal value here,
@@ -39,7 +40,7 @@
                        FontSize="{StaticResource FontSizeTitle}"
                        FontWeight="SemiBold"
                        Margin="0,0,0,8" />
-            <ContentPresenter />
+            <ContentPresenter Content="{Binding Body, RelativeSource={RelativeSource AncestorType=UserControl}}" />
         </StackPanel>
     </Border>
 
