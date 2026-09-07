@@ -9,7 +9,15 @@ var builder = WebApplication.CreateBuilder(args);
 // full-window in Jabasoft's shell via the Apps:Stylebook config entry - see
 // Jabasoft/Jabasoft.App/appsettings.json.
 builder.Services.AddHttpClient();
-builder.Services.AddHttpClient<IAiBrokerClient, AiBrokerClient>(c => c.BaseAddress = new Uri(AiBrokerClient.DefaultBaseUrl));
+// Timeout matches Jabasoft.Broker's own "chat" HttpClient (see its
+// Program.cs) - without this, the default 100s HttpClient.Timeout cuts
+// the request off well before the broker's 5-minute allowance for a slow/
+// cold local model actually elapses.
+builder.Services.AddHttpClient<IAiBrokerClient, AiBrokerClient>(c =>
+{
+    c.BaseAddress = new Uri(AiBrokerClient.DefaultBaseUrl);
+    c.Timeout = TimeSpan.FromMinutes(5);
+});
 
 // Starts Jabasoft.Broker if no instance is reachable yet (any JabaSoft app
 // can be the one that starts it) - fire-and-forget so a cold broker build
@@ -34,7 +42,17 @@ app.Use(async (context, next) =>
 });
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+// Stylebook's wwwroot (styleguide.js/css, index.html) changes constantly
+// during development - Kestrel's static file middleware doesn't send any
+// Cache-Control header by default, so browsers apply their own heuristic
+// freshness and can keep serving a stale <script>/<link> for a long time
+// even across a full page reload or a brand new tab, regardless of what
+// the server actually has on disk now. no-store forces every request to
+// hit the server fresh.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "no-store",
+});
 
 // jabasoft-theme.css is edited here directly on disk (Shared.UI is a
 // sibling project in this repo) - the *page* itself still loads it through
