@@ -705,10 +705,11 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Advanced-edit path: saves whatever is currently in the XAML box as
-    /// the component's Xaml, verbatim. Saved even if it fails to parse -
-    /// CreateComponentVisual shows the parse error instead of crashing,
-    /// so an in-progress edit is never lost.
+    /// Advanced-edit path: a hand-typed XAML change goes through the same
+    /// voorstel-vergelijken-Overnemen flow as an AI answer (ShowProposal)
+    /// instead of saving straight away - a typo never lands in the
+    /// database or destabilizes the live preview; you see it next to the
+    /// last-known-good version first and explicitly accept it.
     /// </summary>
     private void SaveXaml_Click(object sender, RoutedEventArgs e)
     {
@@ -717,21 +718,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        component.Xaml = ComponentXamlBox.Text;
-        App.Db.SaveChanges();
-
-        try
-        {
-            XamlReader.Parse(component.Xaml);
-            XamlErrorText.Visibility = Visibility.Collapsed;
-        }
-        catch (Exception ex)
-        {
-            XamlErrorText.Text = ex.Message;
-            XamlErrorText.Visibility = Visibility.Visible;
-        }
-
-        RefreshPreview();
+        XamlErrorText.Visibility = Visibility.Collapsed;
+        ShowProposal(component.Name, component.Xaml ?? string.Empty, ComponentXamlBox.Text);
+        AiAnswerBox.Text = "Vergelijk hiernaast met het origineel, en klik Overnemen om te bewaren.";
     }
 
     /// <summary>
@@ -924,6 +913,10 @@ public partial class MainWindow : Window
     private void DiscardProposal_Click(object sender, RoutedEventArgs e)
     {
         ClearProposal();
+        // Zet de XAML-editor terug naar de opgeslagen versie - relevant
+        // bij een handmatige wijziging via SaveXaml_Click; een AI-voorstel
+        // raakte de box toch al nooit aan, dus daar is dit een no-op.
+        ComponentXamlBox.Text = _lastSelectedComponent?.Xaml ?? string.Empty;
         AiAnswerBox.Text = "Voorstel genegeerd.";
     }
 

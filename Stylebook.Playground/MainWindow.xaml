@@ -309,7 +309,7 @@
                                      Foreground="{DynamicResource TextMutedBrush}"
                                      FontFamily="{StaticResource AppFontFamily}"
                                      FontSize="{StaticResource FontSizeSmall}" />
-                            <TextBox Grid.Column="1" Text="AI-VOORSTEL" HorizontalAlignment="Center"
+                            <TextBox Grid.Column="1" Text="VOORSTEL" HorizontalAlignment="Center"
                                      Style="{StaticResource SelectableTextStyle}"
                                      Foreground="{DynamicResource TextMutedBrush}"
                                      FontFamily="{StaticResource AppFontFamily}"

@@ -28,6 +28,14 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Laatste vangnet: RenderXamlPreview vangt een parse-fout al af,
+        // maar XAML die WEL parseert kan nog steeds pas tijdens layout
+        // (Measure/Arrange, na het parsen) een uitzondering gooien - die
+        // zou zonder dit de hele app meenemen. Nooit stil negeren: de
+        // gebruiker moet zien dat er iets misging, alleen niet de app
+        // erdoor kwijtraken.
+        DispatcherUnhandledException += OnDispatcherUnhandledException;
+
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: false)
@@ -69,6 +77,16 @@ public partial class App : Application
         {
             Current.Resources.MergedDictionaries.Add(_liveThemeDictionary);
         }
+    }
+
+    private static void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+    {
+        MessageBox.Show(
+            $"Er ging iets onverwacht mis, maar de app blijft draaien:\n\n{e.Exception.Message}",
+            "Onverwachte fout",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+        e.Handled = true;
     }
 
     protected override void OnExit(ExitEventArgs e)
