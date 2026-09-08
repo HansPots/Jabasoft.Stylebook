@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,6 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Stylebook.Components.Theming;
+using Stylebook.Data.Entities;
 
 namespace Stylebook.Playground;
 
@@ -18,16 +20,42 @@ namespace Stylebook.Playground;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private Theme _currentTheme = Theme.Dark;
+    private sealed record ThemeOption(Theme Value, string Label);
+
+    private static readonly ThemeOption[] ThemeOptions =
+    [
+        new ThemeOption(Theme.Lcars, "LCARS"),
+        new ThemeOption(Theme.VisualStudio, "Visual Studio"),
+    ];
 
     public MainWindow()
     {
         InitializeComponent();
+
+        ThemePicker.ItemsSource = ThemeOptions;
+        ThemePicker.DisplayMemberPath = nameof(ThemeOption.Label);
+        ThemePicker.SelectedIndex = 0;
+
+        LoadComponentsByRegion();
     }
 
-    private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
+    private void LoadComponentsByRegion()
     {
-        _currentTheme = _currentTheme == Theme.Dark ? Theme.Light : Theme.Dark;
-        ThemeManager.Apply(_currentTheme);
+        var componentsByRegion = App.Db.Components.AsEnumerable().ToLookup(c => c.Region);
+
+        HeaderComponents.ItemsSource = componentsByRegion[ComponentRegion.Header].ToList();
+        MenuComponents.ItemsSource = componentsByRegion[ComponentRegion.Menu].ToList();
+        InhoudComponents.ItemsSource = componentsByRegion[ComponentRegion.Inhoud].ToList();
+        ActieComponents.ItemsSource = componentsByRegion[ComponentRegion.Actie].ToList();
+        FooterComponents.ItemsSource = componentsByRegion[ComponentRegion.Footer].ToList();
+        AlgemeenComponents.ItemsSource = componentsByRegion[ComponentRegion.Algemeen].ToList();
+    }
+
+    private void ThemePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ThemePicker.SelectedItem is ThemeOption option)
+        {
+            ThemeManager.Apply(option.Value, StylePreviewArea.Resources);
+        }
     }
 }

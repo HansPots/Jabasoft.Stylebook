@@ -2,22 +2,18 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        Donker thema (standaard). Levert dezelfde sleutel-set als
-        Light.xaml in deze map - Theming/ThemeManager.cs verwisselt op
-        naam, dus elk thema-bestand moet exact dezelfde x:Key's hebben.
-        Componenten refereren nooit rechtstreeks naar Dark/Light, alleen
-        naar de gedeelde namen (AccentBrush, SurfaceBrush, ...) via
-        {DynamicResource ...} - dat is wat het live wisselen mogelijk
-        maakt.
+        Visual Studio (Dark+) thema - de vertrouwde donkere IDE-look
+        (editor-achtergrond #1E1E1E, VS-blauw #007ACC als accent). Zelfde
+        sleutel-set als Lcars.xaml, zie de uitleg daar.
     -->
 
-    <Color x:Key="AccentColor">#4A7FE8</Color>
-    <Color x:Key="AccentColorDark">#2F5FC7</Color>
-    <Color x:Key="BackgroundColor">#1B1B1F</Color>
-    <Color x:Key="SurfaceColor">#26262B</Color>
-    <Color x:Key="BorderColor">#3A3A40</Color>
-    <Color x:Key="TextPrimaryColor">#F2F2F2</Color>
-    <Color x:Key="TextMutedColor">#A0A0A8</Color>
+    <Color x:Key="AccentColor">#007ACC</Color>
+    <Color x:Key="AccentColorDark">#005A9E</Color>
+    <Color x:Key="BackgroundColor">#1E1E1E</Color>
+    <Color x:Key="SurfaceColor">#252526</Color>
+    <Color x:Key="BorderColor">#3F3F46</Color>
+    <Color x:Key="TextPrimaryColor">#D4D4D4</Color>
+    <Color x:Key="TextMutedColor">#9D9D9D</Color>
 
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentColorDark}" />

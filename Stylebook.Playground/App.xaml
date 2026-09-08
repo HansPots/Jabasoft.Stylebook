@@ -9,10 +9,13 @@
                 <!-- Shared typography/styles every real app merges in too
                      - see Stylebook.Components/Styles/Theme.xaml. -->
                 <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
-                <!-- Starting color theme - kept as its own top-level entry
-                     (not nested inside Theme.xaml) so Theming/ThemeManager
-                     can swap it live, see that class for why. -->
-                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Dark.xaml" />
+                <!-- The Stylebook tool's own chrome (menu strip, dropdown,
+                     ...) has one fixed look and stays out of theme
+                     switching entirely - Visual Studio dark, always.
+                     Anything that SHOULD switch (a preview surface) merges
+                     its own Themes/*.xaml closer to itself instead, see
+                     MainWindow.xaml's StylePreviewArea. -->
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/VisualStudio.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

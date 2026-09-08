@@ -10,6 +10,23 @@
         Height="1080" Width="1920"
         Background="{DynamicResource BackgroundBrush}">
 
+    <Window.Resources>
+        <!-- Gedeelde look voor de inklapbare regio-secties in de menustrook. -->
+        <Style TargetType="Expander">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+        </Style>
+    </Window.Resources>
+
     <!--
         Vaste indeling van het style-venster: links een 256px strook voor
         het menu (welke component/stijl je bekijkt), rechts het style-
@@ -28,29 +45,60 @@
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,1,0">
-            <StackPanel Margin="{StaticResource SpaceMedium}">
-                <TextBlock Text="MENU"
-                           Foreground="{DynamicResource TextMutedBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="{StaticResource FontSizeSmall}"
-                           Margin="0,0,0,16" />
-                <!-- Menu-items komen hier, zodra er meerdere secties/componenten zijn om tussen te wisselen. -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="{StaticResource SpaceMedium}">
+                    <TextBlock Text="MENU"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               FontFamily="{StaticResource AppFontFamily}"
+                               FontSize="{StaticResource FontSizeSmall}"
+                               Margin="0,0,0,16" />
 
-                <Button x:Name="ThemeToggleButton"
-                        Content="Wissel thema"
-                        Click="ThemeToggleButton_Click"
-                        Margin="0,16,0,0"
-                        Padding="{StaticResource SpaceSmall}"
-                        Background="{DynamicResource AccentBrush}"
-                        Foreground="{DynamicResource TextPrimaryBrush}"
-                        FontFamily="{StaticResource AppFontFamily}"
-                        FontSize="{StaticResource FontSizeSmall}"
-                        BorderThickness="0" />
-            </StackPanel>
+                    <ComboBox x:Name="ThemePicker"
+                              SelectionChanged="ThemePicker_SelectionChanged"
+                              Padding="{StaticResource SpaceSmall}"
+                              Background="{DynamicResource AccentBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              FontFamily="{StaticResource AppFontFamily}"
+                              FontSize="{StaticResource FontSizeSmall}"
+                              Margin="0,0,0,16" />
+
+                    <!-- Componentbeheer per Basis-regio, klap open om de
+                         daarin opgeslagen componenten (Stylebook.Data) te
+                         zien. -->
+                    <Expander Header="Header">
+                        <ListBox x:Name="HeaderComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                    <Expander Header="Menu">
+                        <ListBox x:Name="MenuComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                    <Expander Header="Inhoud">
+                        <ListBox x:Name="InhoudComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                    <Expander Header="Actie">
+                        <ListBox x:Name="ActieComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                    <Expander Header="Footer">
+                        <ListBox x:Name="FooterComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                    <Expander Header="Algemeen">
+                        <ListBox x:Name="AlgemeenComponents" DisplayMemberPath="Name" />
+                    </Expander>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
-        <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te staan -->
-        <Grid Grid.Column="1">
+        <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te
+             staan. Eigen Resources met een eigen Themes/*.xaml - los van
+             de vaste Visual Studio-look van de tool zelf (zie App.xaml) -
+             zodat alleen dit gebied van thema wisselt. -->
+        <Grid x:Name="StylePreviewArea" Grid.Column="1">
+            <Grid.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </Grid.Resources>
             <controls:Basis>
                 <controls:Basis.HeaderContent>
                     <TextBlock Text="Header"

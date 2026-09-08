@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Stylebook.Components/Stylebook.Components.csproj" />
+  <Project Path="Stylebook.Data/Stylebook.Data.csproj" />
   <Project Path="Stylebook.Playground/Stylebook.Playground.csproj" />
 </Solution>

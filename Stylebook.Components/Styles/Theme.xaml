@@ -11,7 +11,7 @@
                 <ResourceDictionary>
                     <ResourceDictionary.MergedDictionaries>
                         <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
-                        <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Dark.xaml" />
+                        <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
                     </ResourceDictionary.MergedDictionaries>
                 </ResourceDictionary>
             </Application.Resources>
