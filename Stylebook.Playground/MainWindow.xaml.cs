@@ -59,10 +59,16 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Component_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var listBox = (ListBox)sender;
+        var region = Enum.Parse<ComponentRegion>((string)listBox.Tag);
+        NewComponentNameBox(region).Text = (listBox.SelectedItem as StylebookComponent)?.Name ?? string.Empty;
+    }
+
     private void AddComponent_Click(object sender, RoutedEventArgs e)
     {
-        var region = Enum.Parse<ComponentRegion>((string)((Button)sender).Tag);
-        AddComponent(region, NewComponentNameBox(region));
+        SaveComponent(Enum.Parse<ComponentRegion>((string)((Button)sender).Tag));
     }
 
     private void NewComponentName_KeyDown(object sender, KeyEventArgs e)
@@ -72,27 +78,49 @@ public partial class MainWindow : Window
             return;
         }
 
-        var textBox = (TextBox)sender;
-        AddComponent(Enum.Parse<ComponentRegion>((string)textBox.Tag), textBox);
+        SaveComponent(Enum.Parse<ComponentRegion>((string)((TextBox)sender).Tag));
     }
 
-    private void AddComponent(ComponentRegion region, TextBox nameBox)
+    /// <summary>
+    /// Adds a new component, or - when one is selected in the region's
+    /// ListBox - renames it instead. CreatedAtUtc/UpdatedAtUtc are stamped
+    /// by StylebookDbContext.SaveChanges, never set here.
+    /// </summary>
+    private void SaveComponent(ComponentRegion region)
     {
+        var nameBox = NewComponentNameBox(region);
         var name = nameBox.Text.Trim();
         if (name.Length == 0)
         {
             return;
         }
 
-        App.Db.Components.Add(new StylebookComponent
+        if (ComponentsListBox(region).SelectedItem is StylebookComponent existing)
         {
-            Name = name,
-            Region = region,
-            CreatedAtUtc = DateTime.UtcNow,
-        });
+            existing.Name = name;
+        }
+        else
+        {
+            App.Db.Components.Add(new StylebookComponent { Name = name, Region = region });
+        }
+
+        App.Db.SaveChanges();
+        nameBox.Clear();
+        LoadComponentsByRegion();
+    }
+
+    private void DeleteComponent_Click(object sender, RoutedEventArgs e)
+    {
+        var region = Enum.Parse<ComponentRegion>((string)((Button)sender).Tag);
+        if (ComponentsListBox(region).SelectedItem is not StylebookComponent selected)
+        {
+            return;
+        }
+
+        App.Db.Components.Remove(selected);
         App.Db.SaveChanges();
 
-        nameBox.Clear();
+        NewComponentNameBox(region).Clear();
         LoadComponentsByRegion();
     }
 
@@ -104,6 +132,17 @@ public partial class MainWindow : Window
         ComponentRegion.Actie => ActieNewComponentName,
         ComponentRegion.Footer => FooterNewComponentName,
         ComponentRegion.Algemeen => AlgemeenNewComponentName,
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
+    };
+
+    private ListBox ComponentsListBox(ComponentRegion region) => region switch
+    {
+        ComponentRegion.Header => HeaderComponents,
+        ComponentRegion.Menu => MenuComponents,
+        ComponentRegion.Inhoud => InhoudComponents,
+        ComponentRegion.Actie => ActieComponents,
+        ComponentRegion.Footer => FooterComponents,
+        ComponentRegion.Algemeen => AlgemeenComponents,
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
 }

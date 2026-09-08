@@ -43,6 +43,12 @@
             <Setter Property="Padding" Value="8,4" />
             <Setter Property="Margin" Value="4,0,0,0" />
         </Style>
+        <!-- Verwijder-knop: bewust ingetogen (Surface i.p.v. Accent), staat
+             alleen naast dezelfde ListBox als de toevoegen/hernoemen-knop. -->
+        <Style TargetType="Button" x:Key="DeleteComponentButtonStyle" BasedOn="{StaticResource AddComponentButtonStyle}">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+        </Style>
     </Window.Resources>
 
     <!--
@@ -82,11 +88,14 @@
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
                          daarin opgeslagen componenten (Stylebook.Data) te
-                         zien en er een nieuwe aan toe te voegen. -->
+                         zien. Selecteer een component om 'm te hernoemen
+                         (naam aanpassen + "+") of te verwijderen ("x");
+                         niets geselecteerd + "+" voegt een nieuwe toe. -->
                     <Expander Header="Header">
                         <StackPanel>
-                            <ListBox x:Name="HeaderComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -94,8 +103,9 @@
                     </Expander>
                     <Expander Header="Menu">
                         <StackPanel>
-                            <ListBox x:Name="MenuComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="MenuComponents" Tag="Menu" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -103,8 +113,9 @@
                     </Expander>
                     <Expander Header="Inhoud">
                         <StackPanel>
-                            <ListBox x:Name="InhoudComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="InhoudComponents" Tag="Inhoud" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -112,8 +123,9 @@
                     </Expander>
                     <Expander Header="Actie">
                         <StackPanel>
-                            <ListBox x:Name="ActieComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="ActieComponents" Tag="Actie" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -121,8 +133,9 @@
                     </Expander>
                     <Expander Header="Footer">
                         <StackPanel>
-                            <ListBox x:Name="FooterComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="FooterComponents" Tag="Footer" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -130,8 +143,9 @@
                     </Expander>
                     <Expander Header="Algemeen">
                         <StackPanel>
-                            <ListBox x:Name="AlgemeenComponents" DisplayMemberPath="Name" />
+                            <ListBox x:Name="AlgemeenComponents" Tag="Algemeen" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel Margin="0,8,0,8">
+                                <Button Content="x" Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
