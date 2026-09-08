@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Stylebook.Components.Theming;
+using Stylebook.Data;
 using Stylebook.Data.Entities;
 using Stylebook.Playground.Theming;
 
@@ -57,11 +58,38 @@ public partial class MainWindow : Window
 
         ThemePresetPicker.ItemsSource = ThemePresetOptions;
         ThemePresetPicker.DisplayMemberPath = nameof(ThemePresetOption.Label);
-        ThemePresetPicker.SelectedIndex = 1; // Visual Studio - matches DbThemeBuilder's seed default.
+        ThemePresetPicker.SelectedIndex = DetectActiveThemeIndex(App.Db);
         _initializing = false;
 
         LoadComponentsByRegion();
         PageBuilderModeButton.IsChecked = true;
+    }
+
+    /// <summary>
+    /// Which preset's AccentColor matches what's actually stored right
+    /// now - so the picker reflects reality instead of always defaulting
+    /// to "Visual Studio" regardless of the database. Falls back to
+    /// Visual Studio (index 1) when nothing matches exactly (hand-edited
+    /// tokens, or a value that doesn't correspond to any known preset).
+    /// </summary>
+    private static int DetectActiveThemeIndex(StylebookDbContext db)
+    {
+        var storedAccent = db.DesignTokens.FirstOrDefault(t => t.Name == "AccentColor")?.Value;
+        if (storedAccent is not null)
+        {
+            for (var i = 0; i < ThemePresetOptions.Length; i++)
+            {
+                var presetAccent = DesignTokenCatalog.GetColors(ThemePresetOptions[i].Value)
+                    .FirstOrDefault(c => c.Name == "AccentColor").Value
+                    .ToString(CultureInfo.InvariantCulture);
+                if (string.Equals(storedAccent, presetAccent, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+        }
+
+        return 1; // Visual Studio - the app's only intended style; also the seed default.
     }
 
     private void LoadComponentsByRegion()
