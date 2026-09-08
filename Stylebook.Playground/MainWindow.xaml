@@ -134,9 +134,12 @@
                          Inhoud/Actie/Footer, geen componentwijzigingen.
                          Componentenbouwer: 1 component geïsoleerd bekijken
                          en bouwen, hier mag wel toegevoegd/hernoemd/
-                         verwijderd worden. Stylebook: het vaste palet
-                         (kleuren/rondingen/lettertype) voor beide thema's
-                         naast elkaar, puur ter referentie. -->
+                         verwijderd worden. Stylebook: het palet
+                         (kleuren/rondingen/lettertype) met de hand
+                         aanpassen - zie StylebookMode_Checked en
+                         BuildStylebookPanel in code-behind. Deze app
+                         gebruikt bewust maar 1 stijl (Visual Studio), dus
+                         geen thema-keuze meer nodig. -->
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -162,10 +165,6 @@
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="StylebookMode_Checked" />
                     </Grid>
-
-                    <ComboBox x:Name="ThemePicker"
-                              SelectionChanged="ThemePicker_SelectionChanged"
-                              Margin="0,0,0,16" />
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
                          daarin opgeslagen componenten (Stylebook.Data) te
@@ -237,22 +236,16 @@
         </Border>
 
         <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te
-             staan. Eigen Resources met een eigen Themes/*.xaml - los van
-             de vaste Visual Studio-look van de tool zelf (zie App.xaml) -
-             zodat alleen dit gebied van thema wisselt. Twee lagen, maar
-             maar 1 zichtbaar (zie SetBuilderMode in code-behind):
-             PageBuilderBasis toont de volledige Basis-schil met per regio
-             het geselecteerde component; ComponentBuilderCanvas toont
-             precies 1 component, geïsoleerd, zonder schil eromheen. -->
+             staan. Geen eigen Resources meer hier - deze app gebruikt nog
+             maar 1 stijl (Visual Studio), DB-gestuurd (zie App.xaml.cs en
+             Theming/DbThemeBuilder.cs), dus alles valt gewoon door naar
+             Application.Resources. Drie lagen, maar maar 1 zichtbaar (zie
+             SetBuilderMode in code-behind): PageBuilderBasis toont de
+             volledige Basis-schil met per regio het geselecteerde
+             component; ComponentBuilderCanvas toont precies 1 component,
+             geïsoleerd, zonder schil eromheen; StylebookContent toont het
+             hand-bewerkbare palet. -->
         <Grid x:Name="StylePreviewArea" Grid.Column="1">
-            <Grid.Resources>
-                <ResourceDictionary>
-                    <ResourceDictionary.MergedDictionaries>
-                        <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
-                    </ResourceDictionary.MergedDictionaries>
-                </ResourceDictionary>
-            </Grid.Resources>
-
             <controls:Basis x:Name="PageBuilderBasis" />
 
             <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">

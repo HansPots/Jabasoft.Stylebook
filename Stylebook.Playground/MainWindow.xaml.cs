@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Security;
 using System.Text;
@@ -12,8 +13,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Stylebook.Components.Theming;
 using Stylebook.Data.Entities;
+using Stylebook.Playground.Theming;
 
 namespace Stylebook.Playground;
 
@@ -30,17 +31,9 @@ public partial class MainWindow : Window
         /// <summary>See and build exactly one component in isolation - editing (add/rename/delete) lives here.</summary>
         ComponentBuilder,
 
-        /// <summary>Reference-only: the fixed palette (colors/radii/typography) for both themes, side by side.</summary>
+        /// <summary>The hand-editable palette (colors/radii/typography) - see Theming/DbThemeBuilder.cs.</summary>
         Stylebook,
     }
-
-    private sealed record ThemeOption(Theme Value, string Label);
-
-    private static readonly ThemeOption[] ThemeOptions =
-    [
-        new ThemeOption(Theme.Lcars, "LCARS"),
-        new ThemeOption(Theme.VisualStudio, "Visual Studio"),
-    ];
 
     private BuilderMode _builderMode = BuilderMode.PageBuilder;
     private StylebookComponent? _lastSelectedComponent;
@@ -48,10 +41,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-
-        ThemePicker.ItemsSource = ThemeOptions;
-        ThemePicker.DisplayMemberPath = nameof(ThemeOption.Label);
-        ThemePicker.SelectedIndex = 0;
 
         LoadComponentsByRegion();
         PageBuilderModeButton.IsChecked = true;
@@ -69,14 +58,6 @@ public partial class MainWindow : Window
         AlgemeenComponents.ItemsSource = componentsByRegion[ComponentRegion.Algemeen].ToList();
 
         RefreshPreview();
-    }
-
-    private void ThemePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ThemePicker.SelectedItem is ThemeOption option)
-        {
-            ThemeManager.Apply(option.Value, StylePreviewArea.Resources);
-        }
     }
 
     private void PageBuilderMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.PageBuilder);
@@ -158,164 +139,159 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Built once (cached on StylebookContent.Content, see SetBuilderMode)
-    /// from Stylebook.Components.Theming.DesignTokenCatalog - both themes'
-    /// actual color VALUES side by side, not {DynamicResource ...}, since
-    /// the whole point is comparing them regardless of which one is
-    /// active in the ThemePicker.
+    /// Built from Stylebook.Data's live DesignTokens rows - not a static
+    /// reference, an editor. Each row is a TextBox on the token's current
+    /// Value; "Opslaan" validates, writes every changed row to the
+    /// database, and calls App.ReapplyLiveTheme() so the whole app
+    /// (chrome and preview alike - there's only the one DB-backed style
+    /// now) re-colors immediately. Rebuilt after a successful save so
+    /// swatches/samples reflect what actually got persisted.
     /// </summary>
-    private static FrameworkElement BuildStylebookPanel()
+    private FrameworkElement BuildStylebookPanel(string? statusMessage = null)
     {
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition());
-        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        var tokens = App.Db.DesignTokens.AsEnumerable()
+            .OrderBy(t => (int)t.Category)
+            .ThenBy(t => t.Name, StringComparer.Ordinal)
+            .ToList();
 
-        var lcarsColumn = BuildThemeColumn(Theme.Lcars);
-        Grid.SetColumn(lcarsColumn, 0);
-        var vsColumn = BuildThemeColumn(Theme.VisualStudio);
-        Grid.SetColumn(vsColumn, 1);
+        var editors = new List<(DesignToken Token, TextBox Box)>();
+        var stack = new StackPanel { Margin = new Thickness(24), MaxWidth = 520 };
 
-        grid.Children.Add(lcarsColumn);
-        grid.Children.Add(vsColumn);
-        return grid;
-    }
+        var title = new TextBlock { Text = "Stylebook", FontSize = 22, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 4) };
+        title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        stack.Children.Add(title);
 
-    private static FrameworkElement BuildThemeColumn(Theme theme)
-    {
-        var colors = DesignTokenCatalog.GetColors(theme);
-        Color ColorOf(string name) => colors.First(c => c.Name == name).Value;
-
-        var background = ColorOf("BackgroundColor");
-        var surface = ColorOf("SurfaceColor");
-        var border = ColorOf("BorderColor");
-        var accent = ColorOf("AccentColor");
-        var textPrimary = ColorOf("TextPrimaryColor");
-        var textMuted = ColorOf("TextMutedColor");
-
-        var stack = new StackPanel { Margin = new Thickness(24) };
-
-        stack.Children.Add(new TextBlock
+        var hint = new TextBlock
         {
-            Text = theme.ToString(),
-            FontSize = 22,
-            FontWeight = FontWeights.Bold,
-            Foreground = new SolidColorBrush(textPrimary),
+            Text = "Pas een waarde aan en klik Opslaan. Kleuren als hex (#RRGGBB), overige als getal.",
+            TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 16),
-        });
-
-        stack.Children.Add(SectionLabel("Kleuren", textMuted));
-        foreach (var (name, value) in colors)
-        {
-            stack.Children.Add(ColorSwatchRow(name, value, textPrimary, surface, border));
-        }
-
-        stack.Children.Add(SectionLabel("Hoekronding", textMuted));
-        foreach (var (name, px) in DesignTokenCatalog.RadiusTokens)
-        {
-            stack.Children.Add(RadiusSample(name, px, surface, border, textPrimary));
-        }
-
-        stack.Children.Add(SectionLabel("Afstand", textMuted));
-        foreach (var (name, px) in DesignTokenCatalog.SpacingTokens)
-        {
-            stack.Children.Add(SpacingSample(name, px, accent, textPrimary));
-        }
-
-        stack.Children.Add(SectionLabel("Tekstgrootte", textMuted));
-        foreach (var (name, px) in DesignTokenCatalog.FontSizeTokens)
-        {
-            stack.Children.Add(new TextBlock
-            {
-                Text = $"{name} ({px}px) - Aa Bb Cc",
-                FontSize = px,
-                FontFamily = new FontFamily(DesignTokenCatalog.FontFamilyValue),
-                Foreground = new SolidColorBrush(textPrimary),
-                Margin = new Thickness(0, 4, 0, 0),
-            });
-        }
-
-        return new Border
-        {
-            Background = new SolidColorBrush(background),
-            BorderBrush = new SolidColorBrush(border),
-            BorderThickness = new Thickness(0, 0, 1, 0),
-            Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
         };
+        hint.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+        stack.Children.Add(hint);
+
+        var fieldStyle = (Style)FindResource("EditorFieldStyle");
+        DesignTokenCategory? currentCategory = null;
+
+        foreach (var token in tokens)
+        {
+            if (token.Category != currentCategory)
+            {
+                currentCategory = token.Category;
+                stack.Children.Add(SectionLabel(CategoryLabel(token.Category)));
+            }
+
+            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), LastChildFill = true };
+
+            if (token.Category == DesignTokenCategory.Color)
+            {
+                var swatch = new Border
+                {
+                    Width = 24,
+                    Height = 24,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(token.Value)!),
+                    BorderThickness = new Thickness(1),
+                    Margin = new Thickness(0, 0, 8, 0),
+                };
+                swatch.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+                DockPanel.SetDock(swatch, Dock.Left);
+                row.Children.Add(swatch);
+            }
+
+            var nameLabel = new TextBlock { Text = token.Name, Width = 170, VerticalAlignment = VerticalAlignment.Center };
+            nameLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+            DockPanel.SetDock(nameLabel, Dock.Left);
+            row.Children.Add(nameLabel);
+
+            var box = new TextBox { Text = token.Value, Style = fieldStyle, AcceptsReturn = false, Height = 28 };
+            editors.Add((token, box));
+            row.Children.Add(box);
+
+            stack.Children.Add(row);
+        }
+
+        var saveButton = new Button { Content = "Opslaan", Style = (Style)FindResource("EditorActionButtonStyle") };
+        saveButton.Click += (_, _) => SaveStylebookEdits(editors);
+        stack.Children.Add(saveButton);
+
+        if (!string.IsNullOrEmpty(statusMessage))
+        {
+            var status = new TextBlock { Text = statusMessage, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
+            status.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+            stack.Children.Add(status);
+        }
+
+        var background = new Border { Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+        background.SetResourceReference(Border.BackgroundProperty, "BackgroundBrush");
+        return background;
     }
 
-    private static TextBlock SectionLabel(string text, Color mutedColor) => new()
+    private static string CategoryLabel(DesignTokenCategory category) => category switch
     {
-        Text = text.ToUpperInvariant(),
-        Foreground = new SolidColorBrush(mutedColor),
-        FontSize = 12,
-        Margin = new Thickness(0, 20, 0, 8),
+        DesignTokenCategory.Color => "Kleuren",
+        DesignTokenCategory.Radius => "Hoekronding",
+        DesignTokenCategory.Spacing => "Afstand",
+        DesignTokenCategory.FontSize => "Tekstgrootte",
+        DesignTokenCategory.FontFamily => "Lettertype",
+        _ => category.ToString(),
     };
 
-    private static FrameworkElement ColorSwatchRow(string name, Color value, Color textColor, Color surfaceColor, Color borderColor)
+    private TextBlock SectionLabel(string text)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        row.Children.Add(new Border
-        {
-            Width = 28,
-            Height = 28,
-            Background = new SolidColorBrush(value),
-            BorderBrush = new SolidColorBrush(borderColor),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Margin = new Thickness(0, 0, 8, 0),
-        });
-        row.Children.Add(new TextBlock
-        {
-            Text = $"{name}  {value}",
-            Foreground = new SolidColorBrush(textColor),
-            VerticalAlignment = VerticalAlignment.Center,
-            FontFamily = new FontFamily("Consolas"),
-            FontSize = 12,
-        });
-        return row;
+        var label = new TextBlock { Text = text.ToUpperInvariant(), FontSize = 12, Margin = new Thickness(0, 20, 0, 8) };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+        return label;
     }
 
-    private static FrameworkElement RadiusSample(string name, double px, Color surfaceColor, Color borderColor, Color textColor)
+    /// <summary>
+    /// Validates each row (hex for Color, a parseable number for the
+    /// rest) before writing anything - an invalid row is reported and
+    /// skipped rather than silently discarded or corrupting the theme.
+    /// </summary>
+    private void SaveStylebookEdits(List<(DesignToken Token, TextBox Box)> editors)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        row.Children.Add(new Border
+        var invalid = new List<string>();
+
+        foreach (var (token, box) in editors)
         {
-            Width = 48,
-            Height = 28,
-            Background = new SolidColorBrush(surfaceColor),
-            BorderBrush = new SolidColorBrush(borderColor),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(px),
-            Margin = new Thickness(0, 0, 8, 0),
-        });
-        row.Children.Add(new TextBlock
-        {
-            Text = $"{name} ({px}px)",
-            Foreground = new SolidColorBrush(textColor),
-            VerticalAlignment = VerticalAlignment.Center,
-            FontSize = 12,
-        });
-        return row;
+            var value = box.Text.Trim();
+            var isValid = token.Category switch
+            {
+                DesignTokenCategory.Color => IsValidColor(value),
+                DesignTokenCategory.FontFamily => value.Length > 0,
+                _ => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
+            };
+
+            if (isValid)
+            {
+                token.Value = value;
+            }
+            else
+            {
+                invalid.Add(token.Name);
+            }
+        }
+
+        App.Db.SaveChanges();
+        App.ReapplyLiveTheme();
+
+        var message = invalid.Count == 0
+            ? "Opgeslagen."
+            : $"Opgeslagen, behalve: {string.Join(", ", invalid)} (ongeldige waarde, oude waarde behouden).";
+
+        StylebookContent.Content = BuildStylebookPanel(message);
     }
 
-    private static FrameworkElement SpacingSample(string name, double px, Color accentColor, Color textColor)
+    private static bool IsValidColor(string value)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        row.Children.Add(new Border
+        try
         {
-            Width = px,
-            Height = 14,
-            Background = new SolidColorBrush(accentColor),
-            Margin = new Thickness(0, 0, 8, 0),
-        });
-        row.Children.Add(new TextBlock
+            return ColorConverter.ConvertFromString(value) is Color;
+        }
+        catch (FormatException)
         {
-            Text = $"{name} ({px}px)",
-            Foreground = new SolidColorBrush(textColor),
-            VerticalAlignment = VerticalAlignment.Center,
-            FontSize = 12,
-        });
-        return row;
+            return false;
+        }
     }
 
     /// <summary>
@@ -427,17 +403,17 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Base instruction for every AI call: the design-token catalog for
-    /// whichever theme is currently selected (see DesignTokenCatalog -
-    /// this is the "kies daaruit" palette, not a suggestion the model can
-    /// ignore) plus the selected component's current Xaml, when there is
-    /// one, so a request like "maak 'm ronder" has something to work from.
+    /// Base instruction for every AI call: the Stylebook's current,
+    /// possibly hand-edited token values (see DbThemeBuilder.DescribeForAi
+    /// - this is the "kies daaruit" palette, not a suggestion the model
+    /// can ignore) plus the selected component's current Xaml, when there
+    /// is one, so a request like "maak 'm ronder" has something to work
+    /// from.
     /// </summary>
     private string BuildAiSystemPrompt()
     {
-        var theme = (ThemePicker.SelectedItem as ThemeOption)?.Value ?? Theme.Lcars;
         var prompt = "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
-                     DesignTokenCatalog.DescribeForAi(theme);
+                     DbThemeBuilder.DescribeForAi(App.Db);
 
         if (_lastSelectedComponent is { Xaml.Length: > 0 } component)
         {
