@@ -33,8 +33,8 @@
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1">
             <ContentPresenter Content="{Binding HeaderContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Stretch" />
         </Border>
 
         <!-- Midden: menu | hoofdinhoud | action, elk vaste breedte behalve de hoofdinhoud -->
@@ -50,15 +50,15 @@
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
                 <ContentPresenter Content="{Binding MenuContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch" />
             </Border>
 
             <Border Grid.Column="1"
                     Background="{DynamicResource BackgroundBrush}">
                 <ContentPresenter Content="{Binding MainContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch" />
             </Border>
 
             <Border Grid.Column="2"
@@ -66,8 +66,8 @@
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1,0,0,0">
                 <ContentPresenter Content="{Binding ActionContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch" />
             </Border>
         </Grid>
 
@@ -77,8 +77,8 @@
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0">
             <ContentPresenter Content="{Binding FooterContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Stretch" />
         </Border>
     </Grid>
 
