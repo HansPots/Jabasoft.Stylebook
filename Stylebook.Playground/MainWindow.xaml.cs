@@ -591,14 +591,17 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Asks the AI for the updated Xaml reflecting the question/request.
-    /// When the answer actually parses as Xaml, shows it as a proposal
-    /// next to the original (see ShowProposal) instead of applying it -
-    /// "Overnemen" is the only thing that ever saves it. When the answer
-    /// isn't Xaml (the model explained instead of producing markup, or a
-    /// genuinely informational question was asked), falls back to just
-    /// showing that text - one button handles both, no need to guess
-    /// which of two buttons a given question needs.
+    /// Asks the AI for the updated Xaml reflecting the question/request,
+    /// plus a short summary of what it changed. When the Xaml part
+    /// actually parses, shows it as a proposal next to the original (see
+    /// ShowProposal) instead of applying it - "Overnemen" is the only
+    /// thing that ever saves it - and puts the summary (not the raw
+    /// markup) in the answer box, so you can read what changed without
+    /// having to diff the Xaml yourself. When the answer isn't in the
+    /// requested Xaml format (the model explained instead of producing
+    /// markup, or a genuinely informational question was asked), falls
+    /// back to just showing the raw text - one button handles both, no
+    /// need to guess which of two buttons a given question needs.
     /// </summary>
     private async void AskAi_Click(object sender, RoutedEventArgs e)
     {
@@ -617,19 +620,23 @@ public partial class MainWindow : Window
         try
         {
             var systemPrompt = BuildAiSystemPrompt() +
-                "\nAntwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken.";
+                "\nAntwoord in exact dit formaat, zonder markdown-codeblokken:\n" +
+                "SAMENVATTING: <een korte zin die samenvat wat je hebt aangepast>\n" +
+                "XAML:\n<de volledige, aangepaste XAML>";
 
-            var answer = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
+            var raw = await App.Ai.AskAsync(systemPrompt, question);
+            var hasSummaryFormat = TryExtractSummaryAndXaml(raw, out var summary, out var xamlPart);
+            var xaml = StripMarkdownFence(hasSummaryFormat ? xamlPart : raw);
 
-            if (TryParseXaml(answer, out _))
+            if (TryParseXaml(xaml, out _))
             {
-                ShowProposal(component.Name, component.Xaml ?? string.Empty, answer);
+                ShowProposal(component.Name, component.Xaml ?? string.Empty, xaml);
+                AiAnswerBox.Text = hasSummaryFormat && summary.Length > 0 ? summary : xaml;
             }
-
-            // Always keep the raw answer readable, proposal or not - so the
-            // change that was made stays visible instead of being replaced
-            // by a status message.
-            AiAnswerBox.Text = answer;
+            else
+            {
+                AiAnswerBox.Text = raw;
+            }
         }
         catch (Exception ex)
         {
@@ -640,6 +647,26 @@ public partial class MainWindow : Window
             AskAiButton.IsEnabled = true;
             AskAiButton.Content = originalContent;
         }
+    }
+
+    /// <summary>Splits a "SAMENVATTING: ...\nXAML:\n..." formatted answer apart. Returns false (xaml = the whole answer) when the model didn't follow the format, so the caller can still try to use it as-is.</summary>
+    private static bool TryExtractSummaryAndXaml(string answer, out string summary, out string xaml)
+    {
+        const string xamlMarker = "XAML:";
+        var xamlIndex = answer.IndexOf(xamlMarker, StringComparison.OrdinalIgnoreCase);
+        if (xamlIndex < 0)
+        {
+            summary = string.Empty;
+            xaml = answer;
+            return false;
+        }
+
+        const string summaryMarker = "SAMENVATTING:";
+        var beforeXaml = answer[..xamlIndex];
+        var summaryIndex = beforeXaml.IndexOf(summaryMarker, StringComparison.OrdinalIgnoreCase);
+        summary = (summaryIndex >= 0 ? beforeXaml[(summaryIndex + summaryMarker.Length)..] : beforeXaml).Trim();
+        xaml = answer[(xamlIndex + xamlMarker.Length)..].Trim();
+        return true;
     }
 
     private static bool TryParseXaml(string xaml, out FrameworkElement? element)

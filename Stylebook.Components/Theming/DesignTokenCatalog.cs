@@ -88,8 +88,13 @@ public static class DesignTokenCatalog
 
         return $"""
             Beschikbare stijl-tokens voor thema {theme} - bouw het ontwerp UITSLUITEND met deze tokens,
-            verzin geen eigen kleur, ronding of maat. Kleuren refereer je via DynamicResource met de
-            TokenNaam, overige tokens (hoekronding/afstand/lettertype) via StaticResource met de TokenNaam.
+            verzin geen eigen kleur, ronding of maat. Refereer ALLE tokens (kleur, hoekronding, afstand,
+            lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit StaticResource, want deze
+            XAML wordt at runtime geparsed zonder ambient resource-context, waardoor StaticResource niet oplost.
+            Voor Margin/Padding/Thickness mag een token-referentie alleen de VOLLEDIGE attribuutwaarde zijn -
+            nooit combineren met losse cijfers en komma's in dezelfde waarde (dus niet eerst 0,0,0, en dan pas
+            de referentie); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke getallen, ofwel
+            uitsluitend een token-referentie als hele waarde. Voeg geen XML-commentaar toe in de XAML.
             Kleuren:
             {string.Join('\n', colorLines)}
             Hoekronding:
