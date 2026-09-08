@@ -74,6 +74,7 @@
         <Style TargetType="Button" x:Key="EditorActionButtonStyle" BasedOn="{StaticResource AddComponentButtonStyle}">
             <Setter Property="Margin" Value="0,8,0,0" />
             <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Height" Value="32" />
         </Style>
         <!-- Paginabouwer/Componentenbouwer-tabs: RadioButtons die zich als
              tabblad gedragen (GroupName houdt ze onderling exclusief). -->
@@ -263,7 +264,48 @@
                         <ColumnDefinition Width="420" />
                     </Grid.ColumnDefinitions>
 
-                    <ContentControl x:Name="ComponentBuilderContent" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <!-- Kolom 0: geïsoleerde preview, en - zodra "Pas toe
+                         op XAML" een voorstel heeft - het AI-voorstel
+                         ernaast, zodat je kunt vergelijken vóór je het
+                         overneemt (zie ShowProposal/AcceptProposal_Click/
+                         DiscardProposal_Click). ProposedColumn begint op
+                         0 breed; alleen ShowProposal zet 'm open. -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid x:Name="ProposalLabelsRow" Grid.Row="0" Visibility="Collapsed" Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="ORIGINEEL" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontFamily="{StaticResource AppFontFamily}"
+                                       FontSize="{StaticResource FontSizeSmall}" />
+                            <TextBlock Grid.Column="1" Text="AI-VOORSTEL" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontFamily="{StaticResource AppFontFamily}"
+                                       FontSize="{StaticResource FontSizeSmall}" />
+                        </Grid>
+
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition x:Name="ProposedColumnDefinition" Width="0" />
+                            </Grid.ColumnDefinitions>
+                            <ContentControl x:Name="ComponentBuilderContent" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ContentControl x:Name="ProposedPreviewContent" Grid.Column="1" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+
+                        <StackPanel x:Name="ProposalActionsRow" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,16,0,16">
+                            <Button Content="Overnemen" Click="AcceptProposal_Click" Style="{StaticResource EditorActionButtonStyle}" />
+                            <Button Content="Negeren" Click="DiscardProposal_Click" Margin="8,0,0,0" Style="{StaticResource EditorActionButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Bewerk-paneel: eigenschappen bovenaan (snel, beperkt
                          tot titel/inhoud-tekst), de eigenlijke XAML

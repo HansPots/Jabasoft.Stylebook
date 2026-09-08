@@ -48,6 +48,9 @@ public partial class MainWindow : Window
     private StylebookComponent? _lastSelectedComponent;
     private bool _initializing = true;
 
+    /// <summary>An AI-proposed Xaml awaiting Overnemen/Negeren - see ShowProposal. Null when there's nothing to compare.</summary>
+    private string? _proposedXaml;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -125,6 +128,11 @@ public partial class MainWindow : Window
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
 
+        if (mode != BuilderMode.ComponentBuilder)
+        {
+            ClearProposal();
+        }
+
         if (mode == BuilderMode.Stylebook)
         {
             StylebookContent.Content ??= BuildStylebookPanel();
@@ -149,6 +157,7 @@ public partial class MainWindow : Window
             ComponentBodyBox.Text = selected.BodyText ?? string.Empty;
             ComponentXamlBox.Text = selected.Xaml ?? string.Empty;
             XamlErrorText.Visibility = Visibility.Collapsed;
+            ClearProposal(); // a pending AI proposal belongs to whichever component was selected when it was asked for.
         }
 
         RefreshPreview();
@@ -456,42 +465,40 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// What a catalog entry (Stylebook.Data.Entities.StylebookComponent)
-    /// looks like when placed somewhere: its stored Xaml, parsed live with
-    /// XamlReader. Falls back to a labeled placeholder when there's no
-    /// Xaml yet (an older row, or one never edited), and to a visibly
-    /// different error box when the stored Xaml fails to parse - this
-    /// runs on every keystroke's worth of "Opslaan en toepassen", so it
-    /// must never let bad markup take the app down with it.
-    /// {DynamicResource} on the fallback/error visuals is applied via
-    /// SetResourceReference (not resolved once via FindResource) so they
-    /// keep responding live to the preview area's LCARS/Visual Studio
-    /// switch, same as the parsed Xaml's own DynamicResource bindings do
-    /// once it's part of the live tree.
+    /// looks like when placed somewhere: its stored Xaml, parsed live via
+    /// RenderXamlPreview - never lets bad markup take the app down with
+    /// it, see that method.
     /// </summary>
-    private FrameworkElement CreateComponentVisual(StylebookComponent? component)
+    private static FrameworkElement CreateComponentVisual(StylebookComponent? component)
     {
         if (component is null)
         {
             return Placeholder("(leeg)", "TextMutedBrush", "BorderBrush");
         }
 
-        if (string.IsNullOrWhiteSpace(component.Xaml))
+        return RenderXamlPreview(component.Name, component.Xaml);
+    }
+
+    /// <summary>Same rendering CreateComponentVisual uses, but for a raw Xaml string not (yet) attached to a saved component - see ShowProposal.</summary>
+    private static FrameworkElement RenderXamlPreview(string name, string? xaml)
+    {
+        if (string.IsNullOrWhiteSpace(xaml))
         {
-            return Placeholder(component.Name, "TextPrimaryBrush", "BorderBrush");
+            return Placeholder(name, "TextPrimaryBrush", "BorderBrush");
         }
 
         try
         {
-            if (XamlReader.Parse(component.Xaml) is FrameworkElement parsed)
+            if (XamlReader.Parse(xaml) is FrameworkElement parsed)
             {
                 return parsed;
             }
 
-            return Placeholder($"'{component.Name}' is geen FrameworkElement", "TextMutedBrush", "BorderBrush");
+            return Placeholder($"'{name}' is geen FrameworkElement", "TextMutedBrush", "BorderBrush");
         }
         catch (Exception ex)
         {
-            return Placeholder($"XAML-fout in '{component.Name}': {ex.Message}", "TextMutedBrush", "AccentBrush");
+            return Placeholder($"XAML-fout in '{name}': {ex.Message}", "TextMutedBrush", "AccentBrush");
         }
     }
 
@@ -619,10 +626,10 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Same request as AskAi_Click, but instructs the model to answer with
-    /// ONLY the updated Xaml and applies that answer straight to
-    /// ComponentXamlBox - saved and re-rendered exactly like a manual
-    /// "Opslaan en toepassen" would, errors included, so a bad AI answer
-    /// is visible and recoverable rather than silently discarded.
+    /// ONLY the updated Xaml. Does NOT save it - shows it as a proposal
+    /// next to the original instead (see ShowProposal), so a bad or
+    /// simply unwanted AI answer never overwrites anything until
+    /// "Overnemen" explicitly accepts it.
     /// </summary>
     private async void AskAiApplyXaml_Click(object sender, RoutedEventArgs e)
     {
@@ -644,24 +651,8 @@ public partial class MainWindow : Window
 
             var xaml = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
 
-            ComponentXamlBox.Text = xaml;
-            component.Xaml = xaml;
-            App.Db.SaveChanges();
-
-            try
-            {
-                XamlReader.Parse(xaml);
-                XamlErrorText.Visibility = Visibility.Collapsed;
-                AiAnswerBox.Text = "XAML aangepast en opgeslagen.";
-            }
-            catch (Exception parseEx)
-            {
-                XamlErrorText.Text = parseEx.Message;
-                XamlErrorText.Visibility = Visibility.Visible;
-                AiAnswerBox.Text = "XAML aangepast en opgeslagen, maar bevat een fout - zie de melding bij de preview.";
-            }
-
-            RefreshPreview();
+            ShowProposal(component.Name, xaml);
+            AiAnswerBox.Text = "Voorstel klaar - vergelijk het hiernaast met het origineel, en klik Overnemen om het te bewaren.";
         }
         catch (Exception ex)
         {
@@ -672,6 +663,61 @@ public partial class MainWindow : Window
             ApplyAiXamlButton.IsEnabled = true;
             ApplyAiXamlButton.Content = originalContent;
         }
+    }
+
+    /// <summary>Renders the AI's proposed Xaml next to the current component and reveals Overnemen/Negeren.</summary>
+    private void ShowProposal(string componentName, string xaml)
+    {
+        _proposedXaml = xaml;
+        ProposedPreviewContent.Content = RenderXamlPreview(componentName, xaml);
+        ProposedColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
+        ProposalLabelsRow.Visibility = Visibility.Visible;
+        ProposedPreviewContent.Visibility = Visibility.Visible;
+        ProposalActionsRow.Visibility = Visibility.Visible;
+    }
+
+    private void ClearProposal()
+    {
+        _proposedXaml = null;
+        ProposedColumnDefinition.Width = new GridLength(0);
+        ProposalLabelsRow.Visibility = Visibility.Collapsed;
+        ProposedPreviewContent.Visibility = Visibility.Collapsed;
+        ProposalActionsRow.Visibility = Visibility.Collapsed;
+        ProposedPreviewContent.Content = null;
+    }
+
+    /// <summary>Commits the pending AI proposal exactly like a manual "Opslaan en toepassen" would - errors included, so a bad answer is visible and recoverable rather than silently discarded.</summary>
+    private void AcceptProposal_Click(object sender, RoutedEventArgs e)
+    {
+        if (_proposedXaml is not { } xaml || _lastSelectedComponent is not { } component)
+        {
+            return;
+        }
+
+        ComponentXamlBox.Text = xaml;
+        component.Xaml = xaml;
+        App.Db.SaveChanges();
+
+        try
+        {
+            XamlReader.Parse(xaml);
+            XamlErrorText.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception parseEx)
+        {
+            XamlErrorText.Text = parseEx.Message;
+            XamlErrorText.Visibility = Visibility.Visible;
+        }
+
+        ClearProposal();
+        AiAnswerBox.Text = "Voorstel overgenomen en opgeslagen.";
+        RefreshPreview();
+    }
+
+    private void DiscardProposal_Click(object sender, RoutedEventArgs e)
+    {
+        ClearProposal();
+        AiAnswerBox.Text = "Voorstel genegeerd.";
     }
 
     /// <summary>Models tend to wrap XAML in ```xml fences even when told not to - strip it if present.</summary>
