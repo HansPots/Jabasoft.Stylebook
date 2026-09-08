@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -19,18 +20,18 @@ public sealed class AiClient(string serverUrl, string model)
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(120) };
 
-    public async Task<string> AskAsync(string systemPrompt, string question, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// history is the conversation so far (role "user"/"assistant",
+    /// oldest first), ending on the newest user question - lets a
+    /// follow-up question ("maak 'm nog scherper") build on what the AI
+    /// just answered instead of starting over each time.
+    /// </summary>
+    public async Task<string> AskAsync(string systemPrompt, IReadOnlyList<(string Role, string Content)> history, CancellationToken cancellationToken = default)
     {
-        var requestBody = new
-        {
-            model,
-            messages = new[]
-            {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = question },
-            },
-            temperature = 0.3,
-        };
+        var messages = new List<object> { new { role = "system", content = systemPrompt } };
+        messages.AddRange(history.Select(turn => (object)new { role = turn.Role, content = turn.Content }));
+
+        var requestBody = new { model, messages, temperature = 0.3 };
 
         using var response = await Http.PostAsJsonAsync(
             $"{serverUrl.TrimEnd('/')}/v1/chat/completions", requestBody, cancellationToken);

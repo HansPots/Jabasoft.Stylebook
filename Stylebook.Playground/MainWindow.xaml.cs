@@ -52,6 +52,16 @@ public partial class MainWindow : Window
     /// <summary>An AI-proposed Xaml awaiting Overnemen/Negeren - see ShowProposal. Null when there's nothing to compare.</summary>
     private string? _proposedXaml;
 
+    /// <summary>
+    /// The AI conversation so far for the selected component (oldest
+    /// first), so a follow-up question ("maak 'm nog scherper") builds on
+    /// what the AI just answered instead of starting over each time.
+    /// Cleared whenever the "current XAML" it was talking about goes
+    /// away from under it - a different component gets selected, or the
+    /// Componentenbouwer tab is left.
+    /// </summary>
+    private readonly List<(string Role, string Content)> _aiConversation = [];
+
     public MainWindow()
     {
         InitializeComponent();
@@ -159,6 +169,7 @@ public partial class MainWindow : Window
         if (mode != BuilderMode.ComponentBuilder)
         {
             ClearProposal();
+            _aiConversation.Clear();
         }
 
         if (mode == BuilderMode.Stylebook)
@@ -186,6 +197,7 @@ public partial class MainWindow : Window
             ComponentXamlBox.Text = selected.Xaml ?? string.Empty;
             XamlErrorText.Visibility = Visibility.Collapsed;
             ClearProposal(); // a pending AI proposal belongs to whichever component was selected when it was asked for.
+            _aiConversation.Clear(); // same for the conversation itself - it was about that component's XAML.
         }
 
         RefreshPreview();
@@ -676,14 +688,21 @@ public partial class MainWindow : Window
     /// is one, so a request like "maak 'm ronder" has something to work
     /// from.
     /// </summary>
-    private string BuildAiSystemPrompt()
+    /// <summary>
+    /// currentXaml is what the AI should treat as "the current XAML" -
+    /// the caller passes _proposedXaml when there's a pending, unaccepted
+    /// proposal (so a follow-up like "maak 'm nog scherper" builds on
+    /// what the AI just suggested, not on the untouched saved version)
+    /// and falls back to the saved component.Xaml otherwise.
+    /// </summary>
+    private string BuildAiSystemPrompt(string? currentXaml)
     {
         var prompt = "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
                      DbThemeBuilder.DescribeForAi(App.Db);
 
-        if (_lastSelectedComponent is { Xaml.Length: > 0 } component)
+        if (_lastSelectedComponent is { } component && !string.IsNullOrEmpty(currentXaml))
         {
-            prompt += $"\nDit is de huidige XAML van '{component.Name}':\n{component.Xaml}";
+            prompt += $"\nDit is de huidige XAML van '{component.Name}':\n{currentXaml}";
         }
 
         return prompt;
@@ -710,6 +729,12 @@ public partial class MainWindow : Window
             return;
         }
 
+        // "Huidige XAML" voor de AI is het nog-niet-geaccepteerde voorstel
+        // als er een is (zodat een vervolgvraag daarop doorbouwt), anders
+        // de opgeslagen versie - vastleggen VOORDAT ClearProposal() zo
+        // dadelijk _proposedXaml wist.
+        var currentXaml = _proposedXaml ?? component.Xaml ?? string.Empty;
+
         var originalContent = AskAiButton.Content;
         AskAiButton.IsEnabled = false;
         AskAiButton.Content = "Bezig...";
@@ -718,14 +743,18 @@ public partial class MainWindow : Window
 
         try
         {
-            var systemPrompt = BuildAiSystemPrompt() +
+            var systemPrompt = BuildAiSystemPrompt(currentXaml) +
                 "\nAntwoord in exact dit formaat, zonder markdown-codeblokken:\n" +
                 "SAMENVATTING: <een korte zin die samenvat wat je hebt aangepast>\n" +
                 "XAML:\n<de volledige, aangepaste XAML>";
 
-            var raw = await App.Ai.AskAsync(systemPrompt, question);
+            var history = new List<(string Role, string Content)>(_aiConversation) { ("user", question) };
+            var raw = await App.Ai.AskAsync(systemPrompt, history);
             var hasSummaryFormat = TryExtractSummaryAndXaml(raw, out var summary, out var xamlPart);
             var xaml = StripMarkdownFence(hasSummaryFormat ? xamlPart : raw);
+
+            _aiConversation.Add(("user", question));
+            _aiConversation.Add(("assistant", raw));
 
             if (TryParseXaml(xaml, out _))
             {
