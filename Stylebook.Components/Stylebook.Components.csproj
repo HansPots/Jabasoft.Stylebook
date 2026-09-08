@@ -12,6 +12,11 @@
          covering the whole icon set, embedded as a WPF pack resource so
          Typography.xaml's IconFontFamily can reference it cross-assembly. -->
     <Resource Include="Fonts\MaterialSymbolsOutlined.ttf" />
+    <!-- Inter, SIL Open Font License (zie Fonts/Inter-OFL.txt) - variable
+         font, tweede optie naast Segoe UI in de font-selector op het
+         Stylebook-palet (zie Typography.xaml/AppFontFamilyOptions en
+         MainWindow.xaml.cs/FontFamilyPicker_SelectionChanged). -->
+    <Resource Include="Fonts\Inter.ttf" />
   </ItemGroup>
 
 </Project>

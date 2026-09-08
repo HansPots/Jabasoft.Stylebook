@@ -375,7 +375,7 @@ public partial class MainWindow : Window
             .ThenBy(t => t.Name, StringComparer.Ordinal)
             .ToList();
 
-        var editors = new List<(DesignToken Token, TextBox Box)>();
+        var editors = new List<(DesignToken Token, Func<string> GetValue)>();
         var stack = new StackPanel { Margin = new Thickness(24), MaxWidth = 560 };
         var selectableStyle = (Style)FindResource("SelectableTextStyle");
 
@@ -418,11 +418,36 @@ public partial class MainWindow : Window
             Grid.SetColumn(nameLabel, 1);
             row.Children.Add(nameLabel);
 
-            var box = new TextBox { Text = token.Value, Style = fieldStyle, AcceptsReturn = false, Height = 28 };
-            box.TextChanged += (_, _) => applyPreview(box.Text.Trim());
-            Grid.SetColumn(box, 2);
-            row.Children.Add(box);
-            editors.Add((token, box));
+            if (token.Category == DesignTokenCategory.FontFamily)
+            {
+                var combo = new ComboBox { Height = 28 };
+                foreach (var option in DesignTokenCatalog.FontFamilyOptions)
+                {
+                    combo.Items.Add(option.DisplayName);
+                }
+                var current = DesignTokenCatalog.FontFamilyOptions.FirstOrDefault(o => o.Source == token.Value);
+                combo.SelectedItem = current.DisplayName ?? DesignTokenCatalog.FontFamilyOptions[0].DisplayName;
+                combo.SelectionChanged += (_, _) =>
+                {
+                    var source = DesignTokenCatalog.FontFamilyOptions
+                        .FirstOrDefault(o => o.DisplayName == (string)combo.SelectedItem).Source
+                        ?? DesignTokenCatalog.FontFamilyOptions[0].Source;
+                    applyPreview(source);
+                };
+                Grid.SetColumn(combo, 2);
+                row.Children.Add(combo);
+                editors.Add((token, () => DesignTokenCatalog.FontFamilyOptions
+                    .FirstOrDefault(o => o.DisplayName == (string)combo.SelectedItem).Source
+                    ?? DesignTokenCatalog.FontFamilyOptions[0].Source));
+            }
+            else
+            {
+                var box = new TextBox { Text = token.Value, Style = fieldStyle, AcceptsReturn = false, Height = 28 };
+                box.TextChanged += (_, _) => applyPreview(box.Text.Trim());
+                Grid.SetColumn(box, 2);
+                row.Children.Add(box);
+                editors.Add((token, () => box.Text.Trim()));
+            }
 
             stack.Children.Add(row);
         }
@@ -621,13 +646,13 @@ public partial class MainWindow : Window
     /// standaard" button) also copies it into DefaultValue and reapplies
     /// the app-wide live theme - see DesignToken's class comment.
     /// </summary>
-    private void SaveStylebookEdits(List<(DesignToken Token, TextBox Box)> editors, bool promoteToDefault)
+    private void SaveStylebookEdits(List<(DesignToken Token, Func<string> GetValue)> editors, bool promoteToDefault)
     {
         var invalid = new List<string>();
 
-        foreach (var (token, box) in editors)
+        foreach (var (token, getValue) in editors)
         {
-            var value = box.Text.Trim();
+            var value = getValue();
             var isValid = token.Category switch
             {
                 DesignTokenCategory.Color => TryParseColor(value, out _),

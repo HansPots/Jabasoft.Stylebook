@@ -55,6 +55,21 @@ public static class DesignTokenCatalog
     public const string FontFamilyTokenName = "AppFontFamily";
     public const string FontFamilyValue = "Segoe UI";
 
+    /// <summary>
+    /// The only two choices the Stylebook's lettertype-selector offers -
+    /// Segoe UI resolves as an installed system font, Inter as an
+    /// embedded WPF pack resource (zie Fonts/Inter.ttf en
+    /// Stylebook.Components.csproj) since it isn't installed on the OS.
+    /// A token's stored Value/DefaultValue is always this Source string
+    /// (what actually resolves via `new FontFamily(...)`), never the
+    /// DisplayName - the selector maps between the two.
+    /// </summary>
+    public static readonly (string DisplayName, string Source)[] FontFamilyOptions =
+    [
+        ("Segoe UI", "Segoe UI"),
+        ("Inter", "pack://application:,,,/Stylebook.Components;component/Fonts/#Inter"),
+    ];
+
     public static ResourceDictionary LoadTheme(Theme theme)
     {
         var uri = new Uri(

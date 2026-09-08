@@ -42,6 +42,7 @@
     <sys:String x:Key="IconAutoAwesome">&#xE65F;</sys:String>
     <sys:String x:Key="IconCheck">&#xE668;</sys:String>
     <sys:String x:Key="IconClose">&#xE5CD;</sys:String>
+    <sys:String x:Key="IconDashboard">&#xE871;</sys:String>
 
     <!-- Hoekronding-schaal, zelfde discipline als de spacing-schaal hierboven:
          een genoemde maat kiezen i.p.v. CornerRadius="6" hardcoden op elk
