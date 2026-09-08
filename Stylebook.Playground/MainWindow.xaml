@@ -8,7 +8,7 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
-        Height="1080" Width="1920"
+        Height="1140" Width="2560"
         Background="{DynamicResource BackgroundBrush}">
 
     <Window.Resources>

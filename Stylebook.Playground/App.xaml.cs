@@ -79,14 +79,54 @@ public partial class App : Application
         }
     }
 
+    /// <summary>Guards against showing more than one crash dialog at once - see the class comment on OnDispatcherUnhandledException for why that matters here.</summary>
+    private static bool _unhandledExceptionDialogPending;
+
+    /// <summary>
+    /// NOOIT hier rechtstreeks (synchroon) MessageBox.Show aanroepen: dat
+    /// pompt de dispatcher-message-loop opnieuw open TERWIJL de kapotte
+    /// operatie nog op de stack staat. Bij een herbruikbare/uitgestelde
+    /// WPF-operatie (bv. VirtualizingStackPanel's viewport-initialisatie,
+    /// die zichzelf via Dispatcher.BeginInvoke herplant) laat die geneste
+    /// message-pump de KAPOTTE operatie meteen opnieuw uitvoeren - die
+    /// gooit dezelfde fout, triggert deze handler opnieuw, toont een
+    /// NIEUWE geneste MessageBox, enzovoort: een oneindige, geneste lus
+    /// die de stack alsnog laat overlopen (dit was letterlijk de oorzaak
+    /// van een eerder gerapporteerde crash - de stacktrace toonde
+    /// tientallen geneste MessageBox.Show-aanroepen vlak vóór de
+    /// StackOverflowException). Dispatcher.BeginInvoke stelt de dialoog
+    /// uit tot een vers dispatcher-frame, ná de kapotte operatie, dus
+    /// zonder die geneste pomp. _unhandledExceptionDialogPending voorkomt
+    /// bovendien een stortvloed dialogen als hetzelfde kapotte element
+    /// bij een volgende layout-pas opnieuw faalt.
+    /// </summary>
     private static void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
-        MessageBox.Show(
-            $"Er ging iets onverwacht mis, maar de app blijft draaien:\n\n{e.Exception.Message}",
-            "Onverwachte fout",
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
         e.Handled = true;
+
+        if (_unhandledExceptionDialogPending)
+        {
+            return;
+        }
+
+        _unhandledExceptionDialogPending = true;
+        var message = e.Exception.Message;
+
+        Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() =>
+        {
+            try
+            {
+                MessageBox.Show(
+                    $"Er ging iets onverwacht mis, maar de app blijft draaien:\n\n{message}",
+                    "Onverwachte fout",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            finally
+            {
+                _unhandledExceptionDialogPending = false;
+            }
+        }));
     }
 
     protected override void OnExit(ExitEventArgs e)
