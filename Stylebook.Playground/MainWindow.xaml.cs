@@ -591,15 +591,19 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Sends the question (plus the selected component's current Xaml as
-    /// context, when there is one) to App.Ai and just shows the raw
-    /// answer - for questions/explanations. Use "Pas toe op XAML" instead
-    /// to have the AI change the component itself.
+    /// Asks the AI for the updated Xaml reflecting the question/request.
+    /// When the answer actually parses as Xaml, shows it as a proposal
+    /// next to the original (see ShowProposal) instead of applying it -
+    /// "Overnemen" is the only thing that ever saves it. When the answer
+    /// isn't Xaml (the model explained instead of producing markup, or a
+    /// genuinely informational question was asked), falls back to just
+    /// showing that text - one button handles both, no need to guess
+    /// which of two buttons a given question needs.
     /// </summary>
     private async void AskAi_Click(object sender, RoutedEventArgs e)
     {
         var question = AiQuestionBox.Text.Trim();
-        if (question.Length == 0)
+        if (question.Length == 0 || _lastSelectedComponent is not { } component)
         {
             return;
         }
@@ -608,10 +612,24 @@ public partial class MainWindow : Window
         AskAiButton.IsEnabled = false;
         AskAiButton.Content = "Bezig...";
         AiAnswerBox.Text = string.Empty;
+        ClearProposal();
 
         try
         {
-            AiAnswerBox.Text = await App.Ai.AskAsync(BuildAiSystemPrompt(), question);
+            var systemPrompt = BuildAiSystemPrompt() +
+                "\nAntwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken.";
+
+            var answer = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
+
+            if (TryParseXaml(answer, out _))
+            {
+                ShowProposal(component.Name, answer);
+                AiAnswerBox.Text = "Voorstel klaar - vergelijk het hiernaast met het origineel, en klik Overnemen om het te bewaren.";
+            }
+            else
+            {
+                AiAnswerBox.Text = answer;
+            }
         }
         catch (Exception ex)
         {
@@ -624,44 +642,17 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Same request as AskAi_Click, but instructs the model to answer with
-    /// ONLY the updated Xaml. Does NOT save it - shows it as a proposal
-    /// next to the original instead (see ShowProposal), so a bad or
-    /// simply unwanted AI answer never overwrites anything until
-    /// "Overnemen" explicitly accepts it.
-    /// </summary>
-    private async void AskAiApplyXaml_Click(object sender, RoutedEventArgs e)
+    private static bool TryParseXaml(string xaml, out FrameworkElement? element)
     {
-        var question = AiQuestionBox.Text.Trim();
-        if (question.Length == 0 || _lastSelectedComponent is not { } component)
-        {
-            return;
-        }
-
-        var originalContent = ApplyAiXamlButton.Content;
-        ApplyAiXamlButton.IsEnabled = false;
-        ApplyAiXamlButton.Content = "Bezig...";
-        AiAnswerBox.Text = string.Empty;
-
         try
         {
-            var systemPrompt = BuildAiSystemPrompt() +
-                "\nAntwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken.";
-
-            var xaml = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
-
-            ShowProposal(component.Name, xaml);
-            AiAnswerBox.Text = "Voorstel klaar - vergelijk het hiernaast met het origineel, en klik Overnemen om het te bewaren.";
+            element = XamlReader.Parse(xaml) as FrameworkElement;
+            return element is not null;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is XamlParseException or System.Xml.XmlException)
         {
-            AiAnswerBox.Text = $"Kon geen antwoord krijgen van de AI-server: {ex.Message}";
-        }
-        finally
-        {
-            ApplyAiXamlButton.IsEnabled = true;
-            ApplyAiXamlButton.Content = originalContent;
+            element = null;
+            return false;
         }
     }
 

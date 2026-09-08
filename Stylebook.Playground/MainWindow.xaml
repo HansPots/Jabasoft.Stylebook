@@ -359,17 +359,10 @@
                                          Height="60"
                                          AcceptsReturn="True" />
 
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <Button x:Name="AskAiButton"
-                                            Content="Vraag AI"
-                                            Click="AskAi_Click"
-                                            Style="{StaticResource EditorActionButtonStyle}" />
-                                    <Button x:Name="ApplyAiXamlButton"
-                                            Content="Pas toe op XAML"
-                                            Click="AskAiApplyXaml_Click"
-                                            Margin="8,8,0,0"
-                                            Style="{StaticResource EditorActionButtonStyle}" />
-                                </StackPanel>
+                                <Button x:Name="AskAiButton"
+                                        Content="Vraag AI"
+                                        Click="AskAi_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}" />
 
                                 <TextBox x:Name="AiAnswerBox"
                                          Style="{StaticResource EditorFieldStyle}"
