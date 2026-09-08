@@ -18,7 +18,7 @@ namespace Stylebook.Playground.Ai;
 /// </summary>
 public sealed class AiClient(string serverUrl, string model)
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(120) };
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };
 
     /// <summary>
     /// history is the conversation so far (role "user"/"assistant",
