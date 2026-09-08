@@ -17,6 +17,9 @@
     <Color x:Key="BorderColor">#9999CC</Color>
     <Color x:Key="TextPrimaryColor">#FF9900</Color>
     <Color x:Key="TextMutedColor">#CC6666</Color>
+    <!-- Puur wit, bewust hetzelfde in beide thema's (geen per-thema
+         variant) - voor tekst die altijd wit moet zijn, ongeacht thema. -->
+    <Color x:Key="Text01Color">#FFFFFF</Color>
     <!-- Tekst/iconen BOVENOP een AccentBrush-achtergrond (knoppen,
          actieve tab) - authentieke LCARS-look is zwarte tekst op de
          oranje vlakken, niet oranje-op-oranje (TextPrimaryColor is hier
@@ -31,6 +34,7 @@
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+    <SolidColorBrush x:Key="Text01Brush" Color="{StaticResource Text01Color}" />
     <SolidColorBrush x:Key="AccentForegroundBrush" Color="{StaticResource AccentForegroundColor}" />
 
 </ResourceDictionary>

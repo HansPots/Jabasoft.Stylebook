@@ -27,6 +27,7 @@ public static class DesignTokenCatalog
         "AccentForegroundColor",
         "TextPrimaryColor",
         "TextMutedColor",
+        "Text01Color",
     ];
 
     public static readonly (string Name, double Pixels)[] RadiusTokens =

@@ -14,6 +14,9 @@
     <Color x:Key="BorderColor">#3F3F46</Color>
     <Color x:Key="TextPrimaryColor">#D4D4D4</Color>
     <Color x:Key="TextMutedColor">#9D9D9D</Color>
+    <!-- Puur wit, bewust hetzelfde in beide thema's (geen per-thema
+         variant) - voor tekst die altijd wit moet zijn, ongeacht thema. -->
+    <Color x:Key="Text01Color">#FFFFFF</Color>
     <!-- Tekst/iconen bovenop een AccentBrush-achtergrond (knoppen, actieve
          tab) - zelfde token als Lcars.xaml, zie de uitleg daar. VS-blauw
          is donker genoeg dat wit hier het best contrasteert. -->
@@ -26,6 +29,7 @@
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+    <SolidColorBrush x:Key="Text01Brush" Color="{StaticResource Text01Color}" />
     <SolidColorBrush x:Key="AccentForegroundBrush" Color="{StaticResource AccentForegroundColor}" />
 
 </ResourceDictionary>

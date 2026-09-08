@@ -34,12 +34,13 @@
             CornerRadius="{StaticResource RadiusMedium}"
             Padding="{StaticResource SpaceMedium}">
         <StackPanel>
-            <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       FontFamily="{StaticResource AppFontFamily}"
-                       FontSize="{StaticResource FontSizeTitle}"
-                       FontWeight="SemiBold"
-                       Margin="0,0,0,8" />
+            <TextBox Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                     Style="{StaticResource SelectableTextStyle}"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     FontFamily="{StaticResource AppFontFamily}"
+                     FontSize="{StaticResource FontSizeTitle}"
+                     FontWeight="SemiBold"
+                     Margin="0,0,0,8" />
             <ContentPresenter Content="{Binding Body, RelativeSource={RelativeSource AncestorType=UserControl}}" />
         </StackPanel>
     </Border>

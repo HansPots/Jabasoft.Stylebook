@@ -25,6 +25,28 @@
         <ResourceDictionary Source="Typography.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
+    <!-- Selecteerbare/kopieerbare "labeltekst": WPF's TextBlock heeft geen
+         eigen selectie (IsTextSelectionEnabled bestaat alleen in
+         UWP/WinUI, niet in WPF - zie dotnet/wpf#307, nog open). De
+         gangbare WPF-oplossing is een alleen-lezen TextBox die eruitziet
+         als een TextBlock: geen rand, geen achtergrond, geen padding-
+         verschil, wel gewoon met de muis te selecteren en Ctrl+C te
+         kopiëren. Expliciet (geen implicit TargetType="TextBox" style,
+         want echte invoervelden gebruiken ook TextBox) - dus telkens
+         Style="{StaticResource SelectableTextStyle}" op een TextBox
+         zetten waar voorheen een TextBlock stond. -->
+    <Style x:Key="SelectableTextStyle" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="IsReadOnly" Value="True" />
+        <Setter Property="IsUndoEnabled" Value="False" />
+        <Setter Property="Cursor" Value="IBeam" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
+    </Style>
+
     <Style TargetType="ComboBoxItem">
         <Setter Property="Padding" Value="{StaticResource SpaceSmall}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />

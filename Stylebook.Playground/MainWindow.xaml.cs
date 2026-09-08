@@ -171,6 +171,12 @@ public partial class MainWindow : Window
             ClearProposal();
             _aiConversation.Clear();
         }
+        else
+        {
+            // Altijd opnieuw opbouwen (niet gecached) zodat een hand-edit op
+            // het Stylebook-tabblad hier meteen klopt zodra je terugkomt.
+            StyleReferenceBar.Content = BuildStyleReferenceBar();
+        }
 
         if (mode == BuilderMode.Stylebook)
         {
@@ -316,20 +322,21 @@ public partial class MainWindow : Window
 
         var editors = new List<(DesignToken Token, TextBox Box)>();
         var stack = new StackPanel { Margin = new Thickness(24), MaxWidth = 560 };
+        var selectableStyle = (Style)FindResource("SelectableTextStyle");
 
-        var title = new TextBlock { Text = "Stylebook", FontSize = 22, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 4) };
-        title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        var title = new TextBox { Text = "Stylebook", Style = selectableStyle, FontSize = 22, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 4) };
         stack.Children.Add(title);
 
-        var hint = new TextBlock
+        var hint = new TextBox
         {
             Text = "Pas een waarde aan - het voorbeeld ernaast volgt meteen. Kleuren als hex (#RRGGBB), overige " +
                    "als getal. 'Opslaan' bewaart je concept; 'Maak dit de standaard' laat de rest van de app het " +
                    "ook echt gebruiken.",
+            Style = selectableStyle,
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 16),
         };
-        hint.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+        hint.SetResourceReference(TextBox.ForegroundProperty, "TextMutedBrush");
         stack.Children.Add(hint);
 
         var fieldStyle = (Style)FindResource("EditorFieldStyle");
@@ -352,8 +359,7 @@ public partial class MainWindow : Window
             Grid.SetColumn(preview, 0);
             row.Children.Add(preview);
 
-            var nameLabel = new TextBlock { Text = token.Name, VerticalAlignment = VerticalAlignment.Center };
-            nameLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+            var nameLabel = new TextBox { Text = token.Name, Style = selectableStyle, VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(nameLabel, 1);
             row.Children.Add(nameLabel);
 
@@ -378,8 +384,8 @@ public partial class MainWindow : Window
 
         if (!string.IsNullOrEmpty(statusMessage))
         {
-            var status = new TextBlock { Text = statusMessage, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-            status.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+            var status = new TextBox { Text = statusMessage, Style = selectableStyle, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
+            status.SetResourceReference(TextBox.ForegroundProperty, "TextMutedBrush");
             stack.Children.Add(status);
         }
 
@@ -488,6 +494,53 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Alleen-lezen naslag van elk stijl-token (icoon/swatch + naam, geen
+    /// waarde, geen bewerken) voor de balk links van de preview in
+    /// Componentenbouwer - hergebruikt dezelfde icoon-generatie als het
+    /// Stylebook-tabblad (CreatePreview), alleen zonder de Apply-kant.
+    /// </summary>
+    private FrameworkElement BuildStyleReferenceBar()
+    {
+        var tokens = App.Db.DesignTokens.AsEnumerable()
+            .OrderBy(t => (int)t.Category)
+            .ThenBy(t => t.Name, StringComparer.Ordinal)
+            .ToList();
+
+        var stack = new StackPanel();
+        DesignTokenCategory? currentCategory = null;
+
+        foreach (var token in tokens)
+        {
+            if (token.Category != currentCategory)
+            {
+                currentCategory = token.Category;
+                stack.Children.Add(SectionLabel(CategoryLabel(token.Category)));
+            }
+
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+
+            var (preview, _) = CreatePreview(token.Category, token.Value);
+            preview.VerticalAlignment = VerticalAlignment.Center;
+            row.Children.Add(preview);
+
+            var nameLabel = new TextBox
+            {
+                Text = token.Name,
+                Style = (Style)FindResource("SelectableTextStyle"),
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 11,
+            };
+            row.Children.Add(nameLabel);
+
+            stack.Children.Add(row);
+        }
+
+        return stack;
+    }
+
     private static string CategoryLabel(DesignTokenCategory category) => category switch
     {
         DesignTokenCategory.Color => "Kleuren",
@@ -498,10 +551,10 @@ public partial class MainWindow : Window
         _ => category.ToString(),
     };
 
-    private TextBlock SectionLabel(string text)
+    private TextBox SectionLabel(string text)
     {
-        var label = new TextBlock { Text = text.ToUpperInvariant(), FontSize = 12, Margin = new Thickness(0, 20, 0, 8) };
-        label.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
+        var label = new TextBox { Text = text.ToUpperInvariant(), Style = (Style)FindResource("SelectableTextStyle"), FontSize = 12, Margin = new Thickness(0, 20, 0, 8) };
+        label.SetResourceReference(TextBox.ForegroundProperty, "TextMutedBrush");
         return label;
     }
 
@@ -615,10 +668,11 @@ public partial class MainWindow : Window
 
     private static FrameworkElement Placeholder(string text, string foregroundKey, string borderKey)
     {
-        var label = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
-        label.SetResourceReference(TextBlock.ForegroundProperty, foregroundKey);
-        label.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
-        label.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeBody");
+        var label = new TextBox { Text = text, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
+        label.SetResourceReference(FrameworkElement.StyleProperty, "SelectableTextStyle");
+        label.SetResourceReference(TextBox.ForegroundProperty, foregroundKey);
+        label.SetResourceReference(TextBox.FontFamilyProperty, "AppFontFamily");
+        label.SetResourceReference(TextBox.FontSizeProperty, "FontSizeBody");
 
         var box = new Border { Child = label, BorderThickness = new Thickness(1) };
         box.SetResourceReference(Border.BackgroundProperty, "SurfaceBrush");

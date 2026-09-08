@@ -54,7 +54,10 @@
         </Style>
         <!-- Componentenbouwer: eigenschappen-paneel + XAML-editor naast de
              geïsoleerde preview. -->
-        <Style TargetType="TextBlock" x:Key="EditorLabelStyle">
+        <!-- TargetType TextBox (niet TextBlock): een label-achtige tekst die
+             wel selecteerbaar/kopieerbaar moet zijn, zie SelectableTextStyle
+             in Stylebook.Components/Styles/Controls.xaml. -->
+        <Style TargetType="TextBox" x:Key="EditorLabelStyle" BasedOn="{StaticResource SelectableTextStyle}">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
@@ -125,11 +128,12 @@
                 BorderThickness="0,0,1,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="{StaticResource SpaceMedium}">
-                    <TextBlock Text="MENU"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="{StaticResource FontSizeSmall}"
-                               Margin="0,0,0,16" />
+                    <TextBox Text="MENU"
+                             Style="{StaticResource SelectableTextStyle}"
+                             Foreground="{DynamicResource TextMutedBrush}"
+                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="{StaticResource FontSizeSmall}"
+                             Margin="0,0,0,16" />
 
                     <!-- Stijl-wisselaar, bovenaan zodat 'ie voor de hele
                          app geldt (chrome en preview delen dezelfde
@@ -260,18 +264,33 @@
             <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180" />
                         <ColumnDefinition Width="*" MinWidth="300" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition x:Name="PropertiesColumn" Width="420" MinWidth="280" MaxWidth="700" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Kolom 0: geïsoleerde preview, en - zodra "Pas toe
+                    <!-- Style-referentiebalk: alleen-lezen overzicht van de
+                         stijl-tokens (icoon/swatch + naam, geen waarde, geen
+                         bewerken) zodat je tijdens het bouwen kunt zien wat
+                         er beschikbaar is zonder naar Stylebook te wisselen.
+                         Zie BuildStyleReferenceBar in code-behind. -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,1,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ContentControl x:Name="StyleReferenceBar" Margin="{StaticResource SpaceMedium}" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Kolom 1: geïsoleerde preview, en - zodra "Pas toe
                          op XAML" een voorstel heeft - het AI-voorstel
                          ernaast, zodat je kunt vergelijken vóór je het
                          overneemt (zie ShowProposal/AcceptProposal_Click/
                          DiscardProposal_Click). ProposedColumn begint op
                          0 breed; alleen ShowProposal zet 'm open. -->
-                    <Grid Grid.Column="0">
+                    <Grid Grid.Column="1">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
@@ -285,14 +304,16 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="ORIGINEEL" HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       FontFamily="{StaticResource AppFontFamily}"
-                                       FontSize="{StaticResource FontSizeSmall}" />
-                            <TextBlock Grid.Column="1" Text="AI-VOORSTEL" HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       FontFamily="{StaticResource AppFontFamily}"
-                                       FontSize="{StaticResource FontSizeSmall}" />
+                            <TextBox Grid.Column="0" Text="ORIGINEEL" HorizontalAlignment="Center"
+                                     Style="{StaticResource SelectableTextStyle}"
+                                     Foreground="{DynamicResource TextMutedBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="{StaticResource FontSizeSmall}" />
+                            <TextBox Grid.Column="1" Text="AI-VOORSTEL" HorizontalAlignment="Center"
+                                     Style="{StaticResource SelectableTextStyle}"
+                                     Foreground="{DynamicResource TextMutedBrush}"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     FontSize="{StaticResource FontSizeSmall}" />
                         </Grid>
 
                         <Grid Grid.Row="1">
@@ -382,7 +403,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <GridSplitter Grid.Column="1"
+                    <GridSplitter Grid.Column="2"
                                   Width="5"
                                   HorizontalAlignment="Stretch"
                                   VerticalAlignment="Stretch"
@@ -393,21 +414,22 @@
                          tot titel/inhoud-tekst), de eigenlijke XAML
                          eronder (alles, brontekst). Beide schrijven naar
                          hetzelfde Xaml-veld - wie het laatst opslaat wint. -->
-                    <Border Grid.Column="2"
+                    <Border Grid.Column="3"
                             Background="{DynamicResource SurfaceBrush}"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1,0,0,0">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="{StaticResource SpaceMedium}">
-                                <TextBlock Text="EIGENSCHAPPEN"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           FontFamily="{StaticResource AppFontFamily}"
-                                           FontSize="{StaticResource FontSizeSmall}" />
+                                <TextBox Text="EIGENSCHAPPEN"
+                                         Style="{StaticResource SelectableTextStyle}"
+                                         Foreground="{DynamicResource TextMutedBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="{StaticResource FontSizeSmall}" />
 
-                                <TextBlock Text="Titel" Style="{StaticResource EditorLabelStyle}" />
+                                <TextBox Text="Titel" Style="{StaticResource EditorLabelStyle}" />
                                 <TextBox x:Name="ComponentTitleBox" Style="{StaticResource EditorFieldStyle}" AcceptsReturn="False" />
 
-                                <TextBlock Text="Inhoud" Style="{StaticResource EditorLabelStyle}" />
+                                <TextBox Text="Inhoud" Style="{StaticResource EditorLabelStyle}" />
                                 <TextBox x:Name="ComponentBodyBox" Style="{StaticResource EditorFieldStyle}" Height="70" />
 
                                 <Button Content="Genereer en opslaan"
@@ -421,25 +443,25 @@
                                      TestContainerBorder/ApplyContainerSimulation
                                      in code-behind. Alleen een preview-hulpmiddel,
                                      wijzigt niets aan de opgeslagen XAML. -->
-                                <TextBlock Text="Testcontainer" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
+                                <TextBox Text="Testcontainer" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
 
-                                <TextBlock Text="Breedte" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
+                                <TextBox Text="Breedte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
                                 <ComboBox x:Name="WidthModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,8">
                                     <ComboBoxItem Content="Vast (eigen breedte)" IsSelected="True" />
                                     <ComboBoxItem Content="Variabel (vult container)" />
                                 </ComboBox>
 
-                                <TextBlock Text="Hoogte" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
+                                <TextBox Text="Hoogte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
                                 <ComboBox x:Name="HeightModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,8">
                                     <ComboBoxItem Content="Vast (eigen hoogte)" IsSelected="True" />
                                     <ComboBoxItem Content="Variabel (vult container)" />
                                 </ComboBox>
 
-                                <TextBlock x:Name="ContainerSizeLabel" Text="Containerformaat: 400 × 260 px" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,4" />
+                                <TextBox x:Name="ContainerSizeLabel" Text="Containerformaat: 400 × 260 px" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,4" />
                                 <Slider x:Name="ContainerWidthSlider" Minimum="120" Maximum="900" Value="400" ValueChanged="ContainerSize_Changed" />
                                 <Slider x:Name="ContainerHeightSlider" Minimum="80" Maximum="700" Value="260" ValueChanged="ContainerSize_Changed" Margin="0,4,0,0" />
 
-                                <TextBlock Text="XAML" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
+                                <TextBox Text="XAML" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
                                 <TextBox x:Name="ComponentXamlBox"
                                          Style="{StaticResource EditorFieldStyle}"
                                          FontFamily="Consolas"
@@ -448,19 +470,20 @@
                                          HorizontalScrollBarVisibility="Auto"
                                          VerticalScrollBarVisibility="Auto" />
 
-                                <TextBlock x:Name="XamlErrorText"
-                                           Foreground="Tomato"
-                                           FontFamily="{StaticResource AppFontFamily}"
-                                           FontSize="{StaticResource FontSizeSmall}"
-                                           TextWrapping="Wrap"
-                                           Margin="0,8,0,0"
-                                           Visibility="Collapsed" />
+                                <TextBox x:Name="XamlErrorText"
+                                         Style="{StaticResource SelectableTextStyle}"
+                                         Foreground="Tomato"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="{StaticResource FontSizeSmall}"
+                                         TextWrapping="Wrap"
+                                         Margin="0,8,0,0"
+                                         Visibility="Collapsed" />
 
                                 <Button Content="Opslaan en toepassen"
                                         Click="SaveXaml_Click"
                                         Style="{StaticResource EditorActionButtonStyle}" />
 
-                                <TextBlock Text="AI" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
+                                <TextBox Text="AI" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
                                 <TextBox x:Name="AiQuestionBox"
                                          Style="{StaticResource EditorFieldStyle}"
                                          Height="60"
