@@ -25,6 +25,40 @@
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
         </Style>
+        <!-- Zonder eigen Template gebruikt een ListBoxItem WPF's systeem-
+             selectiekleur (SystemColors.Highlight) voor de rand/vulling
+             van een geselecteerd item - dat oogt als een paarse rand,
+             los van ons eigen thema. Eigen Template: geen rand meer, een
+             vlak in TextMutedBrush (links afgerond met RadiusLarge, rechts
+             recht - vlak tegen de menustrook-rand aan) voor het
+             geselecteerde component, plus een hover-vlak zodat de lijst
+             ook als knoppen aanvoelt in plaats van als platte tekst. -->
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                CornerRadius="12,0,0,12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TextMutedBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!-- Naam-invoer + toevoegen-knop onderaan elke regio-sectie. -->
         <Style TargetType="TextBox" x:Key="NewComponentNameStyle">
             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
