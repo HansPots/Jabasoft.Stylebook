@@ -272,6 +272,14 @@ public partial class MainWindow : Window
             XamlErrorText.Visibility = Visibility.Collapsed;
             ClearProposal(); // a pending AI proposal belongs to whichever component was selected when it was asked for.
             _aiConversation.Clear(); // same for the conversation itself - it was about that component's XAML.
+
+            // Indices line up 1-to-1 with ContainerSizeMode (Fixed=0,
+            // Variable=1, same order as the ComboBoxItems in XAML) - see
+            // SaveTestContainerSettings for the write-back half of this.
+            WidthModeCombo.SelectedIndex = (int)selected.TestContainerWidthMode;
+            HeightModeCombo.SelectedIndex = (int)selected.TestContainerHeightMode;
+            ContainerWidthSlider.Value = selected.TestContainerWidth;
+            ContainerHeightSlider.Value = selected.TestContainerHeight;
         }
 
         RefreshPreview();
@@ -379,6 +387,24 @@ public partial class MainWindow : Window
         {
             element.VerticalAlignment = VerticalAlignment.Center;
         }
+    }
+
+    /// <summary>
+    /// Writes the Testcontainer's current Vast/Variabel + afmeting
+    /// choices onto the component being saved, so they come back the
+    /// next time it's selected instead of resetting to Vast/400×260 -
+    /// see Component_SelectionChanged for the read-back half. Called
+    /// from every place that actually commits a component to the
+    /// database (GenerateFromProperties_Click, AcceptProposal_Click) -
+    /// not from SaveXaml_Click itself, since that only opens the
+    /// voorstel-vergelijken flow and doesn't write anything yet.
+    /// </summary>
+    private void SaveTestContainerSettings(StylebookComponent component)
+    {
+        component.TestContainerWidthMode = (ContainerSizeMode)WidthModeCombo.SelectedIndex;
+        component.TestContainerHeightMode = (ContainerSizeMode)HeightModeCombo.SelectedIndex;
+        component.TestContainerWidth = ContainerWidthSlider.Value;
+        component.TestContainerHeight = ContainerHeightSlider.Value;
     }
 
     /// <summary>
@@ -837,6 +863,7 @@ public partial class MainWindow : Window
         component.BodyText = ComponentBodyBox.Text;
         component.Xaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
         ComponentXamlBox.Text = component.Xaml;
+        SaveTestContainerSettings(component);
 
         App.Db.SaveChanges();
         XamlErrorText.Visibility = Visibility.Collapsed;
@@ -1057,6 +1084,7 @@ public partial class MainWindow : Window
 
         ComponentXamlBox.Text = xaml;
         component.Xaml = xaml;
+        SaveTestContainerSettings(component);
         App.Db.SaveChanges();
 
         if (!IsXamlSafeToParse(xaml))

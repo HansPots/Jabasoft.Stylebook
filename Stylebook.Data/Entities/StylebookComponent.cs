@@ -22,6 +22,15 @@ public class StylebookComponent : IAuditableEntity
     /// </summary>
     public string? Xaml { get; set; }
 
+    /// <summary>Testcontainer (Componentenbouwer): Vast (component's own size) or Variabel (stretch to fill) - see MainWindow.xaml.cs's ApplyContainerSimulation.</summary>
+    public ContainerSizeMode TestContainerWidthMode { get; set; } = ContainerSizeMode.Fixed;
+
+    public ContainerSizeMode TestContainerHeightMode { get; set; } = ContainerSizeMode.Fixed;
+
+    public double TestContainerWidth { get; set; } = 400;
+
+    public double TestContainerHeight { get; set; } = 260;
+
     // Audit fields last, by convention - see feedback_db_audit_timestamps
     // memory (most important fields first, date/timestamp fields last).
     public DateTime CreatedAtUtc { get; set; }

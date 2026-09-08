@@ -20,7 +20,11 @@ public sealed class StylebookComponentConfiguration : IEntityTypeConfiguration<S
         builder.Property(c => c.Title).HasMaxLength(200).HasColumnOrder(3);
         builder.Property(c => c.BodyText).HasMaxLength(2000).HasColumnOrder(4);
         builder.Property(c => c.Xaml).HasColumnOrder(5);
-        builder.Property(c => c.CreatedAtUtc).IsRequired().HasColumnOrder(6);
-        builder.Property(c => c.UpdatedAtUtc).IsRequired().HasColumnOrder(7);
+        builder.Property(c => c.TestContainerWidthMode).HasConversion<string>().HasMaxLength(20).IsRequired().HasColumnOrder(6);
+        builder.Property(c => c.TestContainerHeightMode).HasConversion<string>().HasMaxLength(20).IsRequired().HasColumnOrder(7);
+        builder.Property(c => c.TestContainerWidth).IsRequired().HasColumnOrder(8);
+        builder.Property(c => c.TestContainerHeight).IsRequired().HasColumnOrder(9);
+        builder.Property(c => c.CreatedAtUtc).IsRequired().HasColumnOrder(10);
+        builder.Property(c => c.UpdatedAtUtc).IsRequired().HasColumnOrder(11);
     }
 }
