@@ -386,15 +386,22 @@
                                      TextWrapping="NoWrap"
                                      HorizontalScrollBarVisibility="Auto"
                                      VerticalScrollBarVisibility="Auto" />
+                            <!-- In tegenstelling tot OriginalXamlText WEL
+                                 bewerkbaar: je kunt het voorstel (van de AI
+                                 of van een handmatige wijziging) hier
+                                 rechtstreeks bijschaven vóór je Overnemen
+                                 klikt - de preview ernaast (en _proposedXaml
+                                 zelf) volgt live mee, zie
+                                 ProposedXamlText_TextChanged. -->
                             <TextBox x:Name="ProposedXamlText"
                                      Grid.Column="1"
                                      Style="{StaticResource EditorFieldStyle}"
                                      FontFamily="Consolas"
                                      Margin="4,0,0,0"
-                                     IsReadOnly="True"
                                      TextWrapping="NoWrap"
                                      HorizontalScrollBarVisibility="Auto"
-                                     VerticalScrollBarVisibility="Auto" />
+                                     VerticalScrollBarVisibility="Auto"
+                                     TextChanged="ProposedXamlText_TextChanged" />
                         </Grid>
 
                         <StackPanel x:Name="ProposalActionsRow" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,16,0,16">

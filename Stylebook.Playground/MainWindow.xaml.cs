@@ -272,6 +272,25 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// ProposedXamlText is bewerkbaar (in tegenstelling tot OriginalXamlText) -
+    /// elke wijziging hier wordt meteen de nieuwe _proposedXaml en de
+    /// preview ernaast volgt live mee, zodat je het voorstel kunt
+    /// bijschaven vóórdat je op Overnemen klikt. Vuurt ook (onschadelijk)
+    /// tijdens ShowProposal/ClearProposal zelf, die _proposedXaml al op de
+    /// juiste waarde (resp. null) hebben gezet vóór ze de tekst zetten.
+    /// </summary>
+    private void ProposedXamlText_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_proposedXaml is null)
+        {
+            return;
+        }
+
+        _proposedXaml = ProposedXamlText.Text;
+        RefreshProposalPreview();
+    }
+
+    /// <summary>
     /// Simuleert dat dit component in een container staat die niet per se
     /// zijn eigen (XAML-)afmeting heeft: "Variabel" wist de eigen Width/
     /// Height van dit gerenderde exemplaar en rekt 'm uit tot
