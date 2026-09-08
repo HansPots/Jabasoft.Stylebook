@@ -3,7 +3,7 @@
 
     <!--
         LCARS thema - de Star Trek-console-look (zwarte achtergrond,
-        amberoranje accent/tekst), Jabasoft's oorspronkelijke
+        amberoranje accent/tekst, lila randen), Jabasoft's oorspronkelijke
         merkidentiteit uit het oude jabasoft-theme.css. Zelfde sleutel-set
         als VisualStudio.xaml - componenten refereren nooit rechtstreeks
         naar een thema, alleen naar deze gedeelde namen via
@@ -14,10 +14,7 @@
     <Color x:Key="AccentColorDark">#CC7A00</Color>
     <Color x:Key="BackgroundColor">#000000</Color>
     <Color x:Key="SurfaceColor">#1A1A1A</Color>
-    <!-- Was lila (#9999CC) - clashte met de amberoranje rest van het
-         palet op randen zoals het navigatiemenu; donkergrijs blijft
-         onopvallend tegen de zwarte achtergrond. -->
-    <Color x:Key="BorderColor">#333333</Color>
+    <Color x:Key="BorderColor">#9999CC</Color>
     <Color x:Key="TextPrimaryColor">#FF9900</Color>
     <Color x:Key="TextMutedColor">#CC6666</Color>
     <!-- Puur wit, bewust hetzelfde in beide thema's (geen per-thema
