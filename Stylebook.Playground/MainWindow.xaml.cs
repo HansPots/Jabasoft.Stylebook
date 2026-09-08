@@ -252,6 +252,19 @@ public partial class MainWindow : Window
 
         if (selected is not null)
         {
+            if (_builderMode == BuilderMode.ComponentBuilder)
+            {
+                // Componentenbouwer edits exactly one component - clear the
+                // other regions' lists so their selection highlight can't
+                // keep showing a component that isn't the one being edited
+                // anymore (looked like "selecting a different one doesn't
+                // work" even though the editor/preview had switched fine).
+                // Not done in Paginabouwer: there, each region's own
+                // selection is what fills that Basis-slot, so all of them
+                // staying selected at once is the intended behavior.
+                DeselectOtherRegionLists(region);
+            }
+
             _lastSelectedComponent = selected;
             ComponentTitleBox.Text = selected.Title ?? string.Empty;
             ComponentBodyBox.Text = selected.BodyText ?? string.Empty;
@@ -262,6 +275,17 @@ public partial class MainWindow : Window
         }
 
         RefreshPreview();
+    }
+
+    private void DeselectOtherRegionLists(ComponentRegion keep)
+    {
+        foreach (ComponentRegion region in Enum.GetValues<ComponentRegion>())
+        {
+            if (region != keep)
+            {
+                ComponentsListBox(region).SelectedItem = null;
+            }
+        }
     }
 
     /// <summary>
