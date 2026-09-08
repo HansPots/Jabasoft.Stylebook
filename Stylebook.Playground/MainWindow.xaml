@@ -49,6 +49,33 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         </Style>
+        <!-- Paginabouwer/Componentenbouwer-tabs: RadioButtons die zich als
+             tabblad gedragen (GroupName houdt ze onderling exclusief). -->
+        <Style TargetType="RadioButton" x:Key="BuilderModeTabStyle">
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="Padding" Value="{StaticResource SpaceSmall}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd"
+                                Background="{DynamicResource SurfaceBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!--
@@ -77,13 +104,32 @@
                                FontSize="{StaticResource FontSizeSmall}"
                                Margin="0,0,0,16" />
 
+                    <!-- Paginabouwer: componenten plaatsen in Header/Menu/
+                         Inhoud/Actie/Footer, geen componentwijzigingen.
+                         Componentenbouwer: 1 component geïsoleerd bekijken
+                         en bouwen, hier mag wel toegevoegd/hernoemd/
+                         verwijderd worden. -->
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <RadioButton x:Name="PageBuilderModeButton"
+                                     Grid.Column="0"
+                                     GroupName="BuilderMode"
+                                     Content="Pagina"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="PageBuilderMode_Checked" />
+                        <RadioButton x:Name="ComponentBuilderModeButton"
+                                     Grid.Column="1"
+                                     GroupName="BuilderMode"
+                                     Content="Component"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="ComponentBuilderMode_Checked" />
+                    </Grid>
+
                     <ComboBox x:Name="ThemePicker"
                               SelectionChanged="ThemePicker_SelectionChanged"
-                              Padding="{StaticResource SpaceSmall}"
-                              Background="{DynamicResource AccentBrush}"
-                              Foreground="{DynamicResource TextPrimaryBrush}"
-                              FontFamily="{StaticResource AppFontFamily}"
-                              FontSize="{StaticResource FontSizeSmall}"
                               Margin="0,0,0,16" />
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
@@ -94,7 +140,7 @@
                     <Expander Header="Header">
                         <StackPanel>
                             <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="HeaderEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -104,7 +150,7 @@
                     <Expander Header="Menu">
                         <StackPanel>
                             <ListBox x:Name="MenuComponents" Tag="Menu" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="MenuEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -114,7 +160,7 @@
                     <Expander Header="Inhoud">
                         <StackPanel>
                             <ListBox x:Name="InhoudComponents" Tag="Inhoud" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="InhoudEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -124,7 +170,7 @@
                     <Expander Header="Actie">
                         <StackPanel>
                             <ListBox x:Name="ActieComponents" Tag="Actie" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="ActieEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -134,7 +180,7 @@
                     <Expander Header="Footer">
                         <StackPanel>
                             <ListBox x:Name="FooterComponents" Tag="Footer" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="FooterEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -144,7 +190,7 @@
                     <Expander Header="Algemeen">
                         <StackPanel>
                             <ListBox x:Name="AlgemeenComponents" Tag="Algemeen" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <DockPanel Margin="0,8,0,8">
+                            <DockPanel x:Name="AlgemeenEditRow" Margin="0,8,0,8">
                                 <Button Content="x" Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <Button Content="+" Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
                                 <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
@@ -158,7 +204,11 @@
         <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te
              staan. Eigen Resources met een eigen Themes/*.xaml - los van
              de vaste Visual Studio-look van de tool zelf (zie App.xaml) -
-             zodat alleen dit gebied van thema wisselt. -->
+             zodat alleen dit gebied van thema wisselt. Twee lagen, maar
+             maar 1 zichtbaar (zie SetBuilderMode in code-behind):
+             PageBuilderBasis toont de volledige Basis-schil met per regio
+             het geselecteerde component; ComponentBuilderCanvas toont
+             precies 1 component, geïsoleerd, zonder schil eromheen. -->
         <Grid x:Name="StylePreviewArea" Grid.Column="1">
             <Grid.Resources>
                 <ResourceDictionary>
@@ -167,40 +217,12 @@
                     </ResourceDictionary.MergedDictionaries>
                 </ResourceDictionary>
             </Grid.Resources>
-            <controls:Basis>
-                <controls:Basis.HeaderContent>
-                    <TextBlock Text="Header"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="{StaticResource FontSizeTitle}" />
-                </controls:Basis.HeaderContent>
-                <controls:Basis.MenuContent>
-                    <TextBlock Text="Menu"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="{StaticResource FontSizeBody}" />
-                </controls:Basis.MenuContent>
-                <controls:Basis.ActionContent>
-                    <TextBlock Text="Actie"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="{StaticResource FontSizeSmall}"
-                               TextWrapping="Wrap"
-                               TextAlignment="Center" />
-                </controls:Basis.ActionContent>
-                <controls:Basis.FooterContent>
-                    <TextBlock Text="Footer"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               FontFamily="{StaticResource AppFontFamily}"
-                               FontSize="{StaticResource FontSizeBody}" />
-                </controls:Basis.FooterContent>
 
-                <!-- Impliciete child content -> MainContent, zie ContentProperty op Basis -->
-                <TextBlock Text="Inhoud"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           FontFamily="{StaticResource AppFontFamily}"
-                           FontSize="{StaticResource FontSizeTitle}" />
-            </controls:Basis>
+            <controls:Basis x:Name="PageBuilderBasis" />
+
+            <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
+                <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
         </Grid>
     </Grid>
 </Window>
