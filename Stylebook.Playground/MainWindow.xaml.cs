@@ -698,6 +698,24 @@ public partial class MainWindow : Window
         return RenderXamlPreview(component.Name, component.Xaml);
     }
 
+    /// <summary>
+    /// XamlReader.Parse and WPF's layout engine (Measure/Arrange) are both
+    /// recursive, proportional to nesting depth - absurdly large or
+    /// deeply nested XAML (an accidental whole-clipboard paste, a
+    /// runaway AI response) can genuinely blow the stack.
+    /// StackOverflowException cannot be caught in .NET (not even by
+    /// App's DispatcherUnhandledException) - the whole process dies with
+    /// no error message at all. The number of '<' characters is a crude
+    /// but usable upper bound on nesting depth (depth can never exceed
+    /// total element count), set well above anything a hand-built or
+    /// AI-generated component would ever legitimately need. Used at
+    /// every XamlReader.Parse call site that touches XAML from outside
+    /// this app's own control (pasted, AI-generated, or otherwise).
+    /// </summary>
+    private const int MaxXamlElementCount = 500;
+
+    private static bool IsXamlSafeToParse(string xaml) => xaml.Count(c => c == '<') <= MaxXamlElementCount;
+
     /// <summary>Same rendering CreateComponentVisual uses, but for a raw Xaml string not (yet) attached to a saved component - see ShowProposal.</summary>
     private static FrameworkElement RenderXamlPreview(string name, string? xaml)
     {
@@ -716,6 +734,11 @@ public partial class MainWindow : Window
         if (!xaml.Contains('<'))
         {
             return Placeholder($"'{name}' is geen XAML (geen '<' gevonden)", "TextMutedBrush", "AccentBrush");
+        }
+
+        if (!IsXamlSafeToParse(xaml))
+        {
+            return Placeholder($"'{name}' is te groot/diep genest om veilig te previewen (meer dan {MaxXamlElementCount} elementen)", "TextMutedBrush", "AccentBrush");
         }
 
         try
@@ -906,6 +929,12 @@ public partial class MainWindow : Window
 
     private static bool TryParseXaml(string xaml, out FrameworkElement? element)
     {
+        if (!IsXamlSafeToParse(xaml))
+        {
+            element = null;
+            return false;
+        }
+
         try
         {
             element = XamlReader.Parse(xaml) as FrameworkElement;
@@ -959,15 +988,23 @@ public partial class MainWindow : Window
         component.Xaml = xaml;
         App.Db.SaveChanges();
 
-        try
+        if (!IsXamlSafeToParse(xaml))
         {
-            XamlReader.Parse(xaml);
-            XamlErrorText.Visibility = Visibility.Collapsed;
-        }
-        catch (Exception parseEx)
-        {
-            XamlErrorText.Text = parseEx.Message;
+            XamlErrorText.Text = $"Te groot/diep genest om te parsen (meer dan {MaxXamlElementCount} elementen) - overgeslagen.";
             XamlErrorText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            try
+            {
+                XamlReader.Parse(xaml);
+                XamlErrorText.Visibility = Visibility.Collapsed;
+            }
+            catch (Exception parseEx)
+            {
+                XamlErrorText.Text = parseEx.Message;
+                XamlErrorText.Visibility = Visibility.Visible;
+            }
         }
 
         ClearProposal();
