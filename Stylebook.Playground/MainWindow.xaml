@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
         xmlns:theming="clr-namespace:Stylebook.Components.Theming;assembly=Stylebook.Components"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
         Height="1080" Width="1920"
@@ -366,42 +367,17 @@
                                       Background="{DynamicResource BorderBrush}"
                                       Visibility="Collapsed" />
 
-                        <!-- Oude/nieuwe XAML-brontekst naast elkaar, onder de
-                             visuele vergelijking - zodat je ook de markup
-                             kunt vergelijken, niet alleen het gerenderde
-                             resultaat. Zelfde 50/50-verdeling als de
-                             ORIGINEEL/AI-VOORSTEL-preview erboven. Hoogte
-                             verstelbaar via XamlComparisonSplitter hierboven. -->
+                        <!-- Monaco's eigen diff-editor (via WebView2) i.p.v.
+                             twee losse tekstvelden: ORIGINEEL (links, nooit
+                             bewerkbaar - originalEditable: false in de HTML)
+                             en het voorstel (rechts, wel bewerkbaar) in één
+                             widget met echte regel-voor-regel diff-
+                             markering. Inhoud gaat heen en weer via de
+                             WebView2-postMessage-brug, zie
+                             InitializeMonacoDiffEditor/SetMonacoDiffContent/
+                             OnMonacoWebMessage in code-behind. -->
                         <Grid x:Name="XamlComparisonRow" Grid.Row="3" Visibility="Collapsed" Margin="0,4,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox x:Name="OriginalXamlText"
-                                     Grid.Column="0"
-                                     Style="{StaticResource EditorFieldStyle}"
-                                     FontFamily="Consolas"
-                                     Margin="0,0,4,0"
-                                     IsReadOnly="True"
-                                     TextWrapping="NoWrap"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     VerticalScrollBarVisibility="Auto" />
-                            <!-- In tegenstelling tot OriginalXamlText WEL
-                                 bewerkbaar: je kunt het voorstel (van de AI
-                                 of van een handmatige wijziging) hier
-                                 rechtstreeks bijschaven vóór je Overnemen
-                                 klikt - de preview ernaast (en _proposedXaml
-                                 zelf) volgt live mee, zie
-                                 ProposedXamlText_TextChanged. -->
-                            <TextBox x:Name="ProposedXamlText"
-                                     Grid.Column="1"
-                                     Style="{StaticResource EditorFieldStyle}"
-                                     FontFamily="Consolas"
-                                     Margin="4,0,0,0"
-                                     TextWrapping="NoWrap"
-                                     HorizontalScrollBarVisibility="Auto"
-                                     VerticalScrollBarVisibility="Auto"
-                                     TextChanged="ProposedXamlText_TextChanged" />
+                            <wv2:WebView2 x:Name="MonacoDiffView" />
                         </Grid>
 
                         <StackPanel x:Name="ProposalActionsRow" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,16,0,16">

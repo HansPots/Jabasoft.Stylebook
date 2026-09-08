@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -13,9 +14,11 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.Web.WebView2.Core;
 using Stylebook.Components.Theming;
 using Stylebook.Data;
 using Stylebook.Data.Entities;
+using Stylebook.Playground.Editor;
 using Stylebook.Playground.Theming;
 
 namespace Stylebook.Playground;
@@ -62,6 +65,9 @@ public partial class MainWindow : Window
     /// </summary>
     private readonly List<(string Role, string Content)> _aiConversation = [];
 
+    /// <summary>Completes once MonacoDiffView's page has actually loaded Monaco (CDN script loading is async) - SetMonacoDiffContent awaits this so a proposal shown before that finishes still lands correctly.</summary>
+    private readonly TaskCompletionSource _monacoReady = new();
+
     public MainWindow()
     {
         InitializeComponent();
@@ -73,6 +79,55 @@ public partial class MainWindow : Window
 
         LoadComponentsByRegion();
         PageBuilderModeButton.IsChecked = true;
+
+        _ = InitializeMonacoDiffEditor();
+    }
+
+    /// <summary>Boots the WebView2 host and points it at the Monaco diff-editor page - fire-and-forget from the constructor, awaited implicitly via _monacoReady by anything that needs the editor.</summary>
+    private async Task InitializeMonacoDiffEditor()
+    {
+        await MonacoDiffView.EnsureCoreWebView2Async();
+        MonacoDiffView.CoreWebView2.WebMessageReceived += OnMonacoWebMessage;
+        MonacoDiffView.NavigateToString(MonacoDiffHtml.Content);
+    }
+
+    /// <summary>
+    /// The two messages Monaco's page sends back: "ready" once it has
+    /// actually finished loading from the CDN (unblocks _monacoReady, so
+    /// a proposal shown before that completes still lands correctly), and
+    /// "change" every time the MODIFIED (editable) side is typed in -
+    /// keeps _proposedXaml in sync exactly like ProposedXamlText_TextChanged
+    /// did for the plain-TextBox version of this comparison.
+    /// </summary>
+    private void OnMonacoWebMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        var json = e.TryGetWebMessageAsString();
+        using var message = JsonDocument.Parse(json);
+        var type = message.RootElement.GetProperty("type").GetString();
+
+        if (type == "ready")
+        {
+            _monacoReady.TrySetResult();
+        }
+        else if (type == "change" && _proposedXaml is not null)
+        {
+            _proposedXaml = message.RootElement.GetProperty("value").GetString();
+            RefreshProposalPreview();
+        }
+    }
+
+    /// <summary>Sets both sides of Monaco's diff editor - waits for _monacoReady first, so this is safe to call even if the page hasn't finished loading yet.</summary>
+    private async void SetMonacoDiffContent(string originalXaml, string proposedXaml)
+    {
+        await _monacoReady.Task;
+        var script = $"window.setDiffContent({JsonSerializer.Serialize(originalXaml)}, {JsonSerializer.Serialize(proposedXaml)})";
+        await MonacoDiffView.CoreWebView2.ExecuteScriptAsync(script);
+    }
+
+    private async void ClearMonacoDiffContent()
+    {
+        await _monacoReady.Task;
+        await MonacoDiffView.CoreWebView2.ExecuteScriptAsync("window.clearDiffContent()");
     }
 
     /// <summary>
@@ -269,25 +324,6 @@ public partial class MainWindow : Window
         var proposedElement = RenderXamlPreview(component.Name, xaml);
         ApplyContainerSimulation(proposedElement);
         ProposedPreviewContent.Content = proposedElement;
-    }
-
-    /// <summary>
-    /// ProposedXamlText is bewerkbaar (in tegenstelling tot OriginalXamlText) -
-    /// elke wijziging hier wordt meteen de nieuwe _proposedXaml en de
-    /// preview ernaast volgt live mee, zodat je het voorstel kunt
-    /// bijschaven vóórdat je op Overnemen klikt. Vuurt ook (onschadelijk)
-    /// tijdens ShowProposal/ClearProposal zelf, die _proposedXaml al op de
-    /// juiste waarde (resp. null) hebben gezet vóór ze de tekst zetten.
-    /// </summary>
-    private void ProposedXamlText_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_proposedXaml is null)
-        {
-            return;
-        }
-
-        _proposedXaml = ProposedXamlText.Text;
-        RefreshProposalPreview();
     }
 
     /// <summary>
@@ -880,8 +916,7 @@ public partial class MainWindow : Window
         ProposedColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
         ProposalLabelsRow.Visibility = Visibility.Visible;
         ProposedTestContainerBorder.Visibility = Visibility.Visible;
-        OriginalXamlText.Text = originalXaml;
-        ProposedXamlText.Text = proposedXaml;
+        SetMonacoDiffContent(originalXaml, proposedXaml);
         XamlComparisonRow.Visibility = Visibility.Visible;
         XamlComparisonSplitter.Visibility = Visibility.Visible;
         ProposalActionsRow.Visibility = Visibility.Visible;
@@ -894,8 +929,7 @@ public partial class MainWindow : Window
         ProposalLabelsRow.Visibility = Visibility.Collapsed;
         ProposedTestContainerBorder.Visibility = Visibility.Collapsed;
         ProposedPreviewContent.Content = null;
-        OriginalXamlText.Text = string.Empty;
-        ProposedXamlText.Text = string.Empty;
+        ClearMonacoDiffContent();
         XamlComparisonRow.Visibility = Visibility.Collapsed;
         XamlComparisonSplitter.Visibility = Visibility.Collapsed;
         ProposalActionsRow.Visibility = Visibility.Collapsed;
