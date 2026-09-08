@@ -25,6 +25,24 @@
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
         </Style>
+        <!-- Naam-invoer + toevoegen-knop onderaan elke regio-sectie. -->
+        <Style TargetType="TextBox" x:Key="NewComponentNameStyle">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
+        <Style TargetType="Button" x:Key="AddComponentButtonStyle">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+        </Style>
     </Window.Resources>
 
     <!--
@@ -64,24 +82,60 @@
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
                          daarin opgeslagen componenten (Stylebook.Data) te
-                         zien. -->
+                         zien en er een nieuwe aan toe te voegen. -->
                     <Expander Header="Header">
-                        <ListBox x:Name="HeaderComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="HeaderComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                     <Expander Header="Menu">
-                        <ListBox x:Name="MenuComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="MenuComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                     <Expander Header="Inhoud">
-                        <ListBox x:Name="InhoudComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="InhoudComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                     <Expander Header="Actie">
-                        <ListBox x:Name="ActieComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="ActieComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                     <Expander Header="Footer">
-                        <ListBox x:Name="FooterComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="FooterComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                     <Expander Header="Algemeen">
-                        <ListBox x:Name="AlgemeenComponents" DisplayMemberPath="Name" />
+                        <StackPanel>
+                            <ListBox x:Name="AlgemeenComponents" DisplayMemberPath="Name" />
+                            <DockPanel Margin="0,8,0,8">
+                                <Button Content="+" Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                            </DockPanel>
+                        </StackPanel>
                     </Expander>
                 </StackPanel>
             </ScrollViewer>

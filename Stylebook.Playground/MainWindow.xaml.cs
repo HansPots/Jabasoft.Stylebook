@@ -58,4 +58,52 @@ public partial class MainWindow : Window
             ThemeManager.Apply(option.Value, StylePreviewArea.Resources);
         }
     }
+
+    private void AddComponent_Click(object sender, RoutedEventArgs e)
+    {
+        var region = Enum.Parse<ComponentRegion>((string)((Button)sender).Tag);
+        AddComponent(region, NewComponentNameBox(region));
+    }
+
+    private void NewComponentName_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter)
+        {
+            return;
+        }
+
+        var textBox = (TextBox)sender;
+        AddComponent(Enum.Parse<ComponentRegion>((string)textBox.Tag), textBox);
+    }
+
+    private void AddComponent(ComponentRegion region, TextBox nameBox)
+    {
+        var name = nameBox.Text.Trim();
+        if (name.Length == 0)
+        {
+            return;
+        }
+
+        App.Db.Components.Add(new StylebookComponent
+        {
+            Name = name,
+            Region = region,
+            CreatedAtUtc = DateTime.UtcNow,
+        });
+        App.Db.SaveChanges();
+
+        nameBox.Clear();
+        LoadComponentsByRegion();
+    }
+
+    private TextBox NewComponentNameBox(ComponentRegion region) => region switch
+    {
+        ComponentRegion.Header => HeaderNewComponentName,
+        ComponentRegion.Menu => MenuNewComponentName,
+        ComponentRegion.Inhoud => InhoudNewComponentName,
+        ComponentRegion.Actie => ActieNewComponentName,
+        ComponentRegion.Footer => FooterNewComponentName,
+        ComponentRegion.Algemeen => AlgemeenNewComponentName,
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
+    };
 }
