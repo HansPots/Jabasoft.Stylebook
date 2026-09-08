@@ -706,6 +706,18 @@ public partial class MainWindow : Window
             return Placeholder(name, "TextPrimaryBrush", "BorderBrush");
         }
 
+        // Iets zonder een enkele '<' kan sowieso geen XML zijn (bv. een
+        // los geplakt tokennaam als "TextPrimaryColor") - dat rechtstreeks
+        // aan XamlReader.Parse voeren gooit dezelfde uitzondering
+        // meermaals (elke keystroke/paste-deelbewerking triggert een
+        // nieuwe poging), wat bij "break on exceptions" in de debugger als
+        // een stortvloed aan foutmeldingen voelt. Dit voorkomt die worp
+        // helemaal voor het overduidelijke geval.
+        if (!xaml.Contains('<'))
+        {
+            return Placeholder($"'{name}' is geen XAML (geen '<' gevonden)", "TextMutedBrush", "AccentBrush");
+        }
+
         try
         {
             if (XamlReader.Parse(xaml) is FrameworkElement parsed)

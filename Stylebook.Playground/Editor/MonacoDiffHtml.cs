@@ -46,6 +46,8 @@ public static class MonacoDiffHtml
                 window.chrome.webview.postMessage(JSON.stringify({ type: "ready" }));
             });
 
+            var changeDebounceTimer = null;
+
             window.setDiffContent = function (originalText, modifiedText) {
                 if (originalModel) { originalModel.dispose(); }
                 if (modifiedModel) { modifiedModel.dispose(); }
@@ -53,7 +55,15 @@ public static class MonacoDiffHtml
                 modifiedModel = monaco.editor.createModel(modifiedText, "xml");
                 diffEditor.setModel({ original: originalModel, modified: modifiedModel });
                 modifiedModel.onDidChangeContent(function () {
-                    window.chrome.webview.postMessage(JSON.stringify({ type: "change", value: modifiedModel.getValue() }));
+                    // Eén paste-over-selectie (of gewoon vlot typen) kan
+                    // meerdere keren achter elkaar vuren - zonder debounce
+                    // stuurt elke tussenstap een eigen bericht, en elke
+                    // tussenstap kan ook nog eens ongeldige XAML zijn.
+                    // Alleen het EINDRESULTAAT (150ms rust) doorsturen.
+                    if (changeDebounceTimer) { clearTimeout(changeDebounceTimer); }
+                    changeDebounceTimer = setTimeout(function () {
+                        window.chrome.webview.postMessage(JSON.stringify({ type: "change", value: modifiedModel.getValue() }));
+                    }, 150);
                 });
             };
 
