@@ -31,7 +31,7 @@
     <Border Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="6"
+            CornerRadius="{StaticResource RadiusMedium}"
             Padding="{StaticResource SpaceMedium}">
         <StackPanel>
             <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"

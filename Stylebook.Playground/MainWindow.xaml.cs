@@ -29,6 +29,9 @@ public partial class MainWindow : Window
 
         /// <summary>See and build exactly one component in isolation - editing (add/rename/delete) lives here.</summary>
         ComponentBuilder,
+
+        /// <summary>Reference-only: the fixed palette (colors/radii/typography) for both themes, side by side.</summary>
+        Stylebook,
     }
 
     private sealed record ThemeOption(Theme Value, string Label);
@@ -80,10 +83,12 @@ public partial class MainWindow : Window
 
     private void ComponentBuilderMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.ComponentBuilder);
 
+    private void StylebookMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Stylebook);
+
     /// <summary>
     /// Gates component editing to the Componentenbouwer tab: the
-    /// Paginabouwer only places already-built components, it can never
-    /// add/rename/delete one.
+    /// Paginabouwer and Stylebook tabs only ever look, they can never
+    /// add/rename/delete a component.
     /// </summary>
     private void SetBuilderMode(BuilderMode mode)
     {
@@ -99,8 +104,16 @@ public partial class MainWindow : Window
 
         PageBuilderBasis.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
+        StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
 
-        RefreshPreview();
+        if (mode == BuilderMode.Stylebook)
+        {
+            StylebookContent.Content ??= BuildStylebookPanel();
+        }
+        else
+        {
+            RefreshPreview();
+        }
     }
 
     private void Component_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -142,6 +155,167 @@ public partial class MainWindow : Window
         {
             ComponentBuilderContent.Content = CreateComponentVisual(_lastSelectedComponent);
         }
+    }
+
+    /// <summary>
+    /// Built once (cached on StylebookContent.Content, see SetBuilderMode)
+    /// from Stylebook.Components.Theming.DesignTokenCatalog - both themes'
+    /// actual color VALUES side by side, not {DynamicResource ...}, since
+    /// the whole point is comparing them regardless of which one is
+    /// active in the ThemePicker.
+    /// </summary>
+    private static FrameworkElement BuildStylebookPanel()
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+
+        var lcarsColumn = BuildThemeColumn(Theme.Lcars);
+        Grid.SetColumn(lcarsColumn, 0);
+        var vsColumn = BuildThemeColumn(Theme.VisualStudio);
+        Grid.SetColumn(vsColumn, 1);
+
+        grid.Children.Add(lcarsColumn);
+        grid.Children.Add(vsColumn);
+        return grid;
+    }
+
+    private static FrameworkElement BuildThemeColumn(Theme theme)
+    {
+        var colors = DesignTokenCatalog.GetColors(theme);
+        Color ColorOf(string name) => colors.First(c => c.Name == name).Value;
+
+        var background = ColorOf("BackgroundColor");
+        var surface = ColorOf("SurfaceColor");
+        var border = ColorOf("BorderColor");
+        var accent = ColorOf("AccentColor");
+        var textPrimary = ColorOf("TextPrimaryColor");
+        var textMuted = ColorOf("TextMutedColor");
+
+        var stack = new StackPanel { Margin = new Thickness(24) };
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = theme.ToString(),
+            FontSize = 22,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(textPrimary),
+            Margin = new Thickness(0, 0, 0, 16),
+        });
+
+        stack.Children.Add(SectionLabel("Kleuren", textMuted));
+        foreach (var (name, value) in colors)
+        {
+            stack.Children.Add(ColorSwatchRow(name, value, textPrimary, surface, border));
+        }
+
+        stack.Children.Add(SectionLabel("Hoekronding", textMuted));
+        foreach (var (name, px) in DesignTokenCatalog.RadiusTokens)
+        {
+            stack.Children.Add(RadiusSample(name, px, surface, border, textPrimary));
+        }
+
+        stack.Children.Add(SectionLabel("Afstand", textMuted));
+        foreach (var (name, px) in DesignTokenCatalog.SpacingTokens)
+        {
+            stack.Children.Add(SpacingSample(name, px, accent, textPrimary));
+        }
+
+        stack.Children.Add(SectionLabel("Tekstgrootte", textMuted));
+        foreach (var (name, px) in DesignTokenCatalog.FontSizeTokens)
+        {
+            stack.Children.Add(new TextBlock
+            {
+                Text = $"{name} ({px}px) - Aa Bb Cc",
+                FontSize = px,
+                FontFamily = new FontFamily(DesignTokenCatalog.FontFamilyValue),
+                Foreground = new SolidColorBrush(textPrimary),
+                Margin = new Thickness(0, 4, 0, 0),
+            });
+        }
+
+        return new Border
+        {
+            Background = new SolidColorBrush(background),
+            BorderBrush = new SolidColorBrush(border),
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto },
+        };
+    }
+
+    private static TextBlock SectionLabel(string text, Color mutedColor) => new()
+    {
+        Text = text.ToUpperInvariant(),
+        Foreground = new SolidColorBrush(mutedColor),
+        FontSize = 12,
+        Margin = new Thickness(0, 20, 0, 8),
+    };
+
+    private static FrameworkElement ColorSwatchRow(string name, Color value, Color textColor, Color surfaceColor, Color borderColor)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        row.Children.Add(new Border
+        {
+            Width = 28,
+            Height = 28,
+            Background = new SolidColorBrush(value),
+            BorderBrush = new SolidColorBrush(borderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Margin = new Thickness(0, 0, 8, 0),
+        });
+        row.Children.Add(new TextBlock
+        {
+            Text = $"{name}  {value}",
+            Foreground = new SolidColorBrush(textColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 12,
+        });
+        return row;
+    }
+
+    private static FrameworkElement RadiusSample(string name, double px, Color surfaceColor, Color borderColor, Color textColor)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        row.Children.Add(new Border
+        {
+            Width = 48,
+            Height = 28,
+            Background = new SolidColorBrush(surfaceColor),
+            BorderBrush = new SolidColorBrush(borderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(px),
+            Margin = new Thickness(0, 0, 8, 0),
+        });
+        row.Children.Add(new TextBlock
+        {
+            Text = $"{name} ({px}px)",
+            Foreground = new SolidColorBrush(textColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12,
+        });
+        return row;
+    }
+
+    private static FrameworkElement SpacingSample(string name, double px, Color accentColor, Color textColor)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        row.Children.Add(new Border
+        {
+            Width = px,
+            Height = 14,
+            Background = new SolidColorBrush(accentColor),
+            Margin = new Thickness(0, 0, 8, 0),
+        });
+        row.Children.Add(new TextBlock
+        {
+            Text = $"{name} ({px}px)",
+            Foreground = new SolidColorBrush(textColor),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 12,
+        });
+        return row;
     }
 
     /// <summary>
@@ -253,6 +427,27 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Base instruction for every AI call: the design-token catalog for
+    /// whichever theme is currently selected (see DesignTokenCatalog -
+    /// this is the "kies daaruit" palette, not a suggestion the model can
+    /// ignore) plus the selected component's current Xaml, when there is
+    /// one, so a request like "maak 'm ronder" has something to work from.
+    /// </summary>
+    private string BuildAiSystemPrompt()
+    {
+        var theme = (ThemePicker.SelectedItem as ThemeOption)?.Value ?? Theme.Lcars;
+        var prompt = "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
+                     DesignTokenCatalog.DescribeForAi(theme);
+
+        if (_lastSelectedComponent is { Xaml.Length: > 0 } component)
+        {
+            prompt += $"\nDit is de huidige XAML van '{component.Name}':\n{component.Xaml}";
+        }
+
+        return prompt;
+    }
+
+    /// <summary>
     /// Sends the question (plus the selected component's current Xaml as
     /// context, when there is one) to App.Ai and just shows the raw
     /// answer - for questions/explanations. Use "Pas toe op XAML" instead
@@ -273,12 +468,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var systemPrompt = _lastSelectedComponent is { Xaml.Length: > 0 } component
-                ? "Je bent een assistent die helpt bij het bouwen van WPF-XAML-componenten voor Stylebook. " +
-                  $"Dit is de huidige XAML van het geselecteerde component ('{component.Name}'):\n{component.Xaml}"
-                : "Je bent een assistent die helpt bij het bouwen van WPF-XAML-componenten voor Stylebook.";
-
-            AiAnswerBox.Text = await App.Ai.AskAsync(systemPrompt, question);
+            AiAnswerBox.Text = await App.Ai.AskAsync(BuildAiSystemPrompt(), question);
         }
         catch (Exception ex)
         {
@@ -313,10 +503,8 @@ public partial class MainWindow : Window
 
         try
         {
-            var systemPrompt =
-                "Je bent een assistent die WPF-XAML-componenten voor Stylebook aanpast. " +
-                "Antwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken. " +
-                $"Dit is de huidige XAML van '{component.Name}':\n{component.Xaml}";
+            var systemPrompt = BuildAiSystemPrompt() +
+                "\nAntwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken.";
 
             var xaml = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
 

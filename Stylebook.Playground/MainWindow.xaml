@@ -134,9 +134,12 @@
                          Inhoud/Actie/Footer, geen componentwijzigingen.
                          Componentenbouwer: 1 component geïsoleerd bekijken
                          en bouwen, hier mag wel toegevoegd/hernoemd/
-                         verwijderd worden. -->
+                         verwijderd worden. Stylebook: het vaste palet
+                         (kleuren/rondingen/lettertype) voor beide thema's
+                         naast elkaar, puur ter referentie. -->
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
@@ -152,6 +155,12 @@
                                      Content="Component"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="ComponentBuilderMode_Checked" />
+                        <RadioButton x:Name="StylebookModeButton"
+                                     Grid.Column="2"
+                                     GroupName="BuilderMode"
+                                     Content="Stylebook"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="StylebookMode_Checked" />
                     </Grid>
 
                     <ComboBox x:Name="ThemePicker"
@@ -329,6 +338,13 @@
                     </Border>
                 </Grid>
             </Border>
+
+            <!-- Stylebook: het vaste palet, beide thema's naast elkaar, puur
+                 referentie - opgebouwd in code-behind (BuildStylebookPanel)
+                 uit Stylebook.Components.Theming.DesignTokenCatalog, zodat
+                 dit nooit uit de pas loopt met wat de thema-bestanden echt
+                 bevatten. -->
+            <ContentControl x:Name="StylebookContent" Visibility="Collapsed" />
         </Grid>
     </Grid>
 </Window>

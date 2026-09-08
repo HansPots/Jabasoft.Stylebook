@@ -22,4 +22,11 @@
     <sys:Double x:Key="FontSizeBody">14</sys:Double>
     <sys:Double x:Key="FontSizeTitle">18</sys:Double>
 
+    <!-- Hoekronding-schaal, zelfde discipline als de spacing-schaal hierboven:
+         een genoemde maat kiezen i.p.v. CornerRadius="6" hardcoden op elk
+         component apart. -->
+    <CornerRadius x:Key="RadiusSmall">3</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">12</CornerRadius>
+
 </ResourceDictionary>
