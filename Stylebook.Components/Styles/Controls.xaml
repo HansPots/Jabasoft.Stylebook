@@ -36,8 +36,13 @@
                         <ContentPresenter />
                     </Border>
                     <ControlTemplate.Triggers>
+                        <!-- Foreground mee-switchen: het item wordt hier
+                             AccentBrush-gekleurd, en TextPrimaryBrush kan
+                             in een thema (LCARS) toevallig gelijk zijn aan
+                             AccentBrush - zonder deze regel oranje-op-oranje. -->
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -46,8 +51,12 @@
     </Style>
 
     <Style TargetType="ComboBox">
+        <!-- Background is AccentBrush (zie de class-comment hierboven),
+             dus Foreground moet AccentForegroundBrush zijn - TextPrimaryBrush
+             kan in een thema (LCARS) toevallig gelijk zijn aan AccentBrush,
+             wat oranje-op-oranje tekst zou geven. -->
         <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
@@ -71,7 +80,7 @@
                                             </Grid.ColumnDefinitions>
                                             <Path Grid.Column="1"
                                                   Data="M0,0 L4,4 L8,0 Z"
-                                                  Fill="{DynamicResource TextPrimaryBrush}"
+                                                  Fill="{DynamicResource AccentForegroundBrush}"
                                                   HorizontalAlignment="Center"
                                                   VerticalAlignment="Center" />
                                         </Grid>

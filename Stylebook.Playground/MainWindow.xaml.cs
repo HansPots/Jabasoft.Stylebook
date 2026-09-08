@@ -253,10 +253,10 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Quick-and-dirty: sends the question (plus the selected component's
-    /// current Xaml as context, when there is one) to App.Ai. Just shows
-    /// the raw answer - no "apply this to the XAML box" wiring yet, that's
-    /// a reasonable next step once this proves useful.
+    /// Sends the question (plus the selected component's current Xaml as
+    /// context, when there is one) to App.Ai and just shows the raw
+    /// answer - for questions/explanations. Use "Pas toe op XAML" instead
+    /// to have the AI change the component itself.
     /// </summary>
     private async void AskAi_Click(object sender, RoutedEventArgs e)
     {
@@ -289,6 +289,79 @@ public partial class MainWindow : Window
             AskAiButton.IsEnabled = true;
             AskAiButton.Content = originalContent;
         }
+    }
+
+    /// <summary>
+    /// Same request as AskAi_Click, but instructs the model to answer with
+    /// ONLY the updated Xaml and applies that answer straight to
+    /// ComponentXamlBox - saved and re-rendered exactly like a manual
+    /// "Opslaan en toepassen" would, errors included, so a bad AI answer
+    /// is visible and recoverable rather than silently discarded.
+    /// </summary>
+    private async void AskAiApplyXaml_Click(object sender, RoutedEventArgs e)
+    {
+        var question = AiQuestionBox.Text.Trim();
+        if (question.Length == 0 || _lastSelectedComponent is not { } component)
+        {
+            return;
+        }
+
+        var originalContent = ApplyAiXamlButton.Content;
+        ApplyAiXamlButton.IsEnabled = false;
+        ApplyAiXamlButton.Content = "Bezig...";
+        AiAnswerBox.Text = string.Empty;
+
+        try
+        {
+            var systemPrompt =
+                "Je bent een assistent die WPF-XAML-componenten voor Stylebook aanpast. " +
+                "Antwoord ALLEEN met de volledige, aangepaste XAML - geen uitleg, geen markdown-codeblokken. " +
+                $"Dit is de huidige XAML van '{component.Name}':\n{component.Xaml}";
+
+            var xaml = StripMarkdownFence(await App.Ai.AskAsync(systemPrompt, question));
+
+            ComponentXamlBox.Text = xaml;
+            component.Xaml = xaml;
+            App.Db.SaveChanges();
+
+            try
+            {
+                XamlReader.Parse(xaml);
+                XamlErrorText.Visibility = Visibility.Collapsed;
+                AiAnswerBox.Text = "XAML aangepast en opgeslagen.";
+            }
+            catch (Exception parseEx)
+            {
+                XamlErrorText.Text = parseEx.Message;
+                XamlErrorText.Visibility = Visibility.Visible;
+                AiAnswerBox.Text = "XAML aangepast en opgeslagen, maar bevat een fout - zie de melding bij de preview.";
+            }
+
+            RefreshPreview();
+        }
+        catch (Exception ex)
+        {
+            AiAnswerBox.Text = $"Kon geen antwoord krijgen van de AI-server: {ex.Message}";
+        }
+        finally
+        {
+            ApplyAiXamlButton.IsEnabled = true;
+            ApplyAiXamlButton.Content = originalContent;
+        }
+    }
+
+    /// <summary>Models tend to wrap XAML in ```xml fences even when told not to - strip it if present.</summary>
+    private static string StripMarkdownFence(string text)
+    {
+        var trimmed = text.Trim();
+        if (!trimmed.StartsWith("```", StringComparison.Ordinal))
+        {
+            return trimmed;
+        }
+
+        var afterOpeningFence = trimmed[(trimmed.IndexOf('\n') + 1)..];
+        var closingFenceIndex = afterOpeningFence.LastIndexOf("```", StringComparison.Ordinal);
+        return (closingFenceIndex >= 0 ? afterOpeningFence[..closingFenceIndex] : afterOpeningFence).Trim();
     }
 
     private static string GenerateCardXaml(string title, string bodyText)

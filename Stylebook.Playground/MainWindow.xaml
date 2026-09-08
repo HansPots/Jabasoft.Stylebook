@@ -35,8 +35,11 @@
             <Setter Property="Padding" Value="4" />
         </Style>
         <Style TargetType="Button" x:Key="AddComponentButtonStyle">
+            <!-- Foreground is AccentForegroundBrush, niet TextPrimaryBrush:
+                 in LCARS zijn AccentColor en TextPrimaryColor toevallig
+                 gelijk, wat oranje-op-oranje tekst zou geven. -->
             <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
             <Setter Property="BorderThickness" Value="0" />
@@ -92,7 +95,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -304,10 +307,17 @@
                                          Height="60"
                                          AcceptsReturn="True" />
 
-                                <Button x:Name="AskAiButton"
-                                        Content="Vraag AI"
-                                        Click="AskAi_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button x:Name="AskAiButton"
+                                            Content="Vraag AI"
+                                            Click="AskAi_Click"
+                                            Style="{StaticResource EditorActionButtonStyle}" />
+                                    <Button x:Name="ApplyAiXamlButton"
+                                            Content="Pas toe op XAML"
+                                            Click="AskAiApplyXaml_Click"
+                                            Margin="8,8,0,0"
+                                            Style="{StaticResource EditorActionButtonStyle}" />
+                                </StackPanel>
 
                                 <TextBox x:Name="AiAnswerBox"
                                          Style="{StaticResource EditorFieldStyle}"

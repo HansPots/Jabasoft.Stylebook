@@ -14,6 +14,10 @@
     <Color x:Key="BorderColor">#3F3F46</Color>
     <Color x:Key="TextPrimaryColor">#D4D4D4</Color>
     <Color x:Key="TextMutedColor">#9D9D9D</Color>
+    <!-- Tekst/iconen bovenop een AccentBrush-achtergrond (knoppen, actieve
+         tab) - zelfde token als Lcars.xaml, zie de uitleg daar. VS-blauw
+         is donker genoeg dat wit hier het best contrasteert. -->
+    <Color x:Key="AccentForegroundColor">#FFFFFF</Color>
 
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
     <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentColorDark}" />
@@ -22,5 +26,6 @@
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+    <SolidColorBrush x:Key="AccentForegroundBrush" Color="{StaticResource AccentForegroundColor}" />
 
 </ResourceDictionary>
