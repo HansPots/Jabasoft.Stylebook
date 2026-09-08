@@ -223,6 +223,7 @@ public partial class MainWindow : Window
         }
 
         RefreshPreview();
+        RefreshProposalPreview();
     }
 
     private void ContainerSize_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -234,7 +235,22 @@ public partial class MainWindow : Window
 
         TestContainerBorder.Width = ContainerWidthSlider.Value;
         TestContainerBorder.Height = ContainerHeightSlider.Value;
+        ProposedTestContainerBorder.Width = ContainerWidthSlider.Value;
+        ProposedTestContainerBorder.Height = ContainerHeightSlider.Value;
         ContainerSizeLabel.Text = $"Containerformaat: {ContainerWidthSlider.Value:0} × {ContainerHeightSlider.Value:0} px";
+    }
+
+    /// <summary>Re-renders the pending AI proposal (if there is one) so it picks up a Vast/Variabel or container-size change made while it's on screen - ORIGINEEL and AI-VOORSTEL always compare at the same settings.</summary>
+    private void RefreshProposalPreview()
+    {
+        if (_proposedXaml is not { } xaml || _lastSelectedComponent is not { } component)
+        {
+            return;
+        }
+
+        var proposedElement = RenderXamlPreview(component.Name, xaml);
+        ApplyContainerSimulation(proposedElement);
+        ProposedPreviewContent.Content = proposedElement;
     }
 
     /// <summary>
@@ -766,17 +782,20 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Renders the AI's proposed Xaml next to the current component, shows both versions' source underneath, and reveals Overnemen/Negeren.</summary>
+    /// <summary>Renders the AI's proposed Xaml next to the current component (same Vast/Variabel + testcontainer-afmeting as ORIGINEEL, zie ApplyContainerSimulation), shows both versions' source underneath, and reveals Overnemen/Negeren.</summary>
     private void ShowProposal(string componentName, string originalXaml, string proposedXaml)
     {
         _proposedXaml = proposedXaml;
-        ProposedPreviewContent.Content = RenderXamlPreview(componentName, proposedXaml);
+        var proposedElement = RenderXamlPreview(componentName, proposedXaml);
+        ApplyContainerSimulation(proposedElement);
+        ProposedPreviewContent.Content = proposedElement;
         ProposedColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
         ProposalLabelsRow.Visibility = Visibility.Visible;
-        ProposedPreviewContent.Visibility = Visibility.Visible;
+        ProposedTestContainerBorder.Visibility = Visibility.Visible;
         OriginalXamlText.Text = originalXaml;
         ProposedXamlText.Text = proposedXaml;
         XamlComparisonRow.Visibility = Visibility.Visible;
+        XamlComparisonSplitter.Visibility = Visibility.Visible;
         ProposalActionsRow.Visibility = Visibility.Visible;
     }
 
@@ -785,11 +804,12 @@ public partial class MainWindow : Window
         _proposedXaml = null;
         ProposedColumnDefinition.Width = new GridLength(0);
         ProposalLabelsRow.Visibility = Visibility.Collapsed;
-        ProposedPreviewContent.Visibility = Visibility.Collapsed;
+        ProposedTestContainerBorder.Visibility = Visibility.Collapsed;
         ProposedPreviewContent.Content = null;
         OriginalXamlText.Text = string.Empty;
         ProposedXamlText.Text = string.Empty;
         XamlComparisonRow.Visibility = Visibility.Collapsed;
+        XamlComparisonSplitter.Visibility = Visibility.Collapsed;
         ProposalActionsRow.Visibility = Visibility.Collapsed;
     }
 
