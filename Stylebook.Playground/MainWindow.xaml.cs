@@ -684,28 +684,16 @@ public partial class MainWindow : Window
     /// Base instruction for every AI call: the Stylebook's current,
     /// possibly hand-edited token values (see DbThemeBuilder.DescribeForAi
     /// - this is the "kies daaruit" palette, not a suggestion the model
-    /// can ignore) plus the selected component's current Xaml, when there
-    /// is one, so a request like "maak 'm ronder" has something to work
-    /// from.
+    /// can ignore). Deliberately does NOT embed "the current XAML" here -
+    /// that goes into the outgoing user question instead (see
+    /// AskAi_Click), explicitly tied to "wat nu op het scherm staat" for
+    /// this specific turn, rather than living in the system prompt where
+    /// it'd compete with what the conversation history already shows.
     /// </summary>
-    /// <summary>
-    /// currentXaml is what the AI should treat as "the current XAML" -
-    /// the caller passes _proposedXaml when there's a pending, unaccepted
-    /// proposal (so a follow-up like "maak 'm nog scherper" builds on
-    /// what the AI just suggested, not on the untouched saved version)
-    /// and falls back to the saved component.Xaml otherwise.
-    /// </summary>
-    private string BuildAiSystemPrompt(string? currentXaml)
+    private string BuildAiSystemPrompt()
     {
-        var prompt = "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
-                     DbThemeBuilder.DescribeForAi(App.Db);
-
-        if (_lastSelectedComponent is { } component && !string.IsNullOrEmpty(currentXaml))
-        {
-            prompt += $"\nDit is de huidige XAML van '{component.Name}':\n{currentXaml}";
-        }
-
-        return prompt;
+        return "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
+               DbThemeBuilder.DescribeForAi(App.Db);
     }
 
     /// <summary>
@@ -729,10 +717,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        // "Huidige XAML" voor de AI is het nog-niet-geaccepteerde voorstel
-        // als er een is (zodat een vervolgvraag daarop doorbouwt), anders
-        // de opgeslagen versie - vastleggen VOORDAT ClearProposal() zo
-        // dadelijk _proposedXaml wist.
+        // Het antwoord (XAML) zoals nu op het scherm staat gaat expliciet
+        // MEE met de vraag zelf, niet (alleen) in de systeemprompt - het
+        // nog-niet-geaccepteerde voorstel als er een is (zodat een
+        // vervolgvraag daarop doorbouwt), anders de opgeslagen versie.
+        // Vastleggen VOORDAT ClearProposal() zo dadelijk _proposedXaml wist.
         var currentXaml = _proposedXaml ?? component.Xaml ?? string.Empty;
 
         var originalContent = AskAiButton.Content;
@@ -743,16 +732,24 @@ public partial class MainWindow : Window
 
         try
         {
-            var systemPrompt = BuildAiSystemPrompt(currentXaml) +
+            var systemPrompt = BuildAiSystemPrompt() +
                 "\nAntwoord in exact dit formaat, zonder markdown-codeblokken:\n" +
                 "SAMENVATTING: <een korte zin die samenvat wat je hebt aangepast>\n" +
                 "XAML:\n<de volledige, aangepaste XAML>";
 
-            var history = new List<(string Role, string Content)>(_aiConversation) { ("user", question) };
+            var questionWithScreenXaml = currentXaml.Length > 0
+                ? $"Dit is de huidige XAML van '{component.Name}', zoals nu op het scherm staat:\n{currentXaml}\n\nVraag: {question}"
+                : question;
+
+            var history = new List<(string Role, string Content)>(_aiConversation) { ("user", questionWithScreenXaml) };
             var raw = await App.Ai.AskAsync(systemPrompt, history);
             var hasSummaryFormat = TryExtractSummaryAndXaml(raw, out var summary, out var xamlPart);
             var xaml = StripMarkdownFence(hasSummaryFormat ? xamlPart : raw);
 
+            // In de bewaarde geschiedenis blijft de vraag kort (zonder de
+            // meegestuurde XAML) - die stond toch al in het vorige
+            // assistant-antwoord, dus dat zou de geschiedenis nodeloos
+            // opblazen bij elke vervolgvraag.
             _aiConversation.Add(("user", question));
             _aiConversation.Add(("assistant", raw));
 
