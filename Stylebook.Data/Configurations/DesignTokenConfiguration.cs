@@ -18,7 +18,8 @@ public sealed class DesignTokenConfiguration : IEntityTypeConfiguration<DesignTo
         builder.Property(t => t.Name).IsRequired().HasMaxLength(100).HasColumnOrder(1);
         builder.Property(t => t.Category).HasConversion<string>().HasMaxLength(50).IsRequired().HasColumnOrder(2);
         builder.Property(t => t.Value).IsRequired().HasMaxLength(200).HasColumnOrder(3);
-        builder.Property(t => t.CreatedAtUtc).IsRequired().HasColumnOrder(4);
-        builder.Property(t => t.UpdatedAtUtc).IsRequired().HasColumnOrder(5);
+        builder.Property(t => t.DefaultValue).HasMaxLength(200).HasColumnOrder(4);
+        builder.Property(t => t.CreatedAtUtc).IsRequired().HasColumnOrder(5);
+        builder.Property(t => t.UpdatedAtUtc).IsRequired().HasColumnOrder(6);
     }
 }

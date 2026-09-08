@@ -14,8 +14,9 @@ namespace Stylebook.Playground.Theming;
 /// what makes hand-edits on the Stylebook page actually take effect.
 /// ApplyPreset loads a known theme's values INTO that same editable
 /// table (upsert by Name) rather than switching to a separate live
-/// scope - "wisselen van stijl" is loading a starting point, hand-edits
-/// afterwards still work exactly the same way.
+/// scope - "wisselen van stijl" is loading a starting point (both Value
+/// and DefaultValue), hand-edits afterwards still work exactly the same
+/// way. See DesignToken's class comment for the Value/DefaultValue split.
 /// </summary>
 public static class DbThemeBuilder
 {
@@ -28,7 +29,7 @@ public static class DbThemeBuilder
         }
     }
 
-    /// <summary>Overwrites every existing token's Value to match the given theme's known preset, adding any that don't exist yet.</summary>
+    /// <summary>Overwrites every existing token's Value AND DefaultValue to match the given theme's known preset, adding any that don't exist yet.</summary>
     public static void ApplyPreset(StylebookDbContext db, Theme theme)
     {
         var tokensByName = db.DesignTokens.ToDictionary(t => t.Name);
@@ -38,10 +39,11 @@ public static class DbThemeBuilder
             if (tokensByName.TryGetValue(name, out var token))
             {
                 token.Value = value;
+                token.DefaultValue = value;
             }
             else
             {
-                db.DesignTokens.Add(new DesignToken { Name = name, Category = category, Value = value });
+                db.DesignTokens.Add(new DesignToken { Name = name, Category = category, Value = value, DefaultValue = value });
             }
         }
 
@@ -71,6 +73,11 @@ public static class DbThemeBuilder
     }
 
     /// <summary>
+    /// Builds the app-wide live theme from every token's DefaultValue
+    /// (falling back to Value only if DefaultValue is somehow unset) -
+    /// "in de applicatie de default waardes gebruikt worden". A row's
+    /// in-progress Value is only ever visible on the Stylebook tab's own
+    /// live preview until "Maak dit de standaard" promotes it here.
     /// Every token becomes both its raw key (e.g. "AccentColor") and,
     /// for colors, a matching "...Brush" SolidColorBrush - the same two
     /// forms every Themes/*.xaml file provides, so existing
@@ -82,24 +89,26 @@ public static class DbThemeBuilder
 
         foreach (var token in db.DesignTokens.AsEnumerable())
         {
+            var value = token.DefaultValue ?? token.Value;
+
             switch (token.Category)
             {
                 case DesignTokenCategory.Color:
-                    var color = (Color)ColorConverter.ConvertFromString(token.Value)!;
+                    var color = (Color)ColorConverter.ConvertFromString(value)!;
                     dictionary[token.Name] = color;
                     dictionary[token.Name.Replace("Color", "Brush", StringComparison.Ordinal)] = new SolidColorBrush(color);
                     break;
                 case DesignTokenCategory.Radius:
-                    dictionary[token.Name] = new CornerRadius(double.Parse(token.Value, CultureInfo.InvariantCulture));
+                    dictionary[token.Name] = new CornerRadius(double.Parse(value, CultureInfo.InvariantCulture));
                     break;
                 case DesignTokenCategory.Spacing:
-                    dictionary[token.Name] = new Thickness(double.Parse(token.Value, CultureInfo.InvariantCulture));
+                    dictionary[token.Name] = new Thickness(double.Parse(value, CultureInfo.InvariantCulture));
                     break;
                 case DesignTokenCategory.FontSize:
-                    dictionary[token.Name] = double.Parse(token.Value, CultureInfo.InvariantCulture);
+                    dictionary[token.Name] = double.Parse(value, CultureInfo.InvariantCulture);
                     break;
                 case DesignTokenCategory.FontFamily:
-                    dictionary[token.Name] = new FontFamily(token.Value);
+                    dictionary[token.Name] = new FontFamily(value);
                     break;
             }
         }

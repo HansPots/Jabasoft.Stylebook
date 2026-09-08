@@ -178,12 +178,14 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Built from Stylebook.Data's live DesignTokens rows - not a static
-    /// reference, an editor. Each row is a TextBox on the token's current
-    /// Value; "Opslaan" validates, writes every changed row to the
-    /// database, and calls App.ReapplyLiveTheme() so the whole app
-    /// (chrome and preview alike - there's only the one DB-backed style
-    /// now) re-colors immediately. Rebuilt after a successful save so
-    /// swatches/samples reflect what actually got persisted.
+    /// reference, an editor. Each row is a TextBox on the token's working
+    /// Value, next to a small preview that updates as you type (before
+    /// any save - see CreatePreview). "Opslaan" validates and writes
+    /// Value only, so the wider app (which renders from DefaultValue, see
+    /// DbThemeBuilder.Build) is unaffected; "Maak dit de standaard" does
+    /// the same save AND copies Value into DefaultValue, which is the
+    /// only thing that changes what the rest of the app looks like.
+    /// Rebuilt after either action so previews reflect what's persisted.
     /// </summary>
     private FrameworkElement BuildStylebookPanel(string? statusMessage = null)
     {
@@ -193,7 +195,7 @@ public partial class MainWindow : Window
             .ToList();
 
         var editors = new List<(DesignToken Token, TextBox Box)>();
-        var stack = new StackPanel { Margin = new Thickness(24), MaxWidth = 520 };
+        var stack = new StackPanel { Margin = new Thickness(24), MaxWidth = 560 };
 
         var title = new TextBlock { Text = "Stylebook", FontSize = 22, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 4) };
         title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
@@ -201,7 +203,9 @@ public partial class MainWindow : Window
 
         var hint = new TextBlock
         {
-            Text = "Pas een waarde aan en klik Opslaan. Kleuren als hex (#RRGGBB), overige als getal.",
+            Text = "Pas een waarde aan - het voorbeeld ernaast volgt meteen. Kleuren als hex (#RRGGBB), overige " +
+                   "als getal. 'Opslaan' bewaart je concept; 'Maak dit de standaard' laat de rest van de app het " +
+                   "ook echt gebruiken.",
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 16),
         };
@@ -219,38 +223,38 @@ public partial class MainWindow : Window
                 stack.Children.Add(SectionLabel(CategoryLabel(token.Category)));
             }
 
-            var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), LastChildFill = true };
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            if (token.Category == DesignTokenCategory.Color)
-            {
-                var swatch = new Border
-                {
-                    Width = 24,
-                    Height = 24,
-                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(token.Value)!),
-                    BorderThickness = new Thickness(1),
-                    Margin = new Thickness(0, 0, 8, 0),
-                };
-                swatch.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-                DockPanel.SetDock(swatch, Dock.Left);
-                row.Children.Add(swatch);
-            }
+            var (preview, applyPreview) = CreatePreview(token.Category, token.Value);
+            Grid.SetColumn(preview, 0);
+            row.Children.Add(preview);
 
-            var nameLabel = new TextBlock { Text = token.Name, Width = 170, VerticalAlignment = VerticalAlignment.Center };
+            var nameLabel = new TextBlock { Text = token.Name, VerticalAlignment = VerticalAlignment.Center };
             nameLabel.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
-            DockPanel.SetDock(nameLabel, Dock.Left);
+            Grid.SetColumn(nameLabel, 1);
             row.Children.Add(nameLabel);
 
             var box = new TextBox { Text = token.Value, Style = fieldStyle, AcceptsReturn = false, Height = 28 };
-            editors.Add((token, box));
+            box.TextChanged += (_, _) => applyPreview(box.Text.Trim());
+            Grid.SetColumn(box, 2);
             row.Children.Add(box);
+            editors.Add((token, box));
 
             stack.Children.Add(row);
         }
 
+        var buttonRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
         var saveButton = new Button { Content = "Opslaan", Style = (Style)FindResource("EditorActionButtonStyle") };
-        saveButton.Click += (_, _) => SaveStylebookEdits(editors);
-        stack.Children.Add(saveButton);
+        saveButton.Click += (_, _) => SaveStylebookEdits(editors, promoteToDefault: false);
+        buttonRow.Children.Add(saveButton);
+
+        var promoteButton = new Button { Content = "Maak dit de standaard", Margin = new Thickness(8, 0, 0, 0), Style = (Style)FindResource("EditorActionButtonStyle") };
+        promoteButton.Click += (_, _) => SaveStylebookEdits(editors, promoteToDefault: true);
+        buttonRow.Children.Add(promoteButton);
+        stack.Children.Add(buttonRow);
 
         if (!string.IsNullOrEmpty(statusMessage))
         {
@@ -262,6 +266,106 @@ public partial class MainWindow : Window
         var background = new Border { Child = new ScrollViewer { Content = stack, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
         background.SetResourceReference(Border.BackgroundProperty, "BackgroundBrush");
         return background;
+    }
+
+    /// <summary>
+    /// Builds a small live-preview visual for one token category, plus a
+    /// closure that updates it in place from a new (possibly still
+    /// mid-typing, possibly invalid) text value - invalid/unparseable
+    /// input is silently ignored here, the preview just keeps showing the
+    /// last good value until the input parses again. Validation/errors
+    /// belong to SaveStylebookEdits, not to every keystroke.
+    /// </summary>
+    private static (FrameworkElement Element, Action<string> Apply) CreatePreview(DesignTokenCategory category, string initialValue)
+    {
+        switch (category)
+        {
+            case DesignTokenCategory.Color:
+            {
+                var swatch = new Border { Width = 24, Height = 24, BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left };
+                swatch.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+                void Apply(string value)
+                {
+                    if (TryParseColor(value, out var color))
+                    {
+                        swatch.Background = new SolidColorBrush(color);
+                    }
+                }
+                Apply(initialValue);
+                return (swatch, Apply);
+            }
+
+            case DesignTokenCategory.Radius:
+            {
+                var box = new Border { Width = 40, Height = 24, BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left };
+                box.SetResourceReference(Border.BackgroundProperty, "SurfaceBrush");
+                box.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+                void Apply(string value)
+                {
+                    if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var px))
+                    {
+                        box.CornerRadius = new CornerRadius(px);
+                    }
+                }
+                Apply(initialValue);
+                return (box, Apply);
+            }
+
+            case DesignTokenCategory.Spacing:
+            {
+                var bar = new Border { Height = 14, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+                bar.SetResourceReference(Border.BackgroundProperty, "AccentBrush");
+                void Apply(string value)
+                {
+                    if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var px) && px >= 0)
+                    {
+                        bar.Width = Math.Max(px, 2);
+                    }
+                }
+                Apply(initialValue);
+                return (bar, Apply);
+            }
+
+            case DesignTokenCategory.FontSize:
+            {
+                var text = new TextBlock { Text = "Aa", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+                text.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+                void Apply(string value)
+                {
+                    if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var px) && px > 0)
+                    {
+                        text.FontSize = px;
+                    }
+                }
+                Apply(initialValue);
+                return (text, Apply);
+            }
+
+            case DesignTokenCategory.FontFamily:
+            {
+                var text = new TextBlock { Text = "Abc", HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+                text.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+                void Apply(string value)
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        try
+                        {
+                            text.FontFamily = new FontFamily(value);
+                        }
+                        catch (Exception ex) when (ex is FormatException or ArgumentException)
+                        {
+                            // Keep showing the last good font while the user types an incomplete/invalid name.
+                        }
+                    }
+                }
+                Apply(initialValue);
+                return (text, Apply);
+            }
+
+            default:
+                return (new TextBlock(), _ => { });
+        }
     }
 
     private static string CategoryLabel(DesignTokenCategory category) => category switch
@@ -285,8 +389,11 @@ public partial class MainWindow : Window
     /// Validates each row (hex for Color, a parseable number for the
     /// rest) before writing anything - an invalid row is reported and
     /// skipped rather than silently discarded or corrupting the theme.
+    /// Always writes Value; only promoteToDefault (the "Maak dit de
+    /// standaard" button) also copies it into DefaultValue and reapplies
+    /// the app-wide live theme - see DesignToken's class comment.
     /// </summary>
-    private void SaveStylebookEdits(List<(DesignToken Token, TextBox Box)> editors)
+    private void SaveStylebookEdits(List<(DesignToken Token, TextBox Box)> editors, bool promoteToDefault)
     {
         var invalid = new List<string>();
 
@@ -295,7 +402,7 @@ public partial class MainWindow : Window
             var value = box.Text.Trim();
             var isValid = token.Category switch
             {
-                DesignTokenCategory.Color => IsValidColor(value),
+                DesignTokenCategory.Color => TryParseColor(value, out _),
                 DesignTokenCategory.FontFamily => value.Length > 0,
                 _ => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
             };
@@ -303,6 +410,10 @@ public partial class MainWindow : Window
             if (isValid)
             {
                 token.Value = value;
+                if (promoteToDefault)
+                {
+                    token.DefaultValue = value;
+                }
             }
             else
             {
@@ -311,25 +422,36 @@ public partial class MainWindow : Window
         }
 
         App.Db.SaveChanges();
-        App.ReapplyLiveTheme();
 
+        if (promoteToDefault)
+        {
+            App.ReapplyLiveTheme();
+        }
+
+        var action = promoteToDefault ? "Opgeslagen en als standaard ingesteld." : "Opgeslagen.";
         var message = invalid.Count == 0
-            ? "Opgeslagen."
-            : $"Opgeslagen, behalve: {string.Join(", ", invalid)} (ongeldige waarde, oude waarde behouden).";
+            ? action
+            : $"{action} Behalve: {string.Join(", ", invalid)} (ongeldige waarde, oude waarde behouden).";
 
         StylebookContent.Content = BuildStylebookPanel(message);
     }
 
-    private static bool IsValidColor(string value)
+    private static bool TryParseColor(string value, out Color color)
     {
         try
         {
-            return ColorConverter.ConvertFromString(value) is Color;
+            if (ColorConverter.ConvertFromString(value) is Color parsed)
+            {
+                color = parsed;
+                return true;
+            }
         }
         catch (FormatException)
         {
-            return false;
         }
+
+        color = default;
+        return false;
     }
 
     /// <summary>
