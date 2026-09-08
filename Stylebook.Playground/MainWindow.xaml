@@ -130,16 +130,24 @@
                                FontSize="{StaticResource FontSizeSmall}"
                                Margin="0,0,0,16" />
 
+                    <!-- Stijl-wisselaar, bovenaan zodat 'ie voor de hele
+                         app geldt (chrome en preview delen dezelfde
+                         resources, zie App.xaml.cs). "Wisselen" laadt een
+                         voorinstelling in de Stylebook-tabel (zie
+                         ThemePreset_SelectionChanged/DbThemeBuilder.ApplyPreset)
+                         - met de hand aangepaste waarden overschrijf je
+                         dus wel, dat is de bedoeling van een preset. -->
+                    <ComboBox x:Name="ThemePresetPicker"
+                              SelectionChanged="ThemePreset_SelectionChanged"
+                              Margin="0,0,0,16" />
+
                     <!-- Paginabouwer: componenten plaatsen in Header/Menu/
                          Inhoud/Actie/Footer, geen componentwijzigingen.
                          Componentenbouwer: 1 component geïsoleerd bekijken
                          en bouwen, hier mag wel toegevoegd/hernoemd/
-                         verwijderd worden. Stylebook: het palet
-                         (kleuren/rondingen/lettertype) met de hand
-                         aanpassen - zie StylebookMode_Checked en
-                         BuildStylebookPanel in code-behind. Deze app
-                         gebruikt bewust maar 1 stijl (Visual Studio), dus
-                         geen thema-keuze meer nodig. -->
+                         verwijderd worden. Stylebook: het palet met de
+                         hand aanpassen - zie StylebookMode_Checked en
+                         BuildStylebookPanel in code-behind. -->
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

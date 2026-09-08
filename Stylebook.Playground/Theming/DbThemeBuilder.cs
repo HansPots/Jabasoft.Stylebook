@@ -12,51 +12,60 @@ namespace Stylebook.Playground.Theming;
 /// Builds the app's live theme ResourceDictionary from Stylebook.Data's
 /// DesignTokens table instead of a compiled Themes/*.xaml file - this is
 /// what makes hand-edits on the Stylebook page actually take effect.
-/// Seeds the table once (from DesignTokenCatalog's VisualStudio values -
-/// see [[project_jabasoft_stylebook_architecture]]) if it's empty, so the
-/// app always has something correct to render even before anyone edits
-/// anything.
+/// ApplyPreset loads a known theme's values INTO that same editable
+/// table (upsert by Name) rather than switching to a separate live
+/// scope - "wisselen van stijl" is loading a starting point, hand-edits
+/// afterwards still work exactly the same way.
 /// </summary>
 public static class DbThemeBuilder
 {
+    /// <summary>Seeds the table once, from Visual Studio's values, if it's empty - so there's always something correct to render.</summary>
     public static void EnsureSeeded(StylebookDbContext db)
     {
-        if (db.DesignTokens.Any())
+        if (!db.DesignTokens.Any())
         {
-            return;
+            ApplyPreset(db, Theme.VisualStudio);
+        }
+    }
+
+    /// <summary>Overwrites every existing token's Value to match the given theme's known preset, adding any that don't exist yet.</summary>
+    public static void ApplyPreset(StylebookDbContext db, Theme theme)
+    {
+        var tokensByName = db.DesignTokens.ToDictionary(t => t.Name);
+
+        void Upsert(string name, DesignTokenCategory category, string value)
+        {
+            if (tokensByName.TryGetValue(name, out var token))
+            {
+                token.Value = value;
+            }
+            else
+            {
+                db.DesignTokens.Add(new DesignToken { Name = name, Category = category, Value = value });
+            }
         }
 
-        foreach (var (name, value) in DesignTokenCatalog.GetColors(Theme.VisualStudio))
+        foreach (var (name, value) in DesignTokenCatalog.GetColors(theme))
         {
-            db.DesignTokens.Add(new DesignToken
-            {
-                Name = name,
-                Category = DesignTokenCategory.Color,
-                Value = value.ToString(CultureInfo.InvariantCulture),
-            });
+            Upsert(name, DesignTokenCategory.Color, value.ToString(CultureInfo.InvariantCulture));
         }
 
         foreach (var (name, px) in DesignTokenCatalog.RadiusTokens)
         {
-            db.DesignTokens.Add(new DesignToken { Name = name, Category = DesignTokenCategory.Radius, Value = Format(px) });
+            Upsert(name, DesignTokenCategory.Radius, Format(px));
         }
 
         foreach (var (name, px) in DesignTokenCatalog.SpacingTokens)
         {
-            db.DesignTokens.Add(new DesignToken { Name = name, Category = DesignTokenCategory.Spacing, Value = Format(px) });
+            Upsert(name, DesignTokenCategory.Spacing, Format(px));
         }
 
         foreach (var (name, px) in DesignTokenCatalog.FontSizeTokens)
         {
-            db.DesignTokens.Add(new DesignToken { Name = name, Category = DesignTokenCategory.FontSize, Value = Format(px) });
+            Upsert(name, DesignTokenCategory.FontSize, Format(px));
         }
 
-        db.DesignTokens.Add(new DesignToken
-        {
-            Name = DesignTokenCatalog.FontFamilyTokenName,
-            Category = DesignTokenCategory.FontFamily,
-            Value = DesignTokenCatalog.FontFamilyValue,
-        });
+        Upsert(DesignTokenCatalog.FontFamilyTokenName, DesignTokenCategory.FontFamily, DesignTokenCatalog.FontFamilyValue);
 
         db.SaveChanges();
     }

@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Stylebook.Components.Theming;
 using Stylebook.Data.Entities;
 using Stylebook.Playground.Theming;
 
@@ -35,12 +36,26 @@ public partial class MainWindow : Window
         Stylebook,
     }
 
+    private sealed record ThemePresetOption(Theme Value, string Label);
+
+    private static readonly ThemePresetOption[] ThemePresetOptions =
+    [
+        new ThemePresetOption(Theme.Lcars, "LCARS"),
+        new ThemePresetOption(Theme.VisualStudio, "Visual Studio"),
+    ];
+
     private BuilderMode _builderMode = BuilderMode.PageBuilder;
     private StylebookComponent? _lastSelectedComponent;
+    private bool _initializing = true;
 
     public MainWindow()
     {
         InitializeComponent();
+
+        ThemePresetPicker.ItemsSource = ThemePresetOptions;
+        ThemePresetPicker.DisplayMemberPath = nameof(ThemePresetOption.Label);
+        ThemePresetPicker.SelectedIndex = 1; // Visual Studio - matches DbThemeBuilder's seed default.
+        _initializing = false;
 
         LoadComponentsByRegion();
         PageBuilderModeButton.IsChecked = true;
@@ -58,6 +73,29 @@ public partial class MainWindow : Window
         AlgemeenComponents.ItemsSource = componentsByRegion[ComponentRegion.Algemeen].ToList();
 
         RefreshPreview();
+    }
+
+    /// <summary>
+    /// Loads a known theme's values into the DesignTokens table (overwrites
+    /// whatever is there, including hand-edits - a preset is a starting
+    /// point, not a merge) and reapplies the live theme app-wide. Guarded
+    /// by _initializing so setting the ComboBox's initial selection in the
+    /// constructor doesn't clobber whatever was last saved to the database.
+    /// </summary>
+    private void ThemePreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_initializing || ThemePresetPicker.SelectedItem is not ThemePresetOption option)
+        {
+            return;
+        }
+
+        DbThemeBuilder.ApplyPreset(App.Db, option.Value);
+        App.ReapplyLiveTheme();
+
+        if (_builderMode == BuilderMode.Stylebook)
+        {
+            StylebookContent.Content = BuildStylebookPanel();
+        }
     }
 
     private void PageBuilderMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.PageBuilder);
