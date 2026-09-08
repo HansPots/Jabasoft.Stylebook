@@ -209,7 +209,62 @@ public partial class MainWindow : Window
         }
         else
         {
-            ComponentBuilderContent.Content = CreateComponentVisual(_lastSelectedComponent);
+            var element = CreateComponentVisual(_lastSelectedComponent);
+            ApplyContainerSimulation(element);
+            ComponentBuilderContent.Content = element;
+        }
+    }
+
+    private void ContainerSimulation_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        RefreshPreview();
+    }
+
+    private void ContainerSize_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        TestContainerBorder.Width = ContainerWidthSlider.Value;
+        TestContainerBorder.Height = ContainerHeightSlider.Value;
+        ContainerSizeLabel.Text = $"Containerformaat: {ContainerWidthSlider.Value:0} × {ContainerHeightSlider.Value:0} px";
+    }
+
+    /// <summary>
+    /// Simuleert dat dit component in een container staat die niet per se
+    /// zijn eigen (XAML-)afmeting heeft: "Variabel" wist de eigen Width/
+    /// Height van dit gerenderde exemplaar en rekt 'm uit tot
+    /// TestContainerBorder's afmeting; "Vast" laat de eigen afmeting
+    /// staan, gecentreerd. Raakt alleen dit preview-exemplaar aan - de
+    /// opgeslagen Xaml verandert nooit.
+    /// </summary>
+    private void ApplyContainerSimulation(FrameworkElement element)
+    {
+        if (WidthModeCombo.SelectedIndex == 1)
+        {
+            element.Width = double.NaN;
+            element.HorizontalAlignment = HorizontalAlignment.Stretch;
+        }
+        else
+        {
+            element.HorizontalAlignment = HorizontalAlignment.Center;
+        }
+
+        if (HeightModeCombo.SelectedIndex == 1)
+        {
+            element.Height = double.NaN;
+            element.VerticalAlignment = VerticalAlignment.Stretch;
+        }
+        else
+        {
+            element.VerticalAlignment = VerticalAlignment.Center;
         }
     }
 
