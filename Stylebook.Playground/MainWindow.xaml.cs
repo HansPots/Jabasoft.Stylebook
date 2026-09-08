@@ -623,13 +623,13 @@ public partial class MainWindow : Window
 
             if (TryParseXaml(answer, out _))
             {
-                ShowProposal(component.Name, answer);
-                AiAnswerBox.Text = "Voorstel klaar - vergelijk het hiernaast met het origineel, en klik Overnemen om het te bewaren.";
+                ShowProposal(component.Name, component.Xaml ?? string.Empty, answer);
             }
-            else
-            {
-                AiAnswerBox.Text = answer;
-            }
+
+            // Always keep the raw answer readable, proposal or not - so the
+            // change that was made stays visible instead of being replaced
+            // by a status message.
+            AiAnswerBox.Text = answer;
         }
         catch (Exception ex)
         {
@@ -656,14 +656,17 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Renders the AI's proposed Xaml next to the current component and reveals Overnemen/Negeren.</summary>
-    private void ShowProposal(string componentName, string xaml)
+    /// <summary>Renders the AI's proposed Xaml next to the current component, shows both versions' source underneath, and reveals Overnemen/Negeren.</summary>
+    private void ShowProposal(string componentName, string originalXaml, string proposedXaml)
     {
-        _proposedXaml = xaml;
-        ProposedPreviewContent.Content = RenderXamlPreview(componentName, xaml);
+        _proposedXaml = proposedXaml;
+        ProposedPreviewContent.Content = RenderXamlPreview(componentName, proposedXaml);
         ProposedColumnDefinition.Width = new GridLength(1, GridUnitType.Star);
         ProposalLabelsRow.Visibility = Visibility.Visible;
         ProposedPreviewContent.Visibility = Visibility.Visible;
+        OriginalXamlText.Text = originalXaml;
+        ProposedXamlText.Text = proposedXaml;
+        XamlComparisonRow.Visibility = Visibility.Visible;
         ProposalActionsRow.Visibility = Visibility.Visible;
     }
 
@@ -673,8 +676,11 @@ public partial class MainWindow : Window
         ProposedColumnDefinition.Width = new GridLength(0);
         ProposalLabelsRow.Visibility = Visibility.Collapsed;
         ProposedPreviewContent.Visibility = Visibility.Collapsed;
-        ProposalActionsRow.Visibility = Visibility.Collapsed;
         ProposedPreviewContent.Content = null;
+        OriginalXamlText.Text = string.Empty;
+        ProposedXamlText.Text = string.Empty;
+        XamlComparisonRow.Visibility = Visibility.Collapsed;
+        ProposalActionsRow.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>Commits the pending AI proposal exactly like a manual "Opslaan en toepassen" would - errors included, so a bad answer is visible and recoverable rather than silently discarded.</summary>
