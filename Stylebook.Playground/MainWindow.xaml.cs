@@ -1,16 +1,17 @@
 using System;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using Stylebook.Components.Controls;
 using Stylebook.Components.Theming;
 using Stylebook.Data.Entities;
 
@@ -112,6 +113,10 @@ public partial class MainWindow : Window
         if (selected is not null)
         {
             _lastSelectedComponent = selected;
+            ComponentTitleBox.Text = selected.Title ?? string.Empty;
+            ComponentBodyBox.Text = selected.BodyText ?? string.Empty;
+            ComponentXamlBox.Text = selected.Xaml ?? string.Empty;
+            XamlErrorText.Visibility = Visibility.Collapsed;
         }
 
         RefreshPreview();
@@ -141,44 +146,133 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// What a catalog entry (Stylebook.Data.Entities.StylebookComponent)
-    /// looks like when placed somewhere. Only "Card" has a real compiled
-    /// control to show yet - everything else is a labeled placeholder
-    /// until components store actual, renderable content.
-    /// {DynamicResource} is applied via SetResourceReference (not
-    /// resolved once via FindResource) so these visuals keep responding
-    /// live to the preview area's LCARS/Visual Studio switch.
+    /// looks like when placed somewhere: its stored Xaml, parsed live with
+    /// XamlReader. Falls back to a labeled placeholder when there's no
+    /// Xaml yet (an older row, or one never edited), and to a visibly
+    /// different error box when the stored Xaml fails to parse - this
+    /// runs on every keystroke's worth of "Opslaan en toepassen", so it
+    /// must never let bad markup take the app down with it.
+    /// {DynamicResource} on the fallback/error visuals is applied via
+    /// SetResourceReference (not resolved once via FindResource) so they
+    /// keep responding live to the preview area's LCARS/Visual Studio
+    /// switch, same as the parsed Xaml's own DynamicResource bindings do
+    /// once it's part of the live tree.
     /// </summary>
     private FrameworkElement CreateComponentVisual(StylebookComponent? component)
     {
         if (component is null)
         {
-            var empty = new TextBlock { Text = "(leeg)", HorizontalAlignment = HorizontalAlignment.Center };
-            empty.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
-            empty.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
-            empty.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeSmall");
-            return empty;
+            return Placeholder("(leeg)", "TextMutedBrush", "BorderBrush");
         }
 
-        if (string.Equals(component.Name, "Card", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(component.Xaml))
         {
-            var body = new TextBlock { Text = "Voorbeeldinhoud", TextWrapping = TextWrapping.Wrap };
-            body.SetResourceReference(TextBlock.ForegroundProperty, "TextMutedBrush");
-            body.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
-            body.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeBody");
-
-            return new Card { Title = component.Name, Body = body, Width = 280, HorizontalAlignment = HorizontalAlignment.Center };
+            return Placeholder(component.Name, "TextPrimaryBrush", "BorderBrush");
         }
 
-        var label = new TextBlock { Text = component.Name };
-        label.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        try
+        {
+            if (XamlReader.Parse(component.Xaml) is FrameworkElement parsed)
+            {
+                return parsed;
+            }
+
+            return Placeholder($"'{component.Name}' is geen FrameworkElement", "TextMutedBrush", "BorderBrush");
+        }
+        catch (Exception ex)
+        {
+            return Placeholder($"XAML-fout in '{component.Name}': {ex.Message}", "TextMutedBrush", "AccentBrush");
+        }
+    }
+
+    private static FrameworkElement Placeholder(string text, string foregroundKey, string borderKey)
+    {
+        var label = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
+        label.SetResourceReference(TextBlock.ForegroundProperty, foregroundKey);
         label.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
         label.SetResourceReference(TextBlock.FontSizeProperty, "FontSizeBody");
 
-        var placeholder = new Border { Child = label, BorderThickness = new Thickness(1) };
-        placeholder.SetResourceReference(Border.BackgroundProperty, "SurfaceBrush");
-        placeholder.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
-        placeholder.SetResourceReference(Border.PaddingProperty, "SpaceMedium");
-        return placeholder;
+        var box = new Border { Child = label, BorderThickness = new Thickness(1) };
+        box.SetResourceReference(Border.BackgroundProperty, "SurfaceBrush");
+        box.SetResourceReference(Border.BorderBrushProperty, borderKey);
+        box.SetResourceReference(Border.PaddingProperty, "SpaceMedium");
+        return box;
+    }
+
+    /// <summary>
+    /// Quick-edit path: builds a simple card-shaped Xaml from the Titel/
+    /// Inhoud fields and saves it as the component's Xaml. Editing Xaml
+    /// directly afterwards does not update Titel/Inhoud back - they're a
+    /// generator, not a live-synced view of the markup.
+    /// </summary>
+    private void GenerateFromProperties_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastSelectedComponent is not { } component)
+        {
+            return;
+        }
+
+        component.Title = ComponentTitleBox.Text;
+        component.BodyText = ComponentBodyBox.Text;
+        component.Xaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
+        ComponentXamlBox.Text = component.Xaml;
+
+        App.Db.SaveChanges();
+        XamlErrorText.Visibility = Visibility.Collapsed;
+        RefreshPreview();
+    }
+
+    /// <summary>
+    /// Advanced-edit path: saves whatever is currently in the XAML box as
+    /// the component's Xaml, verbatim. Saved even if it fails to parse -
+    /// CreateComponentVisual shows the parse error instead of crashing,
+    /// so an in-progress edit is never lost.
+    /// </summary>
+    private void SaveXaml_Click(object sender, RoutedEventArgs e)
+    {
+        if (_lastSelectedComponent is not { } component)
+        {
+            return;
+        }
+
+        component.Xaml = ComponentXamlBox.Text;
+        App.Db.SaveChanges();
+
+        try
+        {
+            XamlReader.Parse(component.Xaml);
+            XamlErrorText.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            XamlErrorText.Text = ex.Message;
+            XamlErrorText.Visibility = Visibility.Visible;
+        }
+
+        RefreshPreview();
+    }
+
+    private static string GenerateCardXaml(string title, string bodyText)
+    {
+        const string template = """
+            <Border xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="16"
+                    Width="280">
+                <StackPanel>
+                    <TextBlock Text="__TITLE__" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,0,0,8" TextWrapping="Wrap" />
+                    <TextBlock Text="__BODY__" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+            """;
+
+        return template
+            .Replace("__TITLE__", SecurityElement.Escape(title))
+            .Replace("__BODY__", SecurityElement.Escape(bodyText));
     }
 
     private void AddComponent_Click(object sender, RoutedEventArgs e)
@@ -216,7 +310,16 @@ public partial class MainWindow : Window
         }
         else
         {
-            App.Db.Components.Add(new StylebookComponent { Name = name, Region = region });
+            // Seed a real, immediately-renderable Xaml so a brand new
+            // component never starts out as a bare placeholder.
+            App.Db.Components.Add(new StylebookComponent
+            {
+                Name = name,
+                Region = region,
+                Title = name,
+                BodyText = "Voorbeeldinhoud",
+                Xaml = GenerateCardXaml(name, "Voorbeeldinhoud"),
+            });
         }
 
         App.Db.SaveChanges();

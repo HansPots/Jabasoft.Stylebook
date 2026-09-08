@@ -49,6 +49,29 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         </Style>
+        <!-- Componentenbouwer: eigenschappen-paneel + XAML-editor naast de
+             geïsoleerde preview. -->
+        <Style TargetType="TextBlock" x:Key="EditorLabelStyle">
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="Margin" Value="0,12,0,4" />
+        </Style>
+        <Style TargetType="TextBox" x:Key="EditorFieldStyle">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="AcceptsReturn" Value="True" />
+        </Style>
+        <Style TargetType="Button" x:Key="EditorActionButtonStyle" BasedOn="{StaticResource AddComponentButtonStyle}">
+            <Setter Property="Margin" Value="0,8,0,0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+        </Style>
         <!-- Paginabouwer/Componentenbouwer-tabs: RadioButtons die zich als
              tabblad gedragen (GroupName houdt ze onderling exclusief). -->
         <Style TargetType="RadioButton" x:Key="BuilderModeTabStyle">
@@ -221,7 +244,63 @@
             <controls:Basis x:Name="PageBuilderBasis" />
 
             <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
-                <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="420" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentControl x:Name="ComponentBuilderContent" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                    <!-- Bewerk-paneel: eigenschappen bovenaan (snel, beperkt
+                         tot titel/inhoud-tekst), de eigenlijke XAML
+                         eronder (alles, brontekst). Beide schrijven naar
+                         hetzelfde Xaml-veld - wie het laatst opslaat wint. -->
+                    <Border Grid.Column="1"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1,0,0,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="{StaticResource SpaceMedium}">
+                                <TextBlock Text="EIGENSCHAPPEN"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           FontFamily="{StaticResource AppFontFamily}"
+                                           FontSize="{StaticResource FontSizeSmall}" />
+
+                                <TextBlock Text="Titel" Style="{StaticResource EditorLabelStyle}" />
+                                <TextBox x:Name="ComponentTitleBox" Style="{StaticResource EditorFieldStyle}" AcceptsReturn="False" />
+
+                                <TextBlock Text="Inhoud" Style="{StaticResource EditorLabelStyle}" />
+                                <TextBox x:Name="ComponentBodyBox" Style="{StaticResource EditorFieldStyle}" Height="70" />
+
+                                <Button Content="Genereer en opslaan"
+                                        Click="GenerateFromProperties_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}" />
+
+                                <TextBlock Text="XAML" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
+                                <TextBox x:Name="ComponentXamlBox"
+                                         Style="{StaticResource EditorFieldStyle}"
+                                         FontFamily="Consolas"
+                                         Height="360"
+                                         TextWrapping="NoWrap"
+                                         HorizontalScrollBarVisibility="Auto"
+                                         VerticalScrollBarVisibility="Auto" />
+
+                                <TextBlock x:Name="XamlErrorText"
+                                           Foreground="Tomato"
+                                           FontFamily="{StaticResource AppFontFamily}"
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,8,0,0"
+                                           Visibility="Collapsed" />
+
+                                <Button Content="Opslaan en toepassen"
+                                        Click="SaveXaml_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

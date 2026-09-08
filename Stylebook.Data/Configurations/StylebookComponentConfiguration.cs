@@ -14,5 +14,8 @@ public sealed class StylebookComponentConfiguration : IEntityTypeConfiguration<S
         builder.Property(c => c.Region).HasConversion<string>().HasMaxLength(50).IsRequired();
         builder.Property(c => c.CreatedAtUtc).IsRequired();
         builder.Property(c => c.UpdatedAtUtc).IsRequired();
+        builder.Property(c => c.Title).HasMaxLength(200);
+        builder.Property(c => c.BodyText).HasMaxLength(2000);
+        builder.Property(c => c.Xaml);
     }
 }
