@@ -163,21 +163,45 @@
                         <RadioButton x:Name="PageBuilderModeButton"
                                      Grid.Column="0"
                                      GroupName="BuilderMode"
-                                     Content="Pagina"
                                      Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="PageBuilderMode_Checked" />
+                                     Checked="PageBuilderMode_Checked"
+                                     AutomationProperties.Name="Pagina">
+                            <!-- Icoon boven de tekst i.p.v. ernaast: deze
+                                 kolommen zijn te smal voor "Component"/
+                                 "Stylebook" naast een icoon zonder af te
+                                 knippen. AutomationProperties.Name gezet
+                                 op elke knop/tab hieronder die icoon+tekst
+                                 combineert - Content is dan geen kale
+                                 string meer, dus de standaard
+                                 toegankelijke naam (voor schermlezers)
+                                 zou anders leeg/onduidelijk worden. -->
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconPage}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Pagina" FontSize="11" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
                         <RadioButton x:Name="ComponentBuilderModeButton"
                                      Grid.Column="1"
                                      GroupName="BuilderMode"
-                                     Content="Component"
                                      Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="ComponentBuilderMode_Checked" />
+                                     Checked="ComponentBuilderMode_Checked"
+                                     AutomationProperties.Name="Component">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconWidgets}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Component" FontSize="11" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
                         <RadioButton x:Name="StylebookModeButton"
                                      Grid.Column="2"
                                      GroupName="BuilderMode"
-                                     Content="Stylebook"
                                      Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="StylebookMode_Checked" />
+                                     Checked="StylebookMode_Checked"
+                                     AutomationProperties.Name="Stylebook">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconPalette}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Stylebook" FontSize="11" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
                     </Grid>
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
@@ -189,8 +213,12 @@
                         <StackPanel>
                             <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="HeaderEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -199,8 +227,12 @@
                         <StackPanel>
                             <ListBox x:Name="MenuComponents" Tag="Menu" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="MenuEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -209,8 +241,12 @@
                         <StackPanel>
                             <ListBox x:Name="InhoudComponents" Tag="Inhoud" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="InhoudEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -219,8 +255,12 @@
                         <StackPanel>
                             <ListBox x:Name="ActieComponents" Tag="Actie" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="ActieEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -229,8 +269,12 @@
                         <StackPanel>
                             <ListBox x:Name="FooterComponents" Tag="Footer" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="FooterEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -239,8 +283,12 @@
                         <StackPanel>
                             <ListBox x:Name="AlgemeenComponents" Tag="Algemeen" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
                             <DockPanel x:Name="AlgemeenEditRow" Margin="0,8,0,8">
-                                <Button Content="x" Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" />
-                                <Button Content="+" Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" />
+                                <Button Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
+                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
+                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -381,8 +429,18 @@
                         </Grid>
 
                         <StackPanel x:Name="ProposalActionsRow" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,16,0,16">
-                            <Button Content="Overnemen" Click="AcceptProposal_Click" Style="{StaticResource EditorActionButtonStyle}" />
-                            <Button Content="Negeren" Click="DiscardProposal_Click" Margin="8,0,0,0" Style="{StaticResource EditorActionButtonStyle}" />
+                            <Button Click="AcceptProposal_Click" Style="{StaticResource EditorActionButtonStyle}" AutomationProperties.Name="Overnemen">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconCheck}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Overnemen" />
+                                </TextBlock>
+                            </Button>
+                            <Button Click="DiscardProposal_Click" Margin="8,0,0,0" Style="{StaticResource EditorActionButtonStyle}" AutomationProperties.Name="Negeren">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Negeren" />
+                                </TextBlock>
+                            </Button>
                         </StackPanel>
                     </Grid>
 
@@ -415,9 +473,14 @@
                                 <TextBox Text="Inhoud" Style="{StaticResource EditorLabelStyle}" />
                                 <TextBox x:Name="ComponentBodyBox" Style="{StaticResource EditorFieldStyle}" Height="70" />
 
-                                <Button Content="Genereer en opslaan"
-                                        Click="GenerateFromProperties_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}" />
+                                <Button Click="GenerateFromProperties_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}"
+                                        AutomationProperties.Name="Genereer en opslaan">
+                                    <TextBlock>
+                                        <Run Text="{StaticResource IconAutoAwesome}" FontFamily="{StaticResource IconFontFamily}" />
+                                        <Run Text=" Genereer en opslaan" />
+                                    </TextBlock>
+                                </Button>
 
                                 <!-- Testcontainer: simuleert of dit component
                                      zich moet aanpassen aan de ruimte waarin
@@ -462,9 +525,14 @@
                                          Margin="0,8,0,0"
                                          Visibility="Collapsed" />
 
-                                <Button Content="Opslaan en toepassen"
-                                        Click="SaveXaml_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}" />
+                                <Button Click="SaveXaml_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}"
+                                        AutomationProperties.Name="Opslaan en toepassen">
+                                    <TextBlock>
+                                        <Run Text="{StaticResource IconSave}" FontFamily="{StaticResource IconFontFamily}" />
+                                        <Run Text=" Opslaan en toepassen" />
+                                    </TextBlock>
+                                </Button>
 
                                 <TextBox Text="AI" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
                                 <TextBox x:Name="AiQuestionBox"
@@ -473,9 +541,14 @@
                                          AcceptsReturn="True" />
 
                                 <Button x:Name="AskAiButton"
-                                        Content="Vraag AI"
                                         Click="AskAi_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}" />
+                                        Style="{StaticResource EditorActionButtonStyle}"
+                                        AutomationProperties.Name="Vraag AI">
+                                    <TextBlock>
+                                        <Run Text="{StaticResource IconAutoAwesome}" FontFamily="{StaticResource IconFontFamily}" />
+                                        <Run Text=" Vraag AI" />
+                                    </TextBlock>
+                                </Button>
 
                                 <TextBox x:Name="AiAnswerBox"
                                          Style="{StaticResource EditorFieldStyle}"

@@ -22,6 +22,27 @@
     <sys:Double x:Key="FontSizeBody">14</sys:Double>
     <sys:Double x:Key="FontSizeTitle">18</sys:Double>
 
+    <!-- Google Material Symbols (Outlined), Apache 2.0 - embedded als WPF
+         pack-resource (zie Fonts/MaterialSymbolsOutlined.ttf en
+         Stylebook.Components.csproj), niet van een CDN: dit is een
+         desktop-app zonder <link>-achtige webfont-lading. Elk icoon is één
+         teken op zijn Private-Use-Area codepoint - de namen/codes komen
+         rechtstreeks uit het font-eigen .codepoints-bestand
+         (github.com/google/material-design-icons). Nieuw icoon nodig?
+         Zoek de naam op in dat bestand en zet 'm hier als
+         IconXxx="&#xCODE;" bij, in plaats van de entity ad-hoc ergens in
+         de XAML te typen. -->
+    <FontFamily x:Key="IconFontFamily">pack://application:,,,/Stylebook.Components;component/Fonts/#Material Symbols Outlined</FontFamily>
+    <sys:String x:Key="IconPage">&#xE873;</sys:String>
+    <sys:String x:Key="IconWidgets">&#xE1BD;</sys:String>
+    <sys:String x:Key="IconPalette">&#xE40A;</sys:String>
+    <sys:String x:Key="IconAdd">&#xE145;</sys:String>
+    <sys:String x:Key="IconDelete">&#xE92E;</sys:String>
+    <sys:String x:Key="IconSave">&#xE161;</sys:String>
+    <sys:String x:Key="IconAutoAwesome">&#xE65F;</sys:String>
+    <sys:String x:Key="IconCheck">&#xE668;</sys:String>
+    <sys:String x:Key="IconClose">&#xE5CD;</sys:String>
+
     <!-- Hoekronding-schaal, zelfde discipline als de spacing-schaal hierboven:
          een genoemde maat kiezen i.p.v. CornerRadius="6" hardcoden op elk
          component apart. -->

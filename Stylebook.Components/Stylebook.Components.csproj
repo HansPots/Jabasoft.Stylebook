@@ -7,4 +7,11 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- Google Material Symbols (Outlined), Apache 2.0 - variable font
+         covering the whole icon set, embedded as a WPF pack resource so
+         Typography.xaml's IconFontFamily can reference it cross-assembly. -->
+    <Resource Include="Fonts\MaterialSymbolsOutlined.ttf" />
+  </ItemGroup>
+
 </Project>
