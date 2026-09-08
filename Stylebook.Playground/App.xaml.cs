@@ -116,6 +116,17 @@ public partial class App : Application
         {
             try
             {
+                // Vóór de dialoog: het onderbroken layout-pas laat de kapotte
+                // subtree (bijna altijd het voorstel - dat is de enige plek
+                // waar van-buitenaf-aangeleverde XAML gerenderd wordt) op
+                // grootte 0 achter, wat aanvoelt als "de editor is weg"
+                // terwijl _proposedXaml en alle Visibility-vlaggen nog gewoon
+                // kloppen. Het voorstel verwerpen (zie
+                // MainWindow.RecoverFromUnhandledException) haalt de kapotte
+                // inhoud weg vóór de gebruiker de melding wegklikt, zodat de
+                // app al hersteld is zodra ze "OK" zien.
+                (Current.MainWindow as MainWindow)?.RecoverFromUnhandledException();
+
                 MessageBox.Show(
                     $"Er ging iets onverwacht mis, maar de app blijft draaien:\n\n{message}",
                     "Onverwachte fout",

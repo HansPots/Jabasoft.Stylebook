@@ -976,6 +976,28 @@ public partial class MainWindow : Window
         ProposalActionsRow.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Called by App.OnDispatcherUnhandledException right after catching a
+    /// crash. e.Handled = true stops the process from dying, but it does
+    /// NOT finish the layout pass that was in progress - the subtree
+    /// being measured when the exception hit (almost always the proposal
+    /// preview, since that's the one place externally-supplied XAML - AI
+    /// or hand-typed - gets rendered) is left stuck at zero size, which
+    /// looks like "the editor disappeared" even though _proposedXaml and
+    /// every visibility flag are still exactly what they were. Simply
+    /// forcing another layout pass would hit the same broken content and
+    /// crash again; discarding the proposal (same effect as clicking
+    /// Negeren) removes the broken content first, so the next layout
+    /// pass has nothing left to trip over.
+    /// </summary>
+    internal void RecoverFromUnhandledException()
+    {
+        if (_proposedXaml is not null)
+        {
+            ClearProposal();
+        }
+    }
+
     /// <summary>Commits the pending AI proposal exactly like a manual "Opslaan en toepassen" would - errors included, so a bad answer is visible and recoverable rather than silently discarded.</summary>
     private void AcceptProposal_Click(object sender, RoutedEventArgs e)
     {
