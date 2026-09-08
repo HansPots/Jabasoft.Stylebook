@@ -252,6 +252,45 @@ public partial class MainWindow : Window
         RefreshPreview();
     }
 
+    /// <summary>
+    /// Quick-and-dirty: sends the question (plus the selected component's
+    /// current Xaml as context, when there is one) to App.Ai. Just shows
+    /// the raw answer - no "apply this to the XAML box" wiring yet, that's
+    /// a reasonable next step once this proves useful.
+    /// </summary>
+    private async void AskAi_Click(object sender, RoutedEventArgs e)
+    {
+        var question = AiQuestionBox.Text.Trim();
+        if (question.Length == 0)
+        {
+            return;
+        }
+
+        var originalContent = AskAiButton.Content;
+        AskAiButton.IsEnabled = false;
+        AskAiButton.Content = "Bezig...";
+        AiAnswerBox.Text = string.Empty;
+
+        try
+        {
+            var systemPrompt = _lastSelectedComponent is { Xaml.Length: > 0 } component
+                ? "Je bent een assistent die helpt bij het bouwen van WPF-XAML-componenten voor Stylebook. " +
+                  $"Dit is de huidige XAML van het geselecteerde component ('{component.Name}'):\n{component.Xaml}"
+                : "Je bent een assistent die helpt bij het bouwen van WPF-XAML-componenten voor Stylebook.";
+
+            AiAnswerBox.Text = await App.Ai.AskAsync(systemPrompt, question);
+        }
+        catch (Exception ex)
+        {
+            AiAnswerBox.Text = $"Kon geen antwoord krijgen van de AI-server: {ex.Message}";
+        }
+        finally
+        {
+            AskAiButton.IsEnabled = true;
+            AskAiButton.Content = originalContent;
+        }
+    }
+
     private static string GenerateCardXaml(string title, string bodyText)
     {
         const string template = """

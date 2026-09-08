@@ -8,10 +8,6 @@ public class StylebookComponent : IAuditableEntity
 
     public ComponentRegion Region { get; set; }
 
-    public DateTime CreatedAtUtc { get; set; }
-
-    public DateTime UpdatedAtUtc { get; set; }
-
     /// <summary>Quick-edit field: what the properties panel writes into the generated Xaml's title text.</summary>
     public string? Title { get; set; }
 
@@ -25,6 +21,12 @@ public class StylebookComponent : IAuditableEntity
     /// of it, editing Xaml directly does not update them.
     /// </summary>
     public string? Xaml { get; set; }
+
+    // Audit fields last, by convention - see feedback_db_audit_timestamps
+    // memory (most important fields first, date/timestamp fields last).
+    public DateTime CreatedAtUtc { get; set; }
+
+    public DateTime UpdatedAtUtc { get; set; }
 
     /// <summary>
     /// WPF falls back to this for a ListBoxItem's accessible name when

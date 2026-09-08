@@ -297,6 +297,23 @@
                                 <Button Content="Opslaan en toepassen"
                                         Click="SaveXaml_Click"
                                         Style="{StaticResource EditorActionButtonStyle}" />
+
+                                <TextBlock Text="AI" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
+                                <TextBox x:Name="AiQuestionBox"
+                                         Style="{StaticResource EditorFieldStyle}"
+                                         Height="60"
+                                         AcceptsReturn="True" />
+
+                                <Button x:Name="AskAiButton"
+                                        Content="Vraag AI"
+                                        Click="AskAi_Click"
+                                        Style="{StaticResource EditorActionButtonStyle}" />
+
+                                <TextBox x:Name="AiAnswerBox"
+                                         Style="{StaticResource EditorFieldStyle}"
+                                         Height="200"
+                                         IsReadOnly="True"
+                                         Margin="0,8,0,0" />
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
