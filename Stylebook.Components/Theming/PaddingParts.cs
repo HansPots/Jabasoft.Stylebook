@@ -12,6 +12,13 @@ namespace Stylebook.Components.Theming;
 /// Border.Padding and Control.Padding are separate DependencyProperties
 /// (both just happen to be named "Padding"), so OnPartChanged switches on
 /// the target element's actual type to know which one to set.
+///
+/// The matching *Negative flag (LeftNegative/TopNegative/RightNegative/
+/// BottomNegative, default False) flips that one side negative regardless
+/// of whether its value came from a token or a literal - see MarginParts'
+/// class comment, same mechanism. Padding is rarely negative in practice,
+/// but WPF doesn't forbid it, so this stays symmetric with MarginParts
+/// rather than being a special case.
 /// </summary>
 public static class PaddingParts
 {
@@ -26,6 +33,18 @@ public static class PaddingParts
 
     public static readonly DependencyProperty BottomProperty = DependencyProperty.RegisterAttached(
         "Bottom", typeof(Thickness), typeof(PaddingParts), new PropertyMetadata(new Thickness(0), OnPartChanged));
+
+    public static readonly DependencyProperty LeftNegativeProperty = DependencyProperty.RegisterAttached(
+        "LeftNegative", typeof(bool), typeof(PaddingParts), new PropertyMetadata(false, OnPartChanged));
+
+    public static readonly DependencyProperty TopNegativeProperty = DependencyProperty.RegisterAttached(
+        "TopNegative", typeof(bool), typeof(PaddingParts), new PropertyMetadata(false, OnPartChanged));
+
+    public static readonly DependencyProperty RightNegativeProperty = DependencyProperty.RegisterAttached(
+        "RightNegative", typeof(bool), typeof(PaddingParts), new PropertyMetadata(false, OnPartChanged));
+
+    public static readonly DependencyProperty BottomNegativeProperty = DependencyProperty.RegisterAttached(
+        "BottomNegative", typeof(bool), typeof(PaddingParts), new PropertyMetadata(false, OnPartChanged));
 
     public static void SetLeft(DependencyObject element, Thickness value) => element.SetValue(LeftProperty, value);
 
@@ -43,9 +62,29 @@ public static class PaddingParts
 
     public static Thickness GetBottom(DependencyObject element) => (Thickness)element.GetValue(BottomProperty);
 
+    public static void SetLeftNegative(DependencyObject element, bool value) => element.SetValue(LeftNegativeProperty, value);
+
+    public static bool GetLeftNegative(DependencyObject element) => (bool)element.GetValue(LeftNegativeProperty);
+
+    public static void SetTopNegative(DependencyObject element, bool value) => element.SetValue(TopNegativeProperty, value);
+
+    public static bool GetTopNegative(DependencyObject element) => (bool)element.GetValue(TopNegativeProperty);
+
+    public static void SetRightNegative(DependencyObject element, bool value) => element.SetValue(RightNegativeProperty, value);
+
+    public static bool GetRightNegative(DependencyObject element) => (bool)element.GetValue(RightNegativeProperty);
+
+    public static void SetBottomNegative(DependencyObject element, bool value) => element.SetValue(BottomNegativeProperty, value);
+
+    public static bool GetBottomNegative(DependencyObject element) => (bool)element.GetValue(BottomNegativeProperty);
+
     private static void OnPartChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        var padding = new Thickness(GetLeft(d).Left, GetTop(d).Left, GetRight(d).Left, GetBottom(d).Left);
+        var padding = new Thickness(
+            Signed(GetLeft(d).Left, GetLeftNegative(d)),
+            Signed(GetTop(d).Left, GetTopNegative(d)),
+            Signed(GetRight(d).Left, GetRightNegative(d)),
+            Signed(GetBottom(d).Left, GetBottomNegative(d)));
 
         switch (d)
         {
@@ -57,4 +96,6 @@ public static class PaddingParts
                 break;
         }
     }
+
+    private static double Signed(double value, bool negative) => negative ? -Math.Abs(value) : value;
 }

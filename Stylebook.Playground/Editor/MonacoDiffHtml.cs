@@ -180,6 +180,14 @@ public static class MonacoDiffHtml
                         ? (partIndex === 0 ? [0, 2] : [1, 3])
                         : [partIndex];
 
+                    // Was de vervangen waarde negatief (bv. de "-18" in een
+                    // naar-buiten-getrokken Margin)? Een token levert altijd
+                    // een positieve grootte op - dus zet in dat geval ook de
+                    // bijbehorende *Negative-vlag mee (alleen zinvol voor
+                    // Margin/Padding, CornerRadius kent geen negatieve
+                    // waarde), zie MarginParts/PaddingParts.
+                    var wasNegative = !isCornerRadius && /^\s*-/.test(enclosing.parts[partIndex]);
+
                     var finalParts = enclosing.parts.length === 2
                         ? [enclosing.parts[0], enclosing.parts[1], enclosing.parts[0], enclosing.parts[1]]
                         : enclosing.parts.slice();
@@ -195,6 +203,9 @@ public static class MonacoDiffHtml
                         var raw = finalParts[k].trim();
                         if (raw === "0") { continue; } // weggelaten zijde = 0, zie CornerRadiusParts/MarginParts/PaddingParts
                         fragments.push("theming:" + partsClass + "." + sideNames[k] + '="' + raw + '"');
+                        if (wasNegative && affectedSides.indexOf(k) !== -1) {
+                            fragments.push("theming:" + partsClass + "." + sideNames[k] + 'Negative="True"');
+                        }
                     }
                     var replacementText = fragments.length > 0 ? fragments.join("\n" + indent) : "";
 

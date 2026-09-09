@@ -176,7 +176,13 @@ public static class DbThemeBuilder
             zijn maar er wel ergens een token gebruikt moet worden - ook daar wordt een weggelaten zijde 0, en mag
             elke zijde apart ofwel een token ofwel een letterlijk getal zijn. Zet nooit ALSNOG een gewoon
             Margin- of Padding-attribuut op hetzelfde element als je deze Parts-attributen gebruikt - die vervangen
-            het volledig, een los Margin/Padding-attribuut ernaast wordt genegeerd. Voeg geen XML-commentaar toe in
+            het volledig, een los Margin/Padding-attribuut ernaast wordt genegeerd. Elke Spacing-token is altijd een
+            positieve grootte, maar een naar-buiten-getrokken Margin/Padding-zijde (bv. een kop die net buiten de
+            rand van zijn kaart uitsteekt) is vaak negatief - daar bestaat geen apart negatief token voor. Zet in
+            dat geval naast de gewone theming:MarginParts.Zijde of theming:PaddingParts.Zijde ook het bijbehorende
+            theming:MarginParts.ZijdeNegative="True" (of PaddingParts.ZijdeNegative) - dat maakt precies die ene
+            zijde negatief, ook als de waarde zelf van een token komt. Alleen relevant voor Margin/Padding, niet
+            voor CornerRadius (een negatieve hoekronding bestaat niet). Voeg geen XML-commentaar toe in
             de XAML.
             Kleuren:
             {Section(DesignTokenCategory.Color)}
