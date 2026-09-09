@@ -170,8 +170,14 @@ public static class DbThemeBuilder
             theming:CornerRadiusParts.BottomRight en theming:CornerRadiusParts.BottomLeft - elk met DynamicResource
             verwijzend naar de gewenste token, precies zoals bij elk ander attribuut. Elk van die vier attributen
             mag zelf weer ofwel een token ofwel een letterlijk getal zijn (bv. 0 voor een rechte hoek), nooit
-            gemixed binnen dat ene attribuut. Een hoek die je weglaat wordt 0. Voeg geen XML-commentaar toe in de
-            XAML.
+            gemixed binnen dat ene attribuut. Een hoek die je weglaat wordt 0. Hetzelfde probleem, dezelfde
+            oplossing geldt voor Margin (theming:MarginParts.Left/Top/Right/Bottom) en voor de Padding van een
+            Border of Control (theming:PaddingParts.Left/Top/Right/Bottom) zodra niet alle zijden gelijk hoeven te
+            zijn maar er wel ergens een token gebruikt moet worden - ook daar wordt een weggelaten zijde 0, en mag
+            elke zijde apart ofwel een token ofwel een letterlijk getal zijn. Zet nooit ALSNOG een gewoon
+            Margin- of Padding-attribuut op hetzelfde element als je deze Parts-attributen gebruikt - die vervangen
+            het volledig, een los Margin/Padding-attribuut ernaast wordt genegeerd. Voeg geen XML-commentaar toe in
+            de XAML.
             Kleuren:
             {Section(DesignTokenCategory.Color)}
             Hoekronding:
