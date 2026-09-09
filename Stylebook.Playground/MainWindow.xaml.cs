@@ -902,6 +902,11 @@ public partial class MainWindow : Window
     private string BuildAiSystemPrompt()
     {
         return "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
+               "Zet nooit een expliciete Width of Height op het root-element van de component, tenzij " +
+               "daar expliciet om gevraagd wordt - dit component wordt in een Header/Menu/Inhoud/Actie/" +
+               "Footer-regio geplaatst die zelf al de juiste afmeting bepaalt en vult (zie Basis.xaml); " +
+               "een vaste maat op het root-element overschrijft dat en zorgt dat het component niet meer " +
+               "de volledige regio vult, ook al was dat er in de vorige versie niet in gezet.\n" +
                DbThemeBuilder.DescribeForAi(App.Db);
     }
 
