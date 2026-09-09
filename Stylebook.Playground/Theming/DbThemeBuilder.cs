@@ -5,34 +5,56 @@ using System.Windows.Media;
 using Stylebook.Components.Theming;
 using Stylebook.Data;
 using Stylebook.Data.Entities;
+using ComponentsTheme = Stylebook.Components.Theming.Theme;
+using DataTheme = Stylebook.Data.Entities.Theme;
 
 namespace Stylebook.Playground.Theming;
 
 /// <summary>
 /// Builds the app's live theme ResourceDictionary from Stylebook.Data's
 /// DesignTokens table instead of a compiled Themes/*.xaml file - this is
-/// what makes hand-edits on the Stylebook page actually take effect.
-/// ApplyPreset loads a known theme's values INTO that same editable
-/// table (upsert by Name) rather than switching to a separate live
-/// scope - "wisselen van stijl" is loading a starting point (both Value
-/// and DefaultValue), hand-edits afterwards still work exactly the same
-/// way. See DesignToken's class comment for the Value/DefaultValue split.
+/// what makes hand-edits on the Stylebook page actually take effect. Every
+/// theme has its own row per token Name (unique on Theme+Name), so
+/// switching which theme is active (see App.CurrentTheme) never touches
+/// another theme's hand-edits - only ApplyPreset (an explicit "reset to
+/// preset" action) overwrites a theme's own rows. See DesignToken's class
+/// comment for the Value/DefaultValue split, and Stylebook.Data.Entities.
+/// Theme's comment for why it's a separate type from
+/// Stylebook.Components.Theming.Theme (used here to convert between them).
 /// </summary>
 public static class DbThemeBuilder
 {
-    /// <summary>Seeds the table once, from Visual Studio's values, if it's empty - so there's always something correct to render.</summary>
+    /// <summary>
+    /// Seeds any theme that has no rows yet, from its own known preset,
+    /// and creates the singleton AppSettings row if missing (defaulting
+    /// to VisualStudio) - so there's always something correct to render,
+    /// for a brand-new database (both themes get seeded) and for one
+    /// migrated from the old single-row-per-name shape (only the theme(s)
+    /// never backfilled by that migration get seeded - see
+    /// AddThemeScopedDesignTokens's own comment).
+    /// </summary>
     public static void EnsureSeeded(StylebookDbContext db)
     {
-        if (!db.DesignTokens.Any())
+        foreach (var theme in Enum.GetValues<DataTheme>())
         {
-            ApplyPreset(db, Theme.VisualStudio);
+            if (!db.DesignTokens.Any(t => t.Theme == theme))
+            {
+                ApplyPreset(db, theme);
+            }
+        }
+
+        if (!db.AppSettings.Any())
+        {
+            db.AppSettings.Add(new AppSetting { CurrentTheme = DataTheme.VisualStudio });
+            db.SaveChanges();
         }
     }
 
-    /// <summary>Overwrites every existing token's Value AND DefaultValue to match the given theme's known preset, adding any that don't exist yet.</summary>
-    public static void ApplyPreset(StylebookDbContext db, Theme theme)
+    /// <summary>Overwrites this theme's existing tokens' Value AND DefaultValue to match its known preset, adding any that don't exist yet - never touches another theme's rows.</summary>
+    public static void ApplyPreset(StylebookDbContext db, DataTheme theme)
     {
-        var tokensByName = db.DesignTokens.ToDictionary(t => t.Name);
+        var componentsTheme = Enum.Parse<ComponentsTheme>(theme.ToString());
+        var tokensByName = db.DesignTokens.Where(t => t.Theme == theme).ToDictionary(t => t.Name);
 
         void Upsert(string name, DesignTokenCategory category, string value)
         {
@@ -43,11 +65,11 @@ public static class DbThemeBuilder
             }
             else
             {
-                db.DesignTokens.Add(new DesignToken { Name = name, Category = category, Value = value, DefaultValue = value });
+                db.DesignTokens.Add(new DesignToken { Name = name, Theme = theme, Category = category, Value = value, DefaultValue = value });
             }
         }
 
-        foreach (var (name, value) in DesignTokenCatalog.GetColors(theme))
+        foreach (var (name, value) in DesignTokenCatalog.GetColors(componentsTheme))
         {
             Upsert(name, DesignTokenCategory.Color, value.ToString(CultureInfo.InvariantCulture));
         }
@@ -73,21 +95,21 @@ public static class DbThemeBuilder
     }
 
     /// <summary>
-    /// Builds the app-wide live theme from every token's DefaultValue
-    /// (falling back to Value only if DefaultValue is somehow unset) -
-    /// "in de applicatie de default waardes gebruikt worden". A row's
-    /// in-progress Value is only ever visible on the Stylebook tab's own
-    /// live preview until "Maak dit de standaard" promotes it here.
+    /// Builds the app-wide live theme for the given theme from its tokens'
+    /// DefaultValue (falling back to Value only if DefaultValue is somehow
+    /// unset) - "in de applicatie de default waardes gebruikt worden". A
+    /// row's in-progress Value is only ever visible on the Stylebook tab's
+    /// own live preview until "Maak dit de standaard" promotes it here.
     /// Every token becomes both its raw key (e.g. "AccentColor") and,
     /// for colors, a matching "...Brush" SolidColorBrush - the same two
     /// forms every Themes/*.xaml file provides, so existing
     /// {DynamicResource}/{StaticResource} usages need no changes.
     /// </summary>
-    public static ResourceDictionary Build(StylebookDbContext db)
+    public static ResourceDictionary Build(StylebookDbContext db, DataTheme theme)
     {
         var dictionary = new ResourceDictionary();
 
-        foreach (var token in db.DesignTokens.AsEnumerable())
+        foreach (var token in db.DesignTokens.Where(t => t.Theme == theme).AsEnumerable())
         {
             var value = token.DefaultValue ?? token.Value;
 
@@ -118,12 +140,13 @@ public static class DbThemeBuilder
 
     /// <summary>
     /// Plain-text summary of the CURRENT (possibly hand-edited) token
-    /// values, for an AI system prompt - see DesignTokenCatalog.DescribeForAi
-    /// for the static-file equivalent this replaces for Stylebook.Playground.
+    /// values for the given theme, for an AI system prompt - see
+    /// DesignTokenCatalog.DescribeForAi for the static-file equivalent
+    /// this replaces for Stylebook.Playground.
     /// </summary>
-    public static string DescribeForAi(StylebookDbContext db)
+    public static string DescribeForAi(StylebookDbContext db, DataTheme theme)
     {
-        var tokens = db.DesignTokens.AsEnumerable().ToList();
+        var tokens = db.DesignTokens.Where(t => t.Theme == theme).AsEnumerable().ToList();
 
         string Section(DesignTokenCategory category) => string.Join(
             '\n', tokens.Where(t => t.Category == category).Select(t => $"  {DisplayName(t)} = {t.Value}"));
@@ -131,14 +154,15 @@ public static class DbThemeBuilder
         var fontFamily = tokens.FirstOrDefault(t => t.Category == DesignTokenCategory.FontFamily);
 
         return $"""
-            Beschikbare stijl-tokens (het handmatig aangepaste Stylebook) - bouw het ontwerp UITSLUITEND met deze
-            tokens, verzin geen eigen kleur, ronding of maat. Refereer ALLE tokens (kleur, hoekronding, afstand,
-            lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit StaticResource, want deze XAML
-            wordt at runtime geparsed zonder ambient resource-context, waardoor StaticResource niet oplost. Voor
-            Margin/Padding/Thickness mag een token-referentie alleen de VOLLEDIGE attribuutwaarde zijn - nooit
-            combineren met losse cijfers en komma's in dezelfde waarde (dus niet eerst 0,0,0, en dan pas de
-            referentie); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke getallen, ofwel
-            uitsluitend een token-referentie als hele waarde. Voeg geen XML-commentaar toe in de XAML.
+            Beschikbare stijl-tokens voor thema {theme} (het handmatig aangepaste Stylebook) - bouw het ontwerp
+            UITSLUITEND met deze tokens, verzin geen eigen kleur, ronding of maat. Refereer ALLE tokens (kleur,
+            hoekronding, afstand, lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit
+            StaticResource, want deze XAML wordt at runtime geparsed zonder ambient resource-context, waardoor
+            StaticResource niet oplost. Voor Margin/Padding/Thickness mag een token-referentie alleen de VOLLEDIGE
+            attribuutwaarde zijn - nooit combineren met losse cijfers en komma's in dezelfde waarde (dus niet eerst
+            0,0,0, en dan pas de referentie); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke
+            getallen, ofwel uitsluitend een token-referentie als hele waarde. Voeg geen XML-commentaar toe in de
+            XAML.
             Kleuren:
             {Section(DesignTokenCategory.Color)}
             Hoekronding:

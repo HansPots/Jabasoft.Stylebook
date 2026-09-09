@@ -23,6 +23,9 @@ public class DesignToken : IAuditableEntity
     /// <summary>Matches a {DynamicResource}/{StaticResource} key used throughout the app, e.g. "AccentColor" or "RadiusMedium".</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Which theme this row's Value/DefaultValue belongs to - each theme has its own row per Name (unique on Theme+Name), so hand-edits under one theme never affect another.</summary>
+    public Theme Theme { get; set; }
+
     public DesignTokenCategory Category { get; set; }
 
     /// <summary>Hex for Color, a plain number for Radius/Spacing/FontSize, a font name for FontFamily. The working/draft value - see the class comment.</summary>

@@ -10,10 +10,13 @@ public sealed class StylebookDbContext(DbContextOptions<StylebookDbContext> opti
 
     public DbSet<DesignToken> DesignTokens => Set<DesignToken>();
 
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new StylebookComponentConfiguration());
         modelBuilder.ApplyConfiguration(new DesignTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

@@ -2,6 +2,7 @@ using System.Windows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Stylebook.Data;
+using Stylebook.Data.Entities;
 using Stylebook.Playground.Ai;
 using Stylebook.Playground.Theming;
 
@@ -15,6 +16,9 @@ public partial class App : Application
     public static StylebookDbContext Db { get; private set; } = null!;
 
     public static AiClient Ai { get; private set; } = null!;
+
+    /// <summary>Which theme is currently active app-wide - persisted in AppSettings so it survives a restart, since DesignTokens no longer implies a "current" theme now every theme has its own rows. Change via SwitchTheme, never set directly.</summary>
+    public static Theme CurrentTheme { get; private set; }
 
     /// <summary>
     /// The live, DB-backed theme layer merged last into Application.Resources
@@ -52,7 +56,8 @@ public partial class App : Application
         Db.Database.Migrate();
 
         DbThemeBuilder.EnsureSeeded(Db);
-        _liveThemeDictionary = DbThemeBuilder.Build(Db);
+        CurrentTheme = Db.AppSettings.Single().CurrentTheme;
+        _liveThemeDictionary = DbThemeBuilder.Build(Db, CurrentTheme);
         Resources.MergedDictionaries.Add(_liveThemeDictionary);
 
         var aiServerUrl = configuration["AiConnector:ServerUrl"]
@@ -67,7 +72,7 @@ public partial class App : Application
     public static void ReapplyLiveTheme()
     {
         var index = Current.Resources.MergedDictionaries.IndexOf(_liveThemeDictionary);
-        _liveThemeDictionary = DbThemeBuilder.Build(Db);
+        _liveThemeDictionary = DbThemeBuilder.Build(Db, CurrentTheme);
 
         if (index >= 0)
         {
@@ -77,6 +82,24 @@ public partial class App : Application
         {
             Current.Resources.MergedDictionaries.Add(_liveThemeDictionary);
         }
+    }
+
+    /// <summary>
+    /// Switches the app-wide active theme: persists the choice in
+    /// AppSettings, then reapplies the live theme from THAT theme's own
+    /// stored tokens (hand-edits included) - never resets anything. A
+    /// deliberate reset back to a theme's built-in preset is a separate,
+    /// explicit action (DbThemeBuilder.ApplyPreset), not something
+    /// switching does as a side effect.
+    /// </summary>
+    public static void SwitchTheme(Theme theme)
+    {
+        var setting = Db.AppSettings.Single();
+        setting.CurrentTheme = theme;
+        Db.SaveChanges();
+
+        CurrentTheme = theme;
+        ReapplyLiveTheme();
     }
 
     /// <summary>Guards against showing more than one crash dialog at once - see the class comment on OnDispatcherUnhandledException for why that matters here.</summary>

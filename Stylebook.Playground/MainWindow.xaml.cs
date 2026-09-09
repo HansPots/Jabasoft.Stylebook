@@ -20,6 +20,8 @@ using Stylebook.Data;
 using Stylebook.Data.Entities;
 using Stylebook.Playground.Editor;
 using Stylebook.Playground.Theming;
+using ComponentsTheme = Stylebook.Components.Theming.Theme;
+using DataTheme = Stylebook.Data.Entities.Theme;
 
 namespace Stylebook.Playground;
 
@@ -40,12 +42,12 @@ public partial class MainWindow : Window
         Stylebook,
     }
 
-    private sealed record ThemePresetOption(Theme Value, string Label);
+    private sealed record ThemePresetOption(ComponentsTheme Value, string Label);
 
     private static readonly ThemePresetOption[] ThemePresetOptions =
     [
-        new ThemePresetOption(Theme.Lcars, "LCARS"),
-        new ThemePresetOption(Theme.VisualStudio, "Visual Studio"),
+        new ThemePresetOption(ComponentsTheme.Lcars, "LCARS"),
+        new ThemePresetOption(ComponentsTheme.VisualStudio, "Visual Studio"),
     ];
 
     private BuilderMode _builderMode = BuilderMode.PageBuilder;
@@ -74,7 +76,8 @@ public partial class MainWindow : Window
 
         ThemePresetPicker.ItemsSource = ThemePresetOptions;
         ThemePresetPicker.DisplayMemberPath = nameof(ThemePresetOption.Label);
-        ThemePresetPicker.SelectedIndex = DetectActiveThemeIndex(App.Db);
+        ThemePresetPicker.SelectedIndex = Array.FindIndex(
+            ThemePresetOptions, o => string.Equals(o.Value.ToString(), App.CurrentTheme.ToString(), StringComparison.Ordinal));
         _initializing = false;
 
         LoadComponentsByRegion();
@@ -130,33 +133,6 @@ public partial class MainWindow : Window
         await MonacoDiffView.CoreWebView2.ExecuteScriptAsync("window.clearDiffContent()");
     }
 
-    /// <summary>
-    /// Which preset's AccentColor matches what's actually stored right
-    /// now - so the picker reflects reality instead of always defaulting
-    /// to "Visual Studio" regardless of the database. Falls back to
-    /// Visual Studio (index 1) when nothing matches exactly (hand-edited
-    /// tokens, or a value that doesn't correspond to any known preset).
-    /// </summary>
-    private static int DetectActiveThemeIndex(StylebookDbContext db)
-    {
-        var storedAccent = db.DesignTokens.FirstOrDefault(t => t.Name == "AccentColor")?.Value;
-        if (storedAccent is not null)
-        {
-            for (var i = 0; i < ThemePresetOptions.Length; i++)
-            {
-                var presetAccent = DesignTokenCatalog.GetColors(ThemePresetOptions[i].Value)
-                    .FirstOrDefault(c => c.Name == "AccentColor").Value
-                    .ToString(CultureInfo.InvariantCulture);
-                if (string.Equals(storedAccent, presetAccent, StringComparison.OrdinalIgnoreCase))
-                {
-                    return i;
-                }
-            }
-        }
-
-        return 1; // Visual Studio - the app's only intended style; also the seed default.
-    }
-
     private void LoadComponentsByRegion()
     {
         var componentsByRegion = App.Db.Components.AsEnumerable().ToLookup(c => c.Region);
@@ -172,11 +148,11 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Loads a known theme's values into the DesignTokens table (overwrites
-    /// whatever is there, including hand-edits - a preset is a starting
-    /// point, not a merge) and reapplies the live theme app-wide. Guarded
-    /// by _initializing so setting the ComboBox's initial selection in the
-    /// constructor doesn't clobber whatever was last saved to the database.
+    /// Switches which theme is active app-wide (App.SwitchTheme) - each
+    /// theme keeps its own stored tokens, hand-edits included, so this is
+    /// non-destructive; it does NOT reset anything back to a preset.
+    /// Guarded by _initializing so setting the ComboBox's initial
+    /// selection in the constructor doesn't re-trigger a switch.
     /// </summary>
     private void ThemePreset_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -185,8 +161,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        DbThemeBuilder.ApplyPreset(App.Db, option.Value);
-        App.ReapplyLiveTheme();
+        App.SwitchTheme(Enum.Parse<DataTheme>(option.Value.ToString()));
 
         if (_builderMode == BuilderMode.Stylebook)
         {
@@ -420,7 +395,7 @@ public partial class MainWindow : Window
     /// </summary>
     private FrameworkElement BuildStylebookPanel(string? statusMessage = null)
     {
-        var tokens = App.Db.DesignTokens.AsEnumerable()
+        var tokens = App.Db.DesignTokens.Where(t => t.Theme == App.CurrentTheme).AsEnumerable()
             .OrderBy(t => (int)t.Category)
             .ThenBy(TokenSortValue)
             .ThenBy(t => t.Name, StringComparer.Ordinal)
@@ -633,7 +608,7 @@ public partial class MainWindow : Window
     /// </summary>
     private FrameworkElement BuildStyleReferenceBar()
     {
-        var tokens = App.Db.DesignTokens.AsEnumerable()
+        var tokens = App.Db.DesignTokens.Where(t => t.Theme == App.CurrentTheme).AsEnumerable()
             .OrderBy(t => (int)t.Category)
             .ThenBy(TokenSortValue)
             .ThenBy(t => t.Name, StringComparer.Ordinal)
@@ -920,7 +895,7 @@ public partial class MainWindow : Window
                "Footer-regio geplaatst die zelf al de juiste afmeting bepaalt en vult (zie Basis.xaml); " +
                "een vaste maat op het root-element overschrijft dat en zorgt dat het component niet meer " +
                "de volledige regio vult, ook al was dat er in de vorige versie niet in gezet.\n" +
-               DbThemeBuilder.DescribeForAi(App.Db);
+               DbThemeBuilder.DescribeForAi(App.Db, App.CurrentTheme);
     }
 
     /// <summary>
