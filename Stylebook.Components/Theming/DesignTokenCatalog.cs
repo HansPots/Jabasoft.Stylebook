@@ -35,6 +35,8 @@ public static class DesignTokenCatalog
         ("RadiusSmall", 3),
         ("RadiusMedium", 6),
         ("RadiusLarge", 12),
+        ("RadiusXLarge", 18),
+        ("RadiusXXLarge", 24),
     ];
 
     public static readonly (string Name, double Pixels)[] SpacingTokens =

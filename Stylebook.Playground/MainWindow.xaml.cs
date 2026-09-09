@@ -422,6 +422,7 @@ public partial class MainWindow : Window
     {
         var tokens = App.Db.DesignTokens.AsEnumerable()
             .OrderBy(t => (int)t.Category)
+            .ThenBy(TokenSortValue)
             .ThenBy(t => t.Name, StringComparer.Ordinal)
             .ToList();
 
@@ -634,6 +635,7 @@ public partial class MainWindow : Window
     {
         var tokens = App.Db.DesignTokens.AsEnumerable()
             .OrderBy(t => (int)t.Category)
+            .ThenBy(TokenSortValue)
             .ThenBy(t => t.Name, StringComparer.Ordinal)
             .ToList();
 
@@ -670,6 +672,17 @@ public partial class MainWindow : Window
 
         return stack;
     }
+
+    /// <summary>
+    /// Klein-naar-groot binnen een categorie i.p.v. alfabetisch op naam -
+    /// alfabetisch zette RadiusLarge/RadiusMedium/RadiusSmall bijvoorbeeld
+    /// grofweg groot-medium-klein neer, puur toeval van de namen. Color en
+    /// FontFamily hebben geen zinvolle grootte-volgorde (hex/fontnaam
+    /// parsen niet als getal) - die vallen terug op 0, dus voor hen blijft
+    /// de ThenBy(Name) erna gewoon de doorslag geven, exact zoals eerst.
+    /// </summary>
+    private static double TokenSortValue(DesignToken token) =>
+        double.TryParse(token.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : 0;
 
     private static string CategoryLabel(DesignTokenCategory category) => category switch
     {

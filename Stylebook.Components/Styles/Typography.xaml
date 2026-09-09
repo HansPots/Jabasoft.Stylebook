@@ -50,5 +50,7 @@
     <CornerRadius x:Key="RadiusSmall">3</CornerRadius>
     <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
     <CornerRadius x:Key="RadiusLarge">12</CornerRadius>
+    <CornerRadius x:Key="RadiusXLarge">18</CornerRadius>
+    <CornerRadius x:Key="RadiusXXLarge">24</CornerRadius>
 
 </ResourceDictionary>
