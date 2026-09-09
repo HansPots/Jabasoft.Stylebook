@@ -138,14 +138,22 @@
 
                     <!-- Stijl-wisselaar, bovenaan zodat 'ie voor de hele
                          app geldt (chrome en preview delen dezelfde
-                         resources, zie App.xaml.cs). "Wisselen" laadt een
-                         voorinstelling in de Stylebook-tabel (zie
-                         ThemePreset_SelectionChanged/DbThemeBuilder.ApplyPreset)
-                         - met de hand aangepaste waarden overschrijf je
-                         dus wel, dat is de bedoeling van een preset. -->
+                         resources, zie App.xaml.cs). Wisselen zelf is
+                         niet-destructief - elk thema bewaart zijn eigen
+                         tokens (zie App.SwitchTheme). "Herstel naar
+                         standaard" is de enige plek die een thema WEL
+                         terugzet naar zijn vaste preset-waarden
+                         (ResetThemeToPreset_Click/DbThemeBuilder.ApplyPreset),
+                         en dat gebeurt alleen na expliciete bevestiging. -->
                     <ComboBox x:Name="ThemePresetPicker"
                               SelectionChanged="ThemePreset_SelectionChanged"
-                              Margin="0,0,0,16" />
+                              Margin="0,0,0,4" />
+                    <Button Content="Herstel naar standaard"
+                            Click="ResetThemeToPreset_Click"
+                            Style="{StaticResource DeleteComponentButtonStyle}"
+                            HorizontalAlignment="Left"
+                            Margin="0,0,0,16"
+                            AutomationProperties.Name="Herstel naar standaard" />
 
                     <!-- Paginabouwer: componenten plaatsen in Header/Menu/
                          Inhoud/Actie/Footer, geen componentwijzigingen.

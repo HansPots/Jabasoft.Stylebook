@@ -133,6 +133,14 @@ public partial class MainWindow : Window
         await MonacoDiffView.CoreWebView2.ExecuteScriptAsync("window.clearDiffContent()");
     }
 
+    /// <summary>Called from a style-reference-bar row click - see BuildStyleReferenceBar. Runs entirely in JS (window.replaceSelectionWithToken) since Monaco's selection/edit APIs live there.</summary>
+    private async void ReplaceSelectionWithToken(string tokenName)
+    {
+        await _monacoReady.Task;
+        await MonacoDiffView.CoreWebView2.ExecuteScriptAsync(
+            $"window.replaceSelectionWithToken({JsonSerializer.Serialize(tokenName)})");
+    }
+
     private void LoadComponentsByRegion()
     {
         var componentsByRegion = App.Db.Components.AsEnumerable().ToLookup(c => c.Region);
@@ -166,6 +174,36 @@ public partial class MainWindow : Window
         if (_builderMode == BuilderMode.Stylebook)
         {
             StylebookContent.Content = BuildStylebookPanel();
+        }
+    }
+
+    /// <summary>
+    /// The one deliberate, destructive counterpart to the (now
+    /// non-destructive) theme switcher - overwrites every token of the
+    /// CURRENTLY active theme back to its built-in preset values, same as
+    /// ApplyPreset always did before switching stopped doing this
+    /// automatically. Confirmed first: there's no undo.
+    /// </summary>
+    private void ResetThemeToPreset_Click(object sender, RoutedEventArgs e)
+    {
+        var themeLabel = ThemePresetOptions.First(o => string.Equals(o.Value.ToString(), App.CurrentTheme.ToString(), StringComparison.Ordinal)).Label;
+        var confirmed = MessageBox.Show(
+            $"Alle handmatige aanpassingen aan '{themeLabel}' gaan verloren en worden teruggezet naar de standaardwaarden. Doorgaan?",
+            "Herstel naar standaard",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning) == MessageBoxResult.Yes;
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        DbThemeBuilder.ApplyPreset(App.Db, App.CurrentTheme);
+        App.ReapplyLiveTheme();
+
+        if (_builderMode == BuilderMode.Stylebook)
+        {
+            StylebookContent.Content = BuildStylebookPanel($"'{themeLabel}' hersteld naar standaardwaarden.");
         }
     }
 
@@ -601,10 +639,14 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Alleen-lezen naslag van elk stijl-token (icoon/swatch + naam, geen
-    /// waarde, geen bewerken) voor de balk links van de preview in
-    /// Componentenbouwer - hergebruikt dezelfde icoon-generatie als het
-    /// Stylebook-tabblad (CreatePreview), alleen zonder de Apply-kant.
+    /// Naslag van elk stijl-token (icoon/swatch + naam) voor de balk links
+    /// van de preview in Componentenbouwer - hergebruikt dezelfde icoon-
+    /// generatie als het Stylebook-tabblad (CreatePreview), zonder de
+    /// Apply-kant. Elke rij is klikbaar: selecteer een letterlijke waarde
+    /// in het VOORSTEL (rechterkant van de diff-editor) en klik een token
+    /// om die selectie te vervangen door {DynamicResource TokenNaam} - zie
+    /// ReplaceSelectionWithToken. Zonder selectie voegt het token gewoon
+    /// in op de cursorpositie.
     /// </summary>
     private FrameworkElement BuildStyleReferenceBar()
     {
@@ -625,7 +667,13 @@ public partial class MainWindow : Window
                 stack.Children.Add(SectionLabel(CategoryLabel(token.Category)));
             }
 
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+            var row = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 8),
+                Background = Brushes.Transparent, // hit-testable over de hele rij, niet alleen waar kinderen tekenen
+                Cursor = Cursors.Hand,
+            };
 
             var (preview, _) = CreatePreview(token.Category, token.Value);
             preview.VerticalAlignment = VerticalAlignment.Center;
@@ -641,6 +689,11 @@ public partial class MainWindow : Window
                 FontSize = 11,
             };
             row.Children.Add(nameLabel);
+
+            var tokenName = token.Name;
+            row.PreviewMouseLeftButtonDown += (_, _) => ReplaceSelectionWithToken(tokenName);
+            row.MouseEnter += (_, _) => row.SetResourceReference(Panel.BackgroundProperty, "BorderBrush");
+            row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
 
             stack.Children.Add(row);
         }

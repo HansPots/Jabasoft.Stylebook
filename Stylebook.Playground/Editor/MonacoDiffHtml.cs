@@ -70,6 +70,23 @@ public static class MonacoDiffHtml
             window.clearDiffContent = function () {
                 if (diffEditor) { diffEditor.setModel(null); }
             };
+
+            // Vervangt de huidige selectie in het VOORSTEL (rechterkant)
+            // door een {DynamicResource TokenNaam}-referentie - of voegt 'm
+            // in op de cursorpositie als er niets geselecteerd is (een
+            // "selectie" van lengte 0 is in Monaco gewoon een geldige range).
+            // executeEdits triggert modifiedModel's eigen onDidChangeContent
+            // hierboven vanzelf, dus dit synchroniseert automatisch terug
+            // naar _proposedXaml zoals elke andere wijziging.
+            window.replaceSelectionWithToken = function (tokenName) {
+                if (!diffEditor) { return; }
+                var modifiedEditor = diffEditor.getModifiedEditor();
+                var selection = modifiedEditor.getSelection();
+                modifiedEditor.executeEdits("replace-with-token", [
+                    { range: selection, text: "{DynamicResource " + tokenName + "}", forceMoveMarkers: true }
+                ]);
+                modifiedEditor.focus();
+            };
         </script>
         </body>
         </html>
