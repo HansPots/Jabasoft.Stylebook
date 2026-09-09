@@ -5,13 +5,15 @@ using Stylebook.Data;
 using Stylebook.Data.Entities;
 using Stylebook.Playground.Ai;
 using Stylebook.Playground.Theming;
+using DataApplication = Stylebook.Data.Entities.Application;
+using DataPage = Stylebook.Data.Entities.Page;
 
 namespace Stylebook.Playground;
 
 /// <summary>
 /// Interaction logic for App.xaml
 /// </summary>
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     public static StylebookDbContext Db { get; private set; } = null!;
 
@@ -60,12 +62,37 @@ public partial class App : Application
         _liveThemeDictionary = DbThemeBuilder.Build(Db, CurrentTheme);
         Resources.MergedDictionaries.Add(_liveThemeDictionary);
 
+        EnsureApplicationsSeeded();
+
         var aiServerUrl = configuration["AiConnector:ServerUrl"]
             ?? throw new InvalidOperationException("AiConnector:ServerUrl ontbreekt in appsettings.json.");
         var aiModel = configuration["AiConnector:Model"]
             ?? throw new InvalidOperationException("AiConnector:Model ontbreekt in appsettings.json.");
 
         Ai = new AiClient(aiServerUrl, aiModel);
+    }
+
+    /// <summary>
+    /// "Jabasoft" is the first real JabaSoft family member being styled
+    /// through the multi-app Stylebook (Applications/Pages/PageRegions) -
+    /// seeds it once, with a single "Hoofdscherm" page, if it doesn't
+    /// exist yet. Only ever adds - never resets an existing Application's
+    /// or Page's data, unlike DbThemeBuilder.EnsureSeeded's per-theme
+    /// upsert (there's no "preset" to reset an Application back to).
+    /// </summary>
+    private static void EnsureApplicationsSeeded()
+    {
+        if (Db.Applications.Any(a => a.Name == "Jabasoft"))
+        {
+            return;
+        }
+
+        var jabasoft = new DataApplication { Name = "Jabasoft" };
+        Db.Applications.Add(jabasoft);
+        Db.SaveChanges();
+
+        Db.Pages.Add(new DataPage { ApplicationId = jabasoft.Id, Name = "Hoofdscherm" });
+        Db.SaveChanges();
     }
 
     /// <summary>Call after saving DesignTokens changes so the edit is visible immediately, everywhere.</summary>

@@ -22,6 +22,8 @@ using Stylebook.Playground.Editor;
 using Stylebook.Playground.Theming;
 using ComponentsTheme = Stylebook.Components.Theming.Theme;
 using DataTheme = Stylebook.Data.Entities.Theme;
+using DataApplication = Stylebook.Data.Entities.Application;
+using DataPage = Stylebook.Data.Entities.Page;
 
 namespace Stylebook.Playground;
 
@@ -54,6 +56,19 @@ public partial class MainWindow : Window
     private StylebookComponent? _lastSelectedComponent;
     private bool _initializing = true;
 
+    /// <summary>Welke Applicatie/Pagina in Paginabouwer is gekozen - null zolang er nog geen (of geen enkele) is. Zie ApplicationPicker_SelectionChanged/PagePicker_SelectionChanged.</summary>
+    private DataApplication? _selectedApplication;
+
+    private DataPage? _selectedPage;
+
+    /// <summary>
+    /// True terwijl LoadPageRegionsIntoSelections de regio-ListBoxen
+    /// programmatisch vult vanuit een net gekozen Pagina - voorkomt dat
+    /// Component_SelectionChanged die eigen wijzigingen aanziet voor een
+    /// echte gebruikersactie en ze meteen weer terugschrijft.
+    /// </summary>
+    private bool _loadingPageRegions;
+
     /// <summary>An AI-proposed Xaml awaiting Overnemen/Negeren - see ShowProposal. Null when there's nothing to compare.</summary>
     private string? _proposedXaml;
 
@@ -81,6 +96,7 @@ public partial class MainWindow : Window
         _initializing = false;
 
         LoadComponentsByRegion();
+        LoadApplications();
         PageBuilderModeButton.IsChecked = true;
 
         _ = InitializeMonacoDiffEditor();
@@ -153,6 +169,105 @@ public partial class MainWindow : Window
         AlgemeenComponents.ItemsSource = componentsByRegion[ComponentRegion.Algemeen].ToList();
 
         RefreshPreview();
+    }
+
+    /// <summary>De regio's die daadwerkelijk een Basis-slot hebben - Algemeen niet, zie ComponentRegion's class comment, dus die telt niet mee voor een Pagina.</summary>
+    private static readonly ComponentRegion[] PageRegionsInBasis =
+    [
+        ComponentRegion.Header, ComponentRegion.Menu, ComponentRegion.Inhoud, ComponentRegion.Actie, ComponentRegion.Footer,
+    ];
+
+    private void LoadApplications()
+    {
+        ApplicationPicker.ItemsSource = App.Db.Applications.AsEnumerable().OrderBy(a => a.Name, StringComparer.Ordinal).ToList();
+        ApplicationPicker.SelectedIndex = ApplicationPicker.Items.Count > 0 ? 0 : -1;
+    }
+
+    private void ApplicationPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _selectedApplication = ApplicationPicker.SelectedItem as DataApplication;
+        LoadPages();
+    }
+
+    private void LoadPages()
+    {
+        PagePicker.ItemsSource = _selectedApplication is null
+            ? null
+            : App.Db.Pages.AsEnumerable().Where(p => p.ApplicationId == _selectedApplication.Id).OrderBy(p => p.Name, StringComparer.Ordinal).ToList();
+        PagePicker.SelectedIndex = PagePicker.Items.Count > 0 ? 0 : -1;
+
+        if (PagePicker.Items.Count == 0)
+        {
+            // Geen PagePicker_SelectionChanged-event bij een lege lijst -
+            // zelf de regio-ListBoxen leegtrekken zodat er geen vorige
+            // pagina's selecties blijven hangen.
+            _selectedPage = null;
+            LoadPageRegionsIntoSelections();
+        }
+    }
+
+    private void PagePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        _selectedPage = PagePicker.SelectedItem as DataPage;
+        LoadPageRegionsIntoSelections();
+    }
+
+    /// <summary>
+    /// Zet elke regio-ListBox's selectie op wat er voor de huidige
+    /// _selectedPage is opgeslagen (of leeg, zonder pagina of zonder
+    /// opgeslagen keuze voor die regio) - zie SavePageRegionSelection
+    /// voor de schrijf-kant. _loadingPageRegions voorkomt dat dit
+    /// programmatisch zetten zelf weer als een gebruikerswijziging
+    /// wordt opgeslagen.
+    /// </summary>
+    private void LoadPageRegionsIntoSelections()
+    {
+        _loadingPageRegions = true;
+        try
+        {
+            var regions = _selectedPage is { } page
+                ? App.Db.PageRegions.AsEnumerable().Where(r => r.PageId == page.Id).ToList()
+                : [];
+
+            foreach (var region in PageRegionsInBasis)
+            {
+                var componentId = regions.FirstOrDefault(r => r.Region == region)?.ComponentId;
+                var listBox = ComponentsListBox(region);
+                listBox.SelectedItem = componentId is null
+                    ? null
+                    : listBox.Items.Cast<StylebookComponent>().FirstOrDefault(c => c.Id == componentId);
+            }
+        }
+        finally
+        {
+            _loadingPageRegions = false;
+        }
+
+        RefreshPreview();
+    }
+
+    private void AddPage_Click(object sender, RoutedEventArgs e) => AddPage();
+
+    private void NewPageName_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            AddPage();
+        }
+    }
+
+    private void AddPage()
+    {
+        var name = NewPageNameBox.Text.Trim();
+        if (name.Length == 0 || _selectedApplication is not { } application)
+        {
+            return;
+        }
+
+        App.Db.Pages.Add(new DataPage { ApplicationId = application.Id, Name = name });
+        App.Db.SaveChanges();
+        NewPageNameBox.Clear();
+        LoadPages();
     }
 
     /// <summary>
@@ -233,6 +348,7 @@ public partial class MainWindow : Window
         PageBuilderBasis.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
+        PageContextPicker.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
 
         if (mode != BuilderMode.ComponentBuilder)
         {
@@ -295,6 +411,7 @@ public partial class MainWindow : Window
             ContainerHeightSlider.Value = selected.TestContainerHeight;
         }
 
+        SavePageRegionSelection(region, selected);
         RefreshPreview();
     }
 
@@ -307,6 +424,35 @@ public partial class MainWindow : Window
                 ComponentsListBox(region).SelectedItem = null;
             }
         }
+    }
+
+    /// <summary>
+    /// Paginabouwer only: persists which component (if any) occupies
+    /// this region for the currently selected Page - upsert by
+    /// (PageId, Region), see PageRegionConfiguration's unique index.
+    /// No-op outside Paginabouwer, without a selected Page, or while
+    /// LoadPageRegionsIntoSelections is programmatically restoring a
+    /// page's saved selections (_loadingPageRegions) - that's a read,
+    /// not a user edit, and must never write back.
+    /// </summary>
+    private void SavePageRegionSelection(ComponentRegion region, StylebookComponent? selected)
+    {
+        if (_loadingPageRegions || _builderMode != BuilderMode.PageBuilder || _selectedPage is not { } page)
+        {
+            return;
+        }
+
+        var pageRegion = App.Db.PageRegions.FirstOrDefault(r => r.PageId == page.Id && r.Region == region);
+        if (pageRegion is null)
+        {
+            App.Db.PageRegions.Add(new PageRegion { PageId = page.Id, Region = region, ComponentId = selected?.Id });
+        }
+        else
+        {
+            pageRegion.ComponentId = selected?.Id;
+        }
+
+        App.Db.SaveChanges();
     }
 
     /// <summary>

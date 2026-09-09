@@ -212,6 +212,30 @@
                         </RadioButton>
                     </Grid>
 
+                    <!-- Applicatie/Pagina-kiezer: alleen zichtbaar in
+                         Paginabouwer (zie SetBuilderMode). Zodra een
+                         Pagina gekozen is, worden de regio-keuzes
+                         hieronder niet meer alleen live voorbeeldstatus -
+                         ze worden ook opgeslagen (PageRegions) en bij
+                         het herkiezen van die pagina weer teruggezet,
+                         zie ApplicationPicker_SelectionChanged/
+                         PagePicker_SelectionChanged/Component_SelectionChanged. -->
+                    <StackPanel x:Name="PageContextPicker" Margin="0,0,0,16">
+                        <TextBox Text="APPLICATIE" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                        <ComboBox x:Name="ApplicationPicker" DisplayMemberPath="Name" SelectionChanged="ApplicationPicker_SelectionChanged" Margin="0,0,0,8" />
+
+                        <TextBox Text="PAGINA" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                        <ComboBox x:Name="PagePicker" DisplayMemberPath="Name" SelectionChanged="PagePicker_SelectionChanged" Margin="0,0,0,8" />
+                        <!-- Zelfde toevoegen-patroon als bij een component:
+                             naam intypen + Enter of "+". -->
+                        <DockPanel>
+                            <Button Click="AddPage_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Nieuwe pagina toevoegen">
+                                <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                            </Button>
+                            <TextBox x:Name="NewPageNameBox" KeyDown="NewPageName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
+                        </DockPanel>
+                    </StackPanel>
+
                     <!-- Componentbeheer per Basis-regio, klap open om de
                          daarin opgeslagen componenten (Stylebook.Data) te
                          zien. Selecteer een component om 'm te hernoemen

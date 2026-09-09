@@ -12,11 +12,20 @@ public sealed class StylebookDbContext(DbContextOptions<StylebookDbContext> opti
 
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
+    public DbSet<Application> Applications => Set<Application>();
+
+    public DbSet<Page> Pages => Set<Page>();
+
+    public DbSet<PageRegion> PageRegions => Set<PageRegion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new StylebookComponentConfiguration());
         modelBuilder.ApplyConfiguration(new DesignTokenConfiguration());
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
+        modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
+        modelBuilder.ApplyConfiguration(new PageConfiguration());
+        modelBuilder.ApplyConfiguration(new PageRegionConfiguration());
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
