@@ -158,10 +158,19 @@ public static class DbThemeBuilder
             UITSLUITEND met deze tokens, verzin geen eigen kleur, ronding of maat. Refereer ALLE tokens (kleur,
             hoekronding, afstand, lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit
             StaticResource, want deze XAML wordt at runtime geparsed zonder ambient resource-context, waardoor
-            StaticResource niet oplost. Voor Margin/Padding/Thickness mag een token-referentie alleen de VOLLEDIGE
-            attribuutwaarde zijn - nooit combineren met losse cijfers en komma's in dezelfde waarde (dus niet eerst
-            0,0,0, en dan pas de referentie); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke
-            getallen, ofwel uitsluitend een token-referentie als hele waarde. Voeg geen XML-commentaar toe in de
+            StaticResource niet oplost. Voor Margin/Padding/Thickness/CornerRadius mag een token-referentie alleen
+            de VOLLEDIGE attribuutwaarde zijn - nooit combineren met losse cijfers of meerdere tokens in dezelfde
+            komma-waarde (dus niet eerst 0,0,0, en dan pas de referentie, en ook niet twee tokens samen in een
+            waarde); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke getallen, ofwel uitsluitend een
+            token-referentie als hele waarde. Moet een Border per hoek een andere hoekronding hebben (dus niet alle
+            vier gelijk) EN moet dat via tokens - dan kan het CornerRadius-attribuut zelf niet gebruikt worden. Zet
+            in plaats daarvan op de Border het namespace-voorvoegsel xmlns:theming gelijk aan clr-namespace:
+            Stylebook.Components.Theming;assembly=Stylebook.Components, en gebruik per hoek een eigen apart
+            attribuut - theming:CornerRadiusParts.TopLeft, theming:CornerRadiusParts.TopRight,
+            theming:CornerRadiusParts.BottomRight en theming:CornerRadiusParts.BottomLeft - elk met DynamicResource
+            verwijzend naar de gewenste token, precies zoals bij elk ander attribuut. Elk van die vier attributen
+            mag zelf weer ofwel een token ofwel een letterlijk getal zijn (bv. 0 voor een rechte hoek), nooit
+            gemixed binnen dat ene attribuut. Een hoek die je weglaat wordt 0. Voeg geen XML-commentaar toe in de
             XAML.
             Kleuren:
             {Section(DesignTokenCategory.Color)}
