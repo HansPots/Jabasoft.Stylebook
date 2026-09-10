@@ -182,6 +182,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <RadioButton x:Name="PageBuilderModeButton"
                                      Grid.Column="0"
@@ -200,7 +201,7 @@
                                  zou anders leeg/onduidelijk worden. -->
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{StaticResource IconPage}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Pagina" FontSize="11" HorizontalAlignment="Center" />
+                                <TextBlock Text="Pagina" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="ComponentBuilderModeButton"
@@ -211,7 +212,7 @@
                                      AutomationProperties.Name="Component">
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{StaticResource IconWidgets}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Component" FontSize="11" HorizontalAlignment="Center" />
+                                <TextBlock Text="Component" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="StylebookModeButton"
@@ -222,7 +223,18 @@
                                      AutomationProperties.Name="Stylebook">
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{StaticResource IconPalette}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Stylebook" FontSize="11" HorizontalAlignment="Center" />
+                                <TextBlock Text="Stylebook" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="CompositionModeButton"
+                                     Grid.Column="3"
+                                     GroupName="BuilderMode"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="CompositionMode_Checked"
+                                     AutomationProperties.Name="Compositie">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconLayers}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Compositie" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                     </Grid>
@@ -656,6 +668,77 @@
                  dit nooit uit de pas loopt met wat de thema-bestanden echt
                  bevatten. -->
             <ContentControl x:Name="StylebookContent" Visibility="Collapsed" />
+
+            <!-- Compositie: componenten uit de platte palette naar het
+                 canvas slepen en vrij positioneren/over elkaar leggen -
+                 laatst gesleept komt bovenop (WPF's eigen Canvas-
+                 tekenvolgorde, geen aparte z-index nodig). "Opslaan als
+                 component" slaat NIET een levend lagen-systeem op, maar
+                 serialiseert de samengestelde boom eenmalig plat naar één
+                 nieuwe StylebookComponent - zie SaveComposition_Click. -->
+            <Border x:Name="CompositionCanvasArea" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Platte lijst van ALLE componenten (niet per regio
+                         zoals in Componentenbouwer) - voor vrij
+                         samenstellen wil je juist componenten uit
+                         verschillende regio's kunnen combineren. -->
+                    <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,1,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ListBox x:Name="CompositionPalette"
+                                     DisplayMemberPath="Name"
+                                     Margin="{StaticResource SpaceMedium}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     PreviewMouseLeftButtonDown="CompositionPalette_PreviewMouseLeftButtonDown"
+                                     PreviewMouseMove="CompositionPalette_PreviewMouseMove" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Het canvas zelf: ruim vast formaat binnen een
+                         ScrollViewer zodat er genoeg ruimte is om vrij te
+                         positioneren. Focusable zodat Delete op een
+                         geselecteerd item werkt. -->
+                    <ScrollViewer Grid.Column="1" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="CompositionCanvas"
+                                Width="2000" Height="1200"
+                                Background="{DynamicResource BackgroundBrush}"
+                                AllowDrop="True"
+                                Drop="CompositionCanvas_Drop"
+                                Focusable="True"
+                                KeyDown="CompositionCanvas_KeyDown" />
+                    </ScrollViewer>
+
+                    <DockPanel Grid.Column="1" Grid.Row="1"
+                               Background="{DynamicResource SurfaceBrush}"
+                               Margin="{StaticResource SpaceMedium}">
+                        <Button DockPanel.Dock="Right" Click="SaveComposition_Click" Style="{StaticResource AddComponentButtonStyle}" Content="Opslaan als component" Margin="4,0,0,0" />
+                        <Button DockPanel.Dock="Right" Click="ClearComposition_Click" Style="{StaticResource DeleteComponentButtonStyle}" AutomationProperties.Name="Leegmaken" Margin="4,0,0,0">
+                            <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
+                        </Button>
+                        <ComboBox x:Name="CompositionRegionPicker" DockPanel.Dock="Right" Width="120" Margin="8,0,0,0">
+                            <ComboBoxItem Content="Header" Tag="Header" IsSelected="True" />
+                            <ComboBoxItem Content="Menu" Tag="Menu" />
+                            <ComboBoxItem Content="Inhoud" Tag="Inhoud" />
+                            <ComboBoxItem Content="Actie" Tag="Actie" />
+                            <ComboBoxItem Content="Footer" Tag="Footer" />
+                            <ComboBoxItem Content="Algemeen" Tag="Algemeen" />
+                        </ComboBox>
+                        <TextBox x:Name="CompositionNameBox" Style="{StaticResource NewComponentNameStyle}" />
+                    </DockPanel>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>

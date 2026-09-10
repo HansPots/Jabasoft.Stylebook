@@ -45,6 +45,7 @@
     <sys:String x:Key="IconDashboard">&#xE871;</sys:String>
     <sys:String x:Key="IconRefresh">&#xE5D5;</sys:String>
     <sys:String x:Key="IconEdit">&#xE3C9;</sys:String>
+    <sys:String x:Key="IconLayers">&#xE53B;</sys:String>
 
     <!-- Hoekronding-schaal, zelfde discipline als de spacing-schaal hierboven:
          een genoemde maat kiezen i.p.v. CornerRadius="6" hardcoden op elk

@@ -43,6 +43,9 @@ public partial class MainWindow : Window
 
         /// <summary>The hand-editable palette (colors/radii/typography) - see Theming/DbThemeBuilder.cs.</summary>
         Stylebook,
+
+        /// <summary>Drag existing components onto a free canvas, stack/position them, then flatten into one new component - see SaveComposition_Click.</summary>
+        Composition,
     }
 
     private sealed record ThemePresetOption(ComponentsTheme Value, string Label);
@@ -61,6 +64,30 @@ public partial class MainWindow : Window
     private DataApplication? _selectedApplication;
 
     private DataPage? _selectedPage;
+
+    /// <summary>Eén item op het Compositie-canvas - de bron waaruit het gerenderd is, de live visual (voor verslepen/verwijderen), en de positie (voor SaveComposition_Click). Left/Top zijn muteerbaar - ze wijzigen live tijdens het verslepen.</summary>
+    private sealed class CompositionItem
+    {
+        public required StylebookComponent Source { get; init; }
+
+        public required Border Visual { get; init; }
+
+        public double Left { get; set; }
+
+        public double Top { get; set; }
+    }
+
+    private readonly List<CompositionItem> _compositionItems = [];
+
+    private CompositionItem? _selectedCompositionItem;
+
+    /// <summary>Muisoffset binnen het geselecteerde item op het moment van MouseLeftButtonDown, zodat verslepen niet met een sprongetje begint (het item springt niet naar de cursor, maar houdt zijn grip-punt vast).</summary>
+    private Point _compositionDragOffset;
+
+    private bool _isDraggingCompositionItem;
+
+    /// <summary>Startpunt van een sleep vanuit CompositionPalette - PreviewMouseMove vergelijkt hiermee om een gewone klik van een echte sleep te onderscheiden (SystemParameters.MinimumHorizontalDragDistance).</summary>
+    private Point _compositionPaletteDragStart;
 
     /// <summary>
     /// True terwijl LoadPageRegionsIntoSelections de regio-ListBoxen
@@ -168,6 +195,9 @@ public partial class MainWindow : Window
         ActieComponents.ItemsSource = componentsByRegion[ComponentRegion.Actie].ToList();
         FooterComponents.ItemsSource = componentsByRegion[ComponentRegion.Footer].ToList();
         AlgemeenComponents.ItemsSource = componentsByRegion[ComponentRegion.Algemeen].ToList();
+
+        // Plat, niet per regio - zie CompositionCanvasArea in MainWindow.xaml.
+        CompositionPalette.ItemsSource = App.Db.Components.AsEnumerable().OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
 
         RefreshPreview();
     }
@@ -384,6 +414,8 @@ public partial class MainWindow : Window
 
     private void StylebookMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Stylebook);
 
+    private void CompositionMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Composition);
+
     /// <summary>
     /// Gates component editing to the Componentenbouwer tab: the
     /// Paginabouwer and Stylebook tabs only ever look, they can never
@@ -407,6 +439,13 @@ public partial class MainWindow : Window
         {
             LoadPageRegionsIntoSelections();
         }
+        else if (mode == BuilderMode.Composition)
+        {
+            // Altijd met een schone lei beginnen, zelfde reden als
+            // ClearComponentEditorState hierboven - een vorige,
+            // niet-opgeslagen compositie zou anders blijven hangen.
+            ClearCompositionCanvas();
+        }
 
         var editingAllowed = mode == BuilderMode.ComponentBuilder;
         HeaderEditRow.IsEnabled = editingAllowed;
@@ -419,6 +458,7 @@ public partial class MainWindow : Window
         PageBuilderBasis.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
+        CompositionCanvasArea.Visibility = mode == BuilderMode.Composition ? Visibility.Visible : Visibility.Collapsed;
         PageContextPicker.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
 
         if (mode != BuilderMode.ComponentBuilder)
@@ -437,10 +477,205 @@ public partial class MainWindow : Window
         {
             StylebookContent.Content ??= BuildStylebookPanel();
         }
-        else
+        else if (mode != BuilderMode.Composition)
         {
+            // Compositie heeft geen "huidige preview" om te verversen -
+            // het canvas houdt zijn eigen inhoud bij (_compositionItems),
+            // los van _lastSelectedComponent/PageBuilderBasis.
             RefreshPreview();
         }
+    }
+
+    /// <summary>Onthoudt het startpunt van een mogelijke sleep vanuit de palette - PreviewMouseMove vergelijkt hiermee.</summary>
+    private void CompositionPalette_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _compositionPaletteDragStart = e.GetPosition(null);
+    }
+
+    /// <summary>
+    /// Start een echte WPF-sleepbewerking zodra de muis met de
+    /// linkerknop ingedrukt ver genoeg beweegt - de drempel
+    /// (SystemParameters.Minimum...DragDistance) is nodig om een gewone
+    /// klik (die alleen maar selecteert) te onderscheiden van een sleep.
+    /// </summary>
+    private void CompositionPalette_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || CompositionPalette.SelectedItem is not StylebookComponent component)
+        {
+            return;
+        }
+
+        var current = e.GetPosition(null);
+        if (Math.Abs(current.X - _compositionPaletteDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(current.Y - _compositionPaletteDragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
+        {
+            return;
+        }
+
+        DragDrop.DoDragDrop(CompositionPalette, component, DragDropEffects.Copy);
+    }
+
+    private void CompositionCanvas_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetData(typeof(StylebookComponent)) is not StylebookComponent component)
+        {
+            return;
+        }
+
+        var position = e.GetPosition(CompositionCanvas);
+        PlaceComponentOnCanvas(component, position.X, position.Y);
+    }
+
+    /// <summary>
+    /// Rendert component (via de al bestaande CreateComponentVisual,
+    /// dezelfde helper als Paginabouwer/Componentenbouwer) en zet 'm op
+    /// het canvas - gewikkeld in een Border zodat er een dunne
+    /// selectierand omheen kan (SelectCompositionItem) en zodat er
+    /// muishandlers voor verslepen op kunnen (CompositionItem_*).
+    /// </summary>
+    private void PlaceComponentOnCanvas(StylebookComponent component, double left, double top)
+    {
+        var host = new Border
+        {
+            BorderThickness = new Thickness(0),
+            Child = CreateComponentVisual(component),
+            Background = Brushes.Transparent, // anders vangt de Border alleen kliks op waar de content zelf ondoorzichtig is
+        };
+        host.MouseLeftButtonDown += CompositionItem_MouseLeftButtonDown;
+        host.MouseMove += CompositionItem_MouseMove;
+        host.MouseLeftButtonUp += CompositionItem_MouseLeftButtonUp;
+
+        Canvas.SetLeft(host, left);
+        Canvas.SetTop(host, top);
+        CompositionCanvas.Children.Add(host);
+
+        var item = new CompositionItem { Source = component, Visual = host, Left = left, Top = top };
+        _compositionItems.Add(item);
+        SelectCompositionItem(item);
+    }
+
+    private void CompositionItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var host = (Border)sender;
+        var item = _compositionItems.First(i => i.Visual == host);
+        SelectCompositionItem(item);
+
+        _isDraggingCompositionItem = true;
+        _compositionDragOffset = e.GetPosition(host);
+        host.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void CompositionItem_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isDraggingCompositionItem || e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var host = (Border)sender;
+        var item = _compositionItems.First(i => i.Visual == host);
+        var position = e.GetPosition(CompositionCanvas);
+        var newLeft = position.X - _compositionDragOffset.X;
+        var newTop = position.Y - _compositionDragOffset.Y;
+
+        Canvas.SetLeft(host, newLeft);
+        Canvas.SetTop(host, newTop);
+        item.Left = newLeft;
+        item.Top = newTop;
+    }
+
+    private void CompositionItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        _isDraggingCompositionItem = false;
+        ((Border)sender).ReleaseMouseCapture();
+    }
+
+    /// <summary>Zet de dunne accent-rand op het geselecteerde item (en haalt 'm van het vorige af) - geeft ook de focus aan CompositionCanvas zodat Delete meteen werkt.</summary>
+    private void SelectCompositionItem(CompositionItem? item)
+    {
+        if (_selectedCompositionItem is { } previous)
+        {
+            previous.Visual.BorderThickness = new Thickness(0);
+        }
+
+        _selectedCompositionItem = item;
+
+        if (item is not null)
+        {
+            item.Visual.BorderThickness = new Thickness(2);
+            item.Visual.SetResourceReference(Border.BorderBrushProperty, "AccentBrush");
+            CompositionCanvas.Focus();
+        }
+    }
+
+    private void CompositionCanvas_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete || _selectedCompositionItem is not { } item)
+        {
+            return;
+        }
+
+        CompositionCanvas.Children.Remove(item.Visual);
+        _compositionItems.Remove(item);
+        _selectedCompositionItem = null;
+        e.Handled = true;
+    }
+
+    private void ClearComposition_Click(object sender, RoutedEventArgs e) => ClearCompositionCanvas();
+
+    /// <summary>Leegt het werk-canvas en de naam-/regiovelden - bij de "Leegmaken"-knop, en automatisch bij het overschakelen naar Compositie-modus (SetBuilderMode), zodat een vorige, niet-opgeslagen compositie nooit blijft hangen.</summary>
+    private void ClearCompositionCanvas()
+    {
+        CompositionCanvas.Children.Clear();
+        _compositionItems.Clear();
+        _selectedCompositionItem = null;
+        CompositionNameBox.Clear();
+        CompositionRegionPicker.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// Slaat de compositie NIET op als een levend lagen-systeem, maar
+    /// plat als één nieuwe StylebookComponent: voor elk CompositionItem
+    /// een VERSE CreateComponentVisual-render (niet de al-op-het-scherm-
+    /// staande instantie hergebruiken - die heeft al een ouder, de
+    /// Border-host) op zijn opgeslagen positie, in een tijdelijke,
+    /// ongebonden Canvas (niet de live CompositionCanvas zelf - die heeft
+    /// een naam/AllowDrop/event-hooks die niet in de opgeslagen XAML
+    /// horen). XamlWriter.Save serialiseert die boom naar een XAML-string
+    /// - WPF's eigen schrijver behoudt {DynamicResource ...}-
+    /// verwijzingen, dus het resultaat blijft themabaar zoals elk ander
+    /// component.
+    /// </summary>
+    private void SaveComposition_Click(object sender, RoutedEventArgs e)
+    {
+        var name = CompositionNameBox.Text.Trim();
+        if (name.Length == 0 || _compositionItems.Count == 0 || CompositionRegionPicker.SelectedItem is not ComboBoxItem regionItem)
+        {
+            return;
+        }
+
+        var region = Enum.Parse<ComponentRegion>((string)regionItem.Tag);
+
+        var flattened = new Canvas();
+        foreach (var item in _compositionItems)
+        {
+            var visual = CreateComponentVisual(item.Source);
+            Canvas.SetLeft(visual, item.Left);
+            Canvas.SetTop(visual, item.Top);
+            flattened.Children.Add(visual);
+        }
+
+        App.Db.Components.Add(new StylebookComponent
+        {
+            Name = name,
+            Region = region,
+            Xaml = XamlWriter.Save(flattened),
+        });
+
+        App.Db.SaveChanges();
+        ClearCompositionCanvas();
+        LoadComponentsByRegion();
     }
 
     private void Component_SelectionChanged(object sender, SelectionChangedEventArgs e)
