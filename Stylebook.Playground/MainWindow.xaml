@@ -185,7 +185,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <RadioButton x:Name="PageBuilderModeButton"
-                                     Grid.Column="0"
+                                     Grid.Column="3"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="PageBuilderMode_Checked"
@@ -216,7 +216,7 @@
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="StylebookModeButton"
-                                     Grid.Column="2"
+                                     Grid.Column="0"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="StylebookMode_Checked"
@@ -227,7 +227,7 @@
                             </StackPanel>
                         </RadioButton>
                         <RadioButton x:Name="CompositionModeButton"
-                                     Grid.Column="3"
+                                     Grid.Column="2"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="CompositionMode_Checked"
@@ -466,21 +466,31 @@
                             <!-- Testcontainer: simuleert de ruimte waarin dit
                                  component straks geplaatst wordt. Breedte/
                                  hoogte hier bestuurbaar met de sliders in
-                                 EIGENSCHAPPEN; of het component zelf meekrimpt/
-                                 -groeit hangt af van WidthModeCombo/
-                                 HeightModeCombo (zie ApplyContainerSimulation) -
-                                 "Vast" laat de eigen (XAML-)afmeting staan,
-                                 "Variabel" vult 'm de container. Bewust geen
-                                 kader (dat oogt als een echt component-randje) -
-                                 alleen een lichte overlay om het containerformaat
-                                 zichtbaar te maken. Beide kolommen (ORIGINEEL en
-                                 AI-VOORSTEL) delen dezelfde afmeting, zie
+                                 EIGENSCHAPPEN (of de sleep-hoek eronder); of
+                                 het component zelf meekrimpt/-groeit hangt af
+                                 van WidthModeCombo/HeightModeCombo (zie
+                                 ApplyContainerSimulation) - "Vast" laat de
+                                 eigen (XAML-)afmeting staan, "Variabel" vult
+                                 'm de container. BorderBrush+BorderThickness
+                                 geven de box nu ALTIJD een zichtbare rand
+                                 (niet meer alleen de lichte overlay) - sinds
+                                 regio's standaard op Variabel staan (zie
+                                 RegionDefaultContainerSize) vult het
+                                 component vaak de hele box, waardoor de
+                                 overlay alleen niet meer te zien was.
+                                 ClipToBounds knipt content af die buiten de
+                                 box zou vallen, zodat je nooit meer ziet dan
+                                 wat er echt past. Beide kolommen (ORIGINEEL
+                                 en AI-VOORSTEL) delen dezelfde afmeting, zie
                                  ContainerSize_Changed. -->
                             <Border x:Name="TestContainerBorder"
                                     Grid.Column="0"
                                     Width="400" Height="260"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Background="#14FFFFFF"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    ClipToBounds="True"
                                     RenderTransformOrigin="0.5,0.5">
                                 <Border.RenderTransform>
                                     <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
@@ -512,6 +522,9 @@
                                     Width="400" Height="260"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Background="#14FFFFFF"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    ClipToBounds="True"
                                     Visibility="Collapsed"
                                     RenderTransformOrigin="0.5,0.5">
                                 <Border.RenderTransform>
@@ -623,16 +636,31 @@
                                 <TextBox Text="Testcontainer" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
 
                                 <TextBox Text="Breedte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <ComboBox x:Name="WidthModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,8">
+                                <ComboBox x:Name="WidthModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,4">
                                     <ComboBoxItem Content="Vast (eigen breedte)" IsSelected="True" />
                                     <ComboBoxItem Content="Variabel (vult container)" />
                                 </ComboBox>
+                                <!-- Alleen van toepassing bij "Vast" - leeg
+                                     laten houdt de natuurlijke (XAML-eigen)
+                                     afmeting aan, zoals voorheen altijd het
+                                     geval was; een getal hier overschrijft
+                                     'm expliciet (ApplySizeConstraints). -->
+                                <TextBox Text="Eigen breedte (px), leeg = natuurlijke afmeting" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
+                                <TextBox x:Name="ComponentFixedWidthBox"
+                                         Style="{StaticResource NewComponentNameStyle}"
+                                         TextChanged="ComponentFixedSize_Changed"
+                                         Margin="0,2,0,8" />
 
                                 <TextBox Text="Hoogte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <ComboBox x:Name="HeightModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,8">
+                                <ComboBox x:Name="HeightModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,4">
                                     <ComboBoxItem Content="Vast (eigen hoogte)" IsSelected="True" />
                                     <ComboBoxItem Content="Variabel (vult container)" />
                                 </ComboBox>
+                                <TextBox Text="Eigen hoogte (px), leeg = natuurlijke afmeting" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
+                                <TextBox x:Name="ComponentFixedHeightBox"
+                                         Style="{StaticResource NewComponentNameStyle}"
+                                         TextChanged="ComponentFixedSize_Changed"
+                                         Margin="0,2,0,8" />
 
                                 <TextBox x:Name="ContainerSizeLabel" Text="Containerformaat: 400 × 260 px" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,4" />
                                 <!-- Bereik verruimd zodat ook Actie's 48px-brede en

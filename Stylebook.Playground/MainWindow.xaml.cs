@@ -717,6 +717,8 @@ public partial class MainWindow : Window
             HeightModeCombo.SelectedIndex = (int)selected.TestContainerHeightMode;
             ContainerWidthSlider.Value = selected.TestContainerWidth;
             ContainerHeightSlider.Value = selected.TestContainerHeight;
+            ComponentFixedWidthBox.Text = selected.FixedWidth?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            ComponentFixedHeightBox.Text = selected.FixedHeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
         }
 
         SavePageRegionSelection(region, selected);
@@ -757,6 +759,8 @@ public partial class MainWindow : Window
         ComponentTitleBox.Text = string.Empty;
         ComponentBodyBox.Text = string.Empty;
         ComponentXamlBox.Text = string.Empty;
+        ComponentFixedWidthBox.Text = string.Empty;
+        ComponentFixedHeightBox.Text = string.Empty;
         XamlErrorText.Visibility = Visibility.Collapsed;
     }
 
@@ -824,6 +828,22 @@ public partial class MainWindow : Window
         RefreshProposalPreview();
     }
 
+    /// <summary>Live-update zodra ComponentFixedWidthBox/HeightBox getypt wordt - zelfde reactie als ContainerSimulation_Changed, maar dan voor de EIGEN afmeting van het component (alleen relevant bij Vast, zie ApplySizeConstraints).</summary>
+    private void ComponentFixedSize_Changed(object sender, TextChangedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        RefreshPreview();
+        RefreshProposalPreview();
+    }
+
+    /// <summary>Leeg of geen geldig getal = "geen expliciete waarde" (null) - het component houdt dan zijn natuurlijke afmeting aan.</summary>
+    private static double? ParseFixedSize(string text) =>
+        double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : null;
+
     private void ContainerSize_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_initializing)
@@ -889,22 +909,29 @@ public partial class MainWindow : Window
         ProposedPreviewContent.Content = proposedElement;
     }
 
-    /// <summary>Simuleert dit component in de testcontainer met de huidige Vast/Variabel-keuze uit WidthModeCombo/HeightModeCombo - dunne wrapper om ApplySizeConstraints.</summary>
+    /// <summary>Simuleert dit component in de testcontainer met de huidige Vast/Variabel + eigen-afmeting-keuze uit de EIGENSCHAPPEN-velden - dunne wrapper om ApplySizeConstraints.</summary>
     private void ApplyContainerSimulation(FrameworkElement element)
     {
-        ApplySizeConstraints(element, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
+        ApplySizeConstraints(
+            element,
+            (ContainerSizeMode)WidthModeCombo.SelectedIndex,
+            ParseFixedSize(ComponentFixedWidthBox.Text),
+            (ContainerSizeMode)HeightModeCombo.SelectedIndex,
+            ParseFixedSize(ComponentFixedHeightBox.Text));
     }
 
     /// <summary>
     /// "Variabel" wist de eigen Width/Height van dit exemplaar en rekt
-    /// 'm uit (Stretch) tot wat de omgeving 'm geeft; "Vast" laat de
-    /// eigen (XAML-)afmeting staan, gecentreerd. Gedeeld tussen de live
+    /// 'm uit (Stretch) tot wat de omgeving 'm geeft. "Vast" met een
+    /// expliciete fixedWidth/fixedHeight zet die waarde er hard op; "Vast"
+    /// zonder waarde (null) laat de natuurlijke (XAML-eigen) afmeting
+    /// staan, zoals voorheen altijd het geval was. Gedeeld tussen de live
     /// preview (ApplyContainerSimulation) en het daadwerkelijk in de
     /// opgeslagen XAML bakken (BakeSizeConstraintsIntoXaml) - exact
     /// dezelfde regel voor beide, dus wat je in de preview ziet is
     /// precies wat er straks ook echt gebruikt wordt.
     /// </summary>
-    private static void ApplySizeConstraints(FrameworkElement element, ContainerSizeMode widthMode, ContainerSizeMode heightMode)
+    private static void ApplySizeConstraints(FrameworkElement element, ContainerSizeMode widthMode, double? fixedWidth, ContainerSizeMode heightMode, double? fixedHeight)
     {
         if (widthMode == ContainerSizeMode.Variable)
         {
@@ -913,6 +940,7 @@ public partial class MainWindow : Window
         }
         else
         {
+            element.Width = fixedWidth ?? double.NaN;
             element.HorizontalAlignment = HorizontalAlignment.Center;
         }
 
@@ -923,20 +951,21 @@ public partial class MainWindow : Window
         }
         else
         {
+            element.Height = fixedHeight ?? double.NaN;
             element.VerticalAlignment = VerticalAlignment.Center;
         }
     }
 
     /// <summary>
-    /// Verwerkt de Vast/Variabel-keuze ECHT in de opgeslagen XAML (in
-    /// tegenstelling tot ApplyContainerSimulation, dat alleen het
-    /// preview-exemplaar aanpast) - parsen, ApplySizeConstraints op de
-    /// root toepassen, terugschrijven. Faalt het parsen (zou niet moeten
-    /// gebeuren met XAML die hier al eerder succesvol gerenderd is),
+    /// Verwerkt de Vast/Variabel + eigen-afmeting-keuze ECHT in de
+    /// opgeslagen XAML (in tegenstelling tot ApplyContainerSimulation, dat
+    /// alleen het preview-exemplaar aanpast) - parsen, ApplySizeConstraints
+    /// op de root toepassen, terugschrijven. Faalt het parsen (zou niet
+    /// moeten gebeuren met XAML die hier al eerder succesvol gerenderd is),
     /// dan de xaml ongewijzigd teruggeven - nooit een component kapot
     /// maken aan deze stap.
     /// </summary>
-    private static string BakeSizeConstraintsIntoXaml(string xaml, ContainerSizeMode widthMode, ContainerSizeMode heightMode)
+    private static string BakeSizeConstraintsIntoXaml(string xaml, ContainerSizeMode widthMode, double? fixedWidth, ContainerSizeMode heightMode, double? fixedHeight)
     {
         try
         {
@@ -945,7 +974,7 @@ public partial class MainWindow : Window
                 return xaml;
             }
 
-            ApplySizeConstraints(root, widthMode, heightMode);
+            ApplySizeConstraints(root, widthMode, fixedWidth, heightMode, fixedHeight);
             return XamlWriter.Save(root);
         }
         catch (Exception)
@@ -970,6 +999,8 @@ public partial class MainWindow : Window
         component.TestContainerHeightMode = (ContainerSizeMode)HeightModeCombo.SelectedIndex;
         component.TestContainerWidth = ContainerWidthSlider.Value;
         component.TestContainerHeight = ContainerHeightSlider.Value;
+        component.FixedWidth = ParseFixedSize(ComponentFixedWidthBox.Text);
+        component.FixedHeight = ParseFixedSize(ComponentFixedHeightBox.Text);
     }
 
     /// <summary>
@@ -1457,7 +1488,12 @@ public partial class MainWindow : Window
         component.Title = ComponentTitleBox.Text;
         component.BodyText = ComponentBodyBox.Text;
         var generatedXaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
-        component.Xaml = BakeSizeConstraintsIntoXaml(generatedXaml, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
+        component.Xaml = BakeSizeConstraintsIntoXaml(
+            generatedXaml,
+            (ContainerSizeMode)WidthModeCombo.SelectedIndex,
+            ParseFixedSize(ComponentFixedWidthBox.Text),
+            (ContainerSizeMode)HeightModeCombo.SelectedIndex,
+            ParseFixedSize(ComponentFixedHeightBox.Text));
         ComponentXamlBox.Text = component.Xaml;
         SaveTestContainerSettings(component);
 
@@ -1704,7 +1740,12 @@ public partial class MainWindow : Window
         }
         else
         {
-            var bakedXaml = BakeSizeConstraintsIntoXaml(xaml, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
+            var bakedXaml = BakeSizeConstraintsIntoXaml(
+                xaml,
+                (ContainerSizeMode)WidthModeCombo.SelectedIndex,
+                ParseFixedSize(ComponentFixedWidthBox.Text),
+                (ContainerSizeMode)HeightModeCombo.SelectedIndex,
+                ParseFixedSize(ComponentFixedHeightBox.Text));
             component.Xaml = bakedXaml;
             ComponentXamlBox.Text = bakedXaml;
             SaveTestContainerSettings(component);
@@ -1826,7 +1867,7 @@ public partial class MainWindow : Window
             Region = region,
             Title = name,
             BodyText = "Voorbeeldinhoud",
-            Xaml = BakeSizeConstraintsIntoXaml(GenerateCardXaml(name, "Voorbeeldinhoud"), widthMode, heightMode),
+            Xaml = BakeSizeConstraintsIntoXaml(GenerateCardXaml(name, "Voorbeeldinhoud"), widthMode, null, heightMode, null),
             TestContainerWidthMode = widthMode,
             TestContainerWidth = width,
             TestContainerHeightMode = heightMode,

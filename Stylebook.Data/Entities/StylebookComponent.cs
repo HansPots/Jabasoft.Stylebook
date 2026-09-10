@@ -31,6 +31,17 @@ public class StylebookComponent : IAuditableEntity
 
     public double TestContainerHeight { get; set; } = 260;
 
+    /// <summary>
+    /// Expliciete eigen breedte/hoogte (px) van het component zelf, alleen
+    /// van toepassing als de bijbehorende Mode hierboven Fixed is - null
+    /// betekent "geen expliciete waarde", het component houdt dan zijn
+    /// natuurlijke (XAML-eigen) afmeting aan, zoals voorheen altijd het
+    /// geval was. Zie ApplySizeConstraints/BakeSizeConstraintsIntoXaml.
+    /// </summary>
+    public double? FixedWidth { get; set; }
+
+    public double? FixedHeight { get; set; }
+
     // Audit fields last, by convention - see feedback_db_audit_timestamps
     // memory (most important fields first, date/timestamp fields last).
     public DateTime CreatedAtUtc { get; set; }
