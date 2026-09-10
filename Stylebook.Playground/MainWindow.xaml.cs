@@ -127,6 +127,14 @@ public partial class MainWindow : Window
 
         LoadComponentsByRegion();
         LoadApplications();
+
+        // Eenmalig bij opstarten, niet elke keer bij binnenkomst van
+        // Compositie-modus (zie SetBuilderMode) - een in-aanbouw
+        // compositie moet blijven staan als je even naar een ander
+        // tabblad wisselt en terugkomt, dus SetBuilderMode leegt 'm
+        // niet meer automatisch.
+        ResizeCompositionCanvasToRegion(GetSelectedCompositionRegion());
+
         PageBuilderModeButton.IsChecked = true;
 
         _ = InitializeMonacoDiffEditor();
@@ -441,13 +449,13 @@ public partial class MainWindow : Window
         {
             LoadPageRegionsIntoSelections();
         }
-        else if (mode == BuilderMode.Composition)
-        {
-            // Altijd met een schone lei beginnen, zelfde reden als
-            // ClearComponentEditorState hierboven - een vorige,
-            // niet-opgeslagen compositie zou anders blijven hangen.
-            ClearCompositionCanvas();
-        }
+
+        // Compositie-modus wist hier BEWUST niets meer bij binnenkomst -
+        // een in-aanbouw compositie (geplaatste componenten, nog niet
+        // opgeslagen) moet blijven staan als je naar een ander tabblad
+        // wisselt en terugkomt. Alleen de expliciete "Leegmaken"-knop
+        // (ClearComposition_Click) en een geslaagde "Opslaan als
+        // component" legen het canvas nog.
 
         var editingAllowed = mode == BuilderMode.ComponentBuilder;
         HeaderEditRow.IsEnabled = editingAllowed;
@@ -712,7 +720,14 @@ public partial class MainWindow : Window
 
     private void ClearComposition_Click(object sender, RoutedEventArgs e) => ClearCompositionCanvas();
 
-    /// <summary>Leegt het werk-canvas en de naam-/regiovelden - bij de "Leegmaken"-knop, en automatisch bij het overschakelen naar Compositie-modus (SetBuilderMode), zodat een vorige, niet-opgeslagen compositie nooit blijft hangen.</summary>
+    /// <summary>
+    /// Leegt het werk-canvas en de naam-/regiovelden - alleen via de
+    /// expliciete "Leegmaken"-knop en ná een geslaagde "Opslaan als
+    /// component" (SaveComposition_Click). NIET meer automatisch bij het
+    /// overschakelen naar Compositie-modus (zie SetBuilderMode) - een
+    /// in-aanbouw compositie moet blijven staan als je naar een ander
+    /// tabblad wisselt en terugkomt.
+    /// </summary>
     private void ClearCompositionCanvas()
     {
         CompositionCanvas.Children.Clear();
