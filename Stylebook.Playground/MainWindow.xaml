@@ -12,6 +12,15 @@
         Background="{DynamicResource BackgroundBrush}">
 
     <Window.Resources>
+        <!-- Gedeelde look voor een sleepbare resize-hoek (Thumb) - gebruikt
+             door TestContainerResizeThumb hieronder (XAML) EN door elk
+             geplaatst item in Compositie-modus (code-behind, via
+             FindResource - zie PlaceComponentOnCanvas). Eén kleine
+             AccentBrush-gekleurde vierkant, verder geen chrome. -->
+        <ControlTemplate x:Key="ResizeThumbHandleTemplate" TargetType="Thumb">
+            <Border Background="{DynamicResource AccentBrush}" CornerRadius="2" />
+        </ControlTemplate>
+
         <!-- Gedeelde look voor de inklapbare regio-secties in de menustrook. -->
         <Style TargetType="Expander">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -507,14 +516,9 @@
                                            HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                            Margin="0,0,-7,-7"
                                            Cursor="SizeNWSE"
+                                           Template="{StaticResource ResizeThumbHandleTemplate}"
                                            DragDelta="TestContainerResizeThumb_DragDelta"
-                                           AutomationProperties.Name="Testbox resizen">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Border Background="{DynamicResource AccentBrush}" CornerRadius="2" />
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
+                                           AutomationProperties.Name="Testbox resizen" />
                                 </Grid>
                             </Border>
                             <Border x:Name="ProposedTestContainerBorder"

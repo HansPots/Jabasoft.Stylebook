@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
@@ -536,12 +537,42 @@ public partial class MainWindow : Window
     /// </summary>
     private void PlaceComponentOnCanvas(StylebookComponent component, double left, double top)
     {
+        // BorderBrush/BorderThickness + ClipToBounds: zelfde reden als bij
+        // TestContainerBorder (Componentenbouwer) - zonder een zichtbare
+        // rand is op dit vrije canvas niet te zien hoe groot een geplaatst
+        // component (bv. een Header/Menu, vaak Variabel/Stretch) eigenlijk
+        // is, en zonder clip zou een groter exemplaar over andere items
+        // heen kunnen spillen.
         var host = new Border
         {
-            BorderThickness = new Thickness(0),
-            Child = CreateComponentVisual(component),
+            BorderThickness = new Thickness(1),
             Background = Brushes.Transparent, // anders vangt de Border alleen kliks op waar de content zelf ondoorzichtig is
+            ClipToBounds = true,
         };
+        host.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
+
+        var contentGrid = new Grid();
+        contentGrid.Children.Add(CreateComponentVisual(component));
+
+        // Sleepbare hoek om dit ene geplaatste component te schalen -
+        // zelfde ResizeThumbHandleTemplate en aanpak als TestContainerResizeThumb
+        // in Componentenbouwer, maar dan direct op host.Width/Height
+        // i.p.v. via de sliders (zie CompositionItemResizeThumb_DragDelta).
+        var resizeThumb = new Thumb
+        {
+            Width = 14,
+            Height = 14,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, -7, -7),
+            Cursor = Cursors.SizeNWSE,
+            Template = (ControlTemplate)FindResource("ResizeThumbHandleTemplate"),
+        };
+        AutomationProperties.SetName(resizeThumb, "Component resizen");
+        resizeThumb.DragDelta += CompositionItemResizeThumb_DragDelta;
+        contentGrid.Children.Add(resizeThumb);
+
+        host.Child = contentGrid;
         host.MouseLeftButtonDown += CompositionItem_MouseLeftButtonDown;
         host.MouseMove += CompositionItem_MouseMove;
         host.MouseLeftButtonUp += CompositionItem_MouseLeftButtonUp;
@@ -551,8 +582,24 @@ public partial class MainWindow : Window
         CompositionCanvas.Children.Add(host);
 
         var item = new CompositionItem { Source = component, Visual = host, Left = left, Top = top };
+        resizeThumb.Tag = item;
         _compositionItems.Add(item);
         SelectCompositionItem(item);
+    }
+
+    /// <summary>Verslepen van de hoek schaalt dit ene geplaatste component (host.Width/Height) - begint bij de huidige ActualWidth/Height (de natuurlijke render-afmeting) als er nog geen expliciete maat gezet is.</summary>
+    private void CompositionItemResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        if (((Thumb)sender).Tag is not CompositionItem item)
+        {
+            return;
+        }
+
+        var currentWidth = double.IsNaN(item.Visual.Width) ? item.Visual.ActualWidth : item.Visual.Width;
+        var currentHeight = double.IsNaN(item.Visual.Height) ? item.Visual.ActualHeight : item.Visual.Height;
+
+        item.Visual.Width = Math.Max(20, currentWidth + e.HorizontalChange);
+        item.Visual.Height = Math.Max(20, currentHeight + e.VerticalChange);
     }
 
     private void CompositionItem_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -597,7 +644,12 @@ public partial class MainWindow : Window
     {
         if (_selectedCompositionItem is { } previous)
         {
-            previous.Visual.BorderThickness = new Thickness(0);
+            // Terug naar de gewone (dunne, altijd zichtbare) randdikte -
+            // niet naar 0, zie PlaceComponentOnCanvas: die rand blijft
+            // nu altijd staan zodat je überhaupt kunt zien hoe groot elk
+            // geplaatst component is.
+            previous.Visual.BorderThickness = new Thickness(1);
+            previous.Visual.SetResourceReference(Border.BorderBrushProperty, "BorderBrush");
         }
 
         _selectedCompositionItem = item;
@@ -662,6 +714,21 @@ public partial class MainWindow : Window
         foreach (var item in _compositionItems)
         {
             var visual = CreateComponentVisual(item.Source);
+
+            // Een handmatige resize via de sleep-hoek (host.Width/Height,
+            // zie CompositionItemResizeThumb_DragDelta) moet ook in het
+            // platte resultaat terechtkomen - anders was schalen op het
+            // canvas alleen maar een preview-trucje geweest.
+            if (!double.IsNaN(item.Visual.Width))
+            {
+                visual.Width = item.Visual.Width;
+            }
+
+            if (!double.IsNaN(item.Visual.Height))
+            {
+                visual.Height = item.Visual.Height;
+            }
+
             Canvas.SetLeft(visual, item.Left);
             Canvas.SetTop(visual, item.Top);
             flattened.Children.Add(visual);
