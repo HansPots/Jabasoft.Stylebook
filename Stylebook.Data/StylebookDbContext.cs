@@ -18,6 +18,8 @@ public sealed class StylebookDbContext(DbContextOptions<StylebookDbContext> opti
 
     public DbSet<PageRegion> PageRegions => Set<PageRegion>();
 
+    public DbSet<ComponentVersion> ComponentVersions => Set<ComponentVersion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new StylebookComponentConfiguration());
@@ -26,6 +28,7 @@ public sealed class StylebookDbContext(DbContextOptions<StylebookDbContext> opti
         modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
         modelBuilder.ApplyConfiguration(new PageConfiguration());
         modelBuilder.ApplyConfiguration(new PageRegionConfiguration());
+        modelBuilder.ApplyConfiguration(new ComponentVersionConfiguration());
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)

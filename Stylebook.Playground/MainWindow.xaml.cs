@@ -449,6 +449,7 @@ public partial class MainWindow : Window
         var region = Enum.Parse<ComponentRegion>((string)listBox.Tag);
         var selected = listBox.SelectedItem as StylebookComponent;
         NewComponentNameBox(region).Text = selected?.Name ?? string.Empty;
+        RenameButton(region).IsEnabled = selected is not null;
 
         if (selected is not null)
         {
@@ -1175,6 +1176,7 @@ public partial class MainWindow : Window
             return;
         }
 
+        SnapshotComponentVersion(component);
         component.Title = ComponentTitleBox.Text;
         component.BodyText = ComponentBodyBox.Text;
         component.Xaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
@@ -1404,6 +1406,7 @@ public partial class MainWindow : Window
         }
 
         ComponentXamlBox.Text = xaml;
+        SnapshotComponentVersion(component);
         component.Xaml = xaml;
         SaveTestContainerSettings(component);
         App.Db.SaveChanges();
@@ -1481,9 +1484,15 @@ public partial class MainWindow : Window
 
     private void AddComponent_Click(object sender, RoutedEventArgs e)
     {
-        SaveComponent(Enum.Parse<ComponentRegion>((string)((Button)sender).Tag));
+        CreateComponent(Enum.Parse<ComponentRegion>((string)((Button)sender).Tag));
     }
 
+    /// <summary>
+    /// Enter in het naamveld doet hetzelfde als "+" (altijd aanmaken) -
+    /// niet hetzelfde als Hernoemen, dat is bewust alleen via de eigen
+    /// knop bereikbaar zodat er maar één manier is om per ongeluk een
+    /// bestaand component te overschrijven te vermijden.
+    /// </summary>
     private void NewComponentName_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter)
@@ -1491,15 +1500,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        SaveComponent(Enum.Parse<ComponentRegion>((string)((TextBox)sender).Tag));
+        CreateComponent(Enum.Parse<ComponentRegion>((string)((TextBox)sender).Tag));
     }
 
     /// <summary>
-    /// Adds a new component, or - when one is selected in the region's
-    /// ListBox - renames it instead. CreatedAtUtc/UpdatedAtUtc are stamped
-    /// by StylebookDbContext.SaveChanges, never set here.
+    /// Maakt ALTIJD een nieuw component aan - negeert opzettelijk een
+    /// eventuele selectie in de regio-ListBox. Vroeger hernoemde "+" een
+    /// geselecteerd component zodra je de naam erin typte, wat een
+    /// bestaand component (bv. Infoblok) stilzwijgend kon overschrijven
+    /// zonder dat het leek te "werken" - zie RenameComponent voor de nu
+    /// losse, bewuste hernoem-actie. CreatedAtUtc/UpdatedAtUtc worden
+    /// door StylebookDbContext.SaveChanges gezet, nooit hier.
     /// </summary>
-    private void SaveComponent(ComponentRegion region)
+    private void CreateComponent(ComponentRegion region)
     {
         var nameBox = NewComponentNameBox(region);
         var name = nameBox.Text.Trim();
@@ -1508,26 +1521,52 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (ComponentsListBox(region).SelectedItem is StylebookComponent existing)
+        // Seed a real, immediately-renderable Xaml so a brand new
+        // component never starts out as a bare placeholder.
+        App.Db.Components.Add(new StylebookComponent
         {
-            existing.Name = name;
-        }
-        else
-        {
-            // Seed a real, immediately-renderable Xaml so a brand new
-            // component never starts out as a bare placeholder.
-            App.Db.Components.Add(new StylebookComponent
-            {
-                Name = name,
-                Region = region,
-                Title = name,
-                BodyText = "Voorbeeldinhoud",
-                Xaml = GenerateCardXaml(name, "Voorbeeldinhoud"),
-            });
-        }
+            Name = name,
+            Region = region,
+            Title = name,
+            BodyText = "Voorbeeldinhoud",
+            Xaml = GenerateCardXaml(name, "Voorbeeldinhoud"),
+        });
 
         App.Db.SaveChanges();
         nameBox.Clear();
+        LoadComponentsByRegion();
+    }
+
+    private void RenameComponent_Click(object sender, RoutedEventArgs e)
+    {
+        RenameComponent(Enum.Parse<ComponentRegion>((string)((Button)sender).Tag));
+    }
+
+    /// <summary>
+    /// Hernoemt het component dat nu in de regio-ListBox geselecteerd
+    /// staat naar de tekst in het naamveld - de enige plek die een
+    /// bestaand component overschrijft, dus altijd een bewuste, losse
+    /// knop (nooit een side effect van "+" of Enter). Bewaart eerst een
+    /// snapshot van de oude naam, zie SnapshotComponentVersion.
+    /// </summary>
+    private void RenameComponent(ComponentRegion region)
+    {
+        if (ComponentsListBox(region).SelectedItem is not StylebookComponent existing)
+        {
+            return;
+        }
+
+        var nameBox = NewComponentNameBox(region);
+        var name = nameBox.Text.Trim();
+        if (name.Length == 0)
+        {
+            return;
+        }
+
+        SnapshotComponentVersion(existing);
+        existing.Name = name;
+
+        App.Db.SaveChanges();
         LoadComponentsByRegion();
     }
 
@@ -1544,6 +1583,47 @@ public partial class MainWindow : Window
 
         NewComponentNameBox(region).Clear();
         LoadComponentsByRegion();
+    }
+
+    private const int MaxComponentVersionsToKeep = 5;
+
+    /// <summary>
+    /// Bewaart een snapshot van component's HUIDIGE (nog niet gewijzigde)
+    /// Name/Title/BodyText/Xaml, vlak vóór Hernoemen, "Genereer en
+    /// opslaan", of "Overnemen" die staat overschrijft - een noodgreep om
+    /// via SQL terug te vinden wat een component vroeger was (geen UI).
+    /// Trimt daarna terug tot de laatste MaxComponentVersionsToKeep voor
+    /// dat component - oudste eerst weg.
+    /// </summary>
+    private void SnapshotComponentVersion(StylebookComponent component)
+    {
+        // Eigen SaveChanges nodig: de nieuwe versie moet al ECHT in de
+        // database staan (met een Id) vóórdat de trim-query hieronder
+        // 'm kan meetellen - anders zou "laatste 5" per ongeluk 6 rijen
+        // overhouden (de query ziet de nog-ongesaved rij niet mee).
+        App.Db.ComponentVersions.Add(new ComponentVersion
+        {
+            ComponentId = component.Id,
+            Name = component.Name,
+            Title = component.Title,
+            BodyText = component.BodyText,
+            Xaml = component.Xaml,
+        });
+        App.Db.SaveChanges();
+
+        var idsToRemove = App.Db.ComponentVersions
+            .Where(v => v.ComponentId == component.Id)
+            .OrderByDescending(v => v.CreatedAtUtc)
+            .Select(v => v.Id)
+            .AsEnumerable()
+            .Skip(MaxComponentVersionsToKeep)
+            .ToList();
+
+        if (idsToRemove.Count > 0)
+        {
+            App.Db.ComponentVersions.RemoveRange(App.Db.ComponentVersions.Where(v => idsToRemove.Contains(v.Id)));
+            App.Db.SaveChanges();
+        }
     }
 
     private TextBox NewComponentNameBox(ComponentRegion region) => region switch
@@ -1565,6 +1645,17 @@ public partial class MainWindow : Window
         ComponentRegion.Actie => ActieComponents,
         ComponentRegion.Footer => FooterComponents,
         ComponentRegion.Algemeen => AlgemeenComponents,
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
+    };
+
+    private Button RenameButton(ComponentRegion region) => region switch
+    {
+        ComponentRegion.Header => HeaderRenameButton,
+        ComponentRegion.Menu => MenuRenameButton,
+        ComponentRegion.Inhoud => InhoudRenameButton,
+        ComponentRegion.Actie => ActieRenameButton,
+        ComponentRegion.Footer => FooterRenameButton,
+        ComponentRegion.Algemeen => AlgemeenRenameButton,
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
 }

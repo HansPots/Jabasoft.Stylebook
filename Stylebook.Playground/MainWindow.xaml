@@ -253,9 +253,13 @@
 
                     <!-- Componentbeheer per Basis-regio, klap open om de
                          daarin opgeslagen componenten (Stylebook.Data) te
-                         zien. Selecteer een component om 'm te hernoemen
-                         (naam aanpassen + "+") of te verwijderen ("x");
-                         niets geselecteerd + "+" voegt een nieuwe toe. -->
+                         zien. "+" maakt ALTIJD een nieuw component aan
+                         (negeert een eventuele selectie) - Hernoemen (potlood)
+                         en Verwijderen (x) werken alleen op het geselecteerde
+                         component en staan daarom uit zolang niets
+                         geselecteerd is. Bewust twee losse knoppen: "+" mocht
+                         nooit meer per ongeluk een bestaand component
+                         overschrijven, zie CreateComponent/RenameComponent. -->
                     <Expander Header="Header">
                         <StackPanel>
                             <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
@@ -265,6 +269,9 @@
                                 </Button>
                                 <Button Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button x:Name="HeaderRenameButton" Tag="Header" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
                                 <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -280,6 +287,9 @@
                                 <Button Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
+                                <Button x:Name="MenuRenameButton" Tag="Menu" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -293,6 +303,9 @@
                                 </Button>
                                 <Button Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button x:Name="InhoudRenameButton" Tag="Inhoud" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
                                 <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
@@ -308,6 +321,9 @@
                                 <Button Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
+                                <Button x:Name="ActieRenameButton" Tag="Actie" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -322,6 +338,9 @@
                                 <Button Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
+                                <Button x:Name="FooterRenameButton" Tag="Footer" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
                                 <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
                         </StackPanel>
@@ -335,6 +354,9 @@
                                 </Button>
                                 <Button Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
                                     <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
+                                </Button>
+                                <Button x:Name="AlgemeenRenameButton" Tag="Algemeen" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
+                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
                                 </Button>
                                 <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
                             </DockPanel>
