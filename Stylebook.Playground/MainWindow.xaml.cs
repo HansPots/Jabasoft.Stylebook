@@ -605,10 +605,15 @@ public partial class MainWindow : Window
     private const double ComponentPreviewMaxZoom = 3.0;
 
     /// <summary>
-    /// Ctrl+scrollwiel zoomt de geïsoleerde Componentenbouwer-preview
-    /// (ORIGINEEL en, indien zichtbaar, AI-VOORSTEL ernaast - ze delen
-    /// dezelfde ScaleTransform, zie MainWindow.xaml). Zonder Ctrl doet
-    /// het wiel niets - er is hier toch geen scrollbare inhoud onder.
+    /// Ctrl+scrollwiel zoomt de geïsoleerde Componentenbouwer-preview -
+    /// ORIGINEEL en, indien zichtbaar, AI-VOORSTEL ernaast zoomen altijd
+    /// samen, maar elk rond ZIJN EIGEN middelpunt (twee losse
+    /// ScaleTransforms, zie MainWindow.xaml) - niet rond het midden van
+    /// de omvattende twee-koloms-Grid, anders schuift ORIGINEEL bij het
+    /// verschijnen van VOORSTEL (kolom "*" halveert dan) weg van zijn
+    /// eigen middelpunt en kan bij een afwijkend zoomniveau buiten beeld
+    /// belanden. Zonder Ctrl doet het wiel niets - er is hier toch geen
+    /// scrollbare inhoud onder.
     /// </summary>
     private void ComponentPreviewZoom_MouseWheel(object sender, MouseWheelEventArgs e)
     {
@@ -623,6 +628,8 @@ public partial class MainWindow : Window
         var newScale = Math.Clamp(ComponentPreviewZoomTransform.ScaleX * factor, ComponentPreviewMinZoom, ComponentPreviewMaxZoom);
         ComponentPreviewZoomTransform.ScaleX = newScale;
         ComponentPreviewZoomTransform.ScaleY = newScale;
+        ProposedPreviewZoomTransform.ScaleX = newScale;
+        ProposedPreviewZoomTransform.ScaleY = newScale;
     }
 
     /// <summary>Re-renders the pending AI proposal (if there is one) so it picks up a Vast/Variabel or container-size change made while it's on screen - ORIGINEEL and AI-VOORSTEL always compare at the same settings.</summary>

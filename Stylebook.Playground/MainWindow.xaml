@@ -413,15 +413,18 @@
                         </Grid>
 
                         <!-- Ctrl+scrollwiel zoomt ORIGINEEL en (indien
-                             zichtbaar) VOORSTEL altijd samen - ze delen
-                             deze ene ScaleTransform. Zie
-                             ComponentPreviewZoom_MouseWheel. -->
-                        <Grid Grid.Row="1"
-                              RenderTransformOrigin="0.5,0.5"
-                              PreviewMouseWheel="ComponentPreviewZoom_MouseWheel">
-                            <Grid.RenderTransform>
-                                <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
-                            </Grid.RenderTransform>
+                             zichtbaar) VOORSTEL altijd samen, zie
+                             ComponentPreviewZoom_MouseWheel. Elk vak heeft
+                             ZIJN EIGEN ScaleTransform+RenderTransformOrigin
+                             (niet één gedeelde transform op deze omvattende
+                             Grid) - anders verschuift het middelpunt zodra
+                             VOORSTEL verschijnt (kolom "*" gaat dan van de
+                             volledige breedte naar de helft), waardoor
+                             ORIGINEEL bij een afwijkend zoomniveau buiten
+                             beeld kon schuiven. Was precies de bug: na
+                             zoomen en op "Opslaan en toepassen" klikken was
+                             er "geen preview meer" te zien. -->
+                        <Grid Grid.Row="1" PreviewMouseWheel="ComponentPreviewZoom_MouseWheel">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition x:Name="ProposedColumnDefinition" Width="0" />
@@ -443,7 +446,11 @@
                                     Grid.Column="0"
                                     Width="400" Height="260"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Background="#14FFFFFF">
+                                    Background="#14FFFFFF"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
+                                </Border.RenderTransform>
                                 <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                             </Border>
                             <Border x:Name="ProposedTestContainerBorder"
@@ -451,7 +458,11 @@
                                     Width="400" Height="260"
                                     HorizontalAlignment="Center" VerticalAlignment="Center"
                                     Background="#14FFFFFF"
-                                    Visibility="Collapsed">
+                                    Visibility="Collapsed"
+                                    RenderTransformOrigin="0.5,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="ProposedPreviewZoomTransform" ScaleX="1" ScaleY="1" />
+                                </Border.RenderTransform>
                                 <ContentControl x:Name="ProposedPreviewContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                             </Border>
                         </Grid>
