@@ -1225,6 +1225,11 @@ public partial class MainWindow : Window
                "Footer-regio geplaatst die zelf al de juiste afmeting bepaalt en vult (zie Basis.xaml); " +
                "een vaste maat op het root-element overschrijft dat en zorgt dat het component niet meer " +
                "de volledige regio vult, ook al was dat er in de vorige versie niet in gezet.\n" +
+               "Vervang je een losse CornerRadius=\"...\" attribuut door theming:CornerRadiusParts (nodig " +
+               "zodra meerdere hoeken elk hun eigen token/waarde moeten krijgen, zie CornerRadiusParts.cs), " +
+               "zet dan ALTIJD alle vier de hoeken expliciet (TopLeft, TopRight, BottomRight, BottomLeft) - " +
+               "ook de hoeken die 0 zijn. Nooit een hoek weglaten omdat 'ie toch op 0 uitkomt: de hele set " +
+               "moet in één oogopslag duidelijk zijn zonder dat je de impliciete 0-standaard hoeft te kennen.\n" +
                DbThemeBuilder.DescribeForAi(App.Db, App.CurrentTheme);
     }
 

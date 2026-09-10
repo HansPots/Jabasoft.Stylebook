@@ -22,6 +22,11 @@ namespace Stylebook.Components.Theming;
 /// read off each supplied value - a Radius-category design token always
 /// resolves to a uniform CornerRadius (see DbThemeBuilder.Build), so any
 /// one corner of it carries the token's actual magnitude.
+///
+/// Conventie voor wie deze parts gebruikt: zet ALTIJD alle vier de hoeken
+/// expliciet neer, ook de hoeken die op 0 blijven staan - nooit stilzwijgend
+/// op de "unset = 0"-default hierboven leunen. Zo is in de XAML zelf in één
+/// oogopslag duidelijk welke hoeken bewust rond zijn en welke bewust recht.
 /// </summary>
 public static class CornerRadiusParts
 {
