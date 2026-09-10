@@ -286,6 +286,17 @@ public partial class MainWindow : Window
         var previousApplicationId = _selectedApplication?.Id;
         var previousPageId = _selectedPage?.Id;
 
+        // Zonder dit blijven alle entiteiten die deze sessie al eerder
+        // heeft ingeladen (bv. bij opstarten) door EF Core's
+        // change tracker vastgehouden - een gewone query geeft dan
+        // gewoon die oude, in-memory objecten terug in plaats van de
+        // verse databasewaarden, ook al is de SQL-query zelf prima. Pas
+        // ontdekt doordat een rechtstreeks via SQL aangepast component na
+        // Verversen nog steeds de oude XAML liet zien. Clear() maakt alle
+        // entiteiten "niet meer gevolgd", zodat de Load*-aanroepen
+        // hieronder ze echt opnieuw uit de database materialiseren.
+        App.Db.ChangeTracker.Clear();
+
         LoadComponentsByRegion();
 
         if (_builderMode == BuilderMode.ComponentBuilder)
