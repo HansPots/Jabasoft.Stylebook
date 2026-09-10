@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -837,6 +838,13 @@ public partial class MainWindow : Window
         ContainerSizeLabel.Text = $"Containerformaat: {ContainerWidthSlider.Value:0} × {ContainerHeightSlider.Value:0} px";
     }
 
+    /// <summary>Sleepbaar alternatief voor de sliders hierboven - telt de sleepafstand gewoon bij ContainerWidthSlider/HeightSlider op, wat via hun eigen ValueChanged (ContainerSize_Changed) automatisch de testbox en het label bijwerkt.</summary>
+    private void TestContainerResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
+    {
+        ContainerWidthSlider.Value = Math.Clamp(ContainerWidthSlider.Value + e.HorizontalChange, ContainerWidthSlider.Minimum, ContainerWidthSlider.Maximum);
+        ContainerHeightSlider.Value = Math.Clamp(ContainerHeightSlider.Value + e.VerticalChange, ContainerHeightSlider.Minimum, ContainerHeightSlider.Maximum);
+    }
+
     private const double ComponentPreviewMinZoom = 0.25;
     private const double ComponentPreviewMaxZoom = 3.0;
 
@@ -881,17 +889,24 @@ public partial class MainWindow : Window
         ProposedPreviewContent.Content = proposedElement;
     }
 
-    /// <summary>
-    /// Simuleert dat dit component in een container staat die niet per se
-    /// zijn eigen (XAML-)afmeting heeft: "Variabel" wist de eigen Width/
-    /// Height van dit gerenderde exemplaar en rekt 'm uit tot
-    /// TestContainerBorder's afmeting; "Vast" laat de eigen afmeting
-    /// staan, gecentreerd. Raakt alleen dit preview-exemplaar aan - de
-    /// opgeslagen Xaml verandert nooit.
-    /// </summary>
+    /// <summary>Simuleert dit component in de testcontainer met de huidige Vast/Variabel-keuze uit WidthModeCombo/HeightModeCombo - dunne wrapper om ApplySizeConstraints.</summary>
     private void ApplyContainerSimulation(FrameworkElement element)
     {
-        if (WidthModeCombo.SelectedIndex == 1)
+        ApplySizeConstraints(element, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
+    }
+
+    /// <summary>
+    /// "Variabel" wist de eigen Width/Height van dit exemplaar en rekt
+    /// 'm uit (Stretch) tot wat de omgeving 'm geeft; "Vast" laat de
+    /// eigen (XAML-)afmeting staan, gecentreerd. Gedeeld tussen de live
+    /// preview (ApplyContainerSimulation) en het daadwerkelijk in de
+    /// opgeslagen XAML bakken (BakeSizeConstraintsIntoXaml) - exact
+    /// dezelfde regel voor beide, dus wat je in de preview ziet is
+    /// precies wat er straks ook echt gebruikt wordt.
+    /// </summary>
+    private static void ApplySizeConstraints(FrameworkElement element, ContainerSizeMode widthMode, ContainerSizeMode heightMode)
+    {
+        if (widthMode == ContainerSizeMode.Variable)
         {
             element.Width = double.NaN;
             element.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -901,7 +916,7 @@ public partial class MainWindow : Window
             element.HorizontalAlignment = HorizontalAlignment.Center;
         }
 
-        if (HeightModeCombo.SelectedIndex == 1)
+        if (heightMode == ContainerSizeMode.Variable)
         {
             element.Height = double.NaN;
             element.VerticalAlignment = VerticalAlignment.Stretch;
@@ -909,6 +924,33 @@ public partial class MainWindow : Window
         else
         {
             element.VerticalAlignment = VerticalAlignment.Center;
+        }
+    }
+
+    /// <summary>
+    /// Verwerkt de Vast/Variabel-keuze ECHT in de opgeslagen XAML (in
+    /// tegenstelling tot ApplyContainerSimulation, dat alleen het
+    /// preview-exemplaar aanpast) - parsen, ApplySizeConstraints op de
+    /// root toepassen, terugschrijven. Faalt het parsen (zou niet moeten
+    /// gebeuren met XAML die hier al eerder succesvol gerenderd is),
+    /// dan de xaml ongewijzigd teruggeven - nooit een component kapot
+    /// maken aan deze stap.
+    /// </summary>
+    private static string BakeSizeConstraintsIntoXaml(string xaml, ContainerSizeMode widthMode, ContainerSizeMode heightMode)
+    {
+        try
+        {
+            if (XamlReader.Parse(xaml) is not FrameworkElement root)
+            {
+                return xaml;
+            }
+
+            ApplySizeConstraints(root, widthMode, heightMode);
+            return XamlWriter.Save(root);
+        }
+        catch (Exception)
+        {
+            return xaml;
         }
     }
 
@@ -1414,7 +1456,8 @@ public partial class MainWindow : Window
         SnapshotComponentVersion(component);
         component.Title = ComponentTitleBox.Text;
         component.BodyText = ComponentBodyBox.Text;
-        component.Xaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
+        var generatedXaml = GenerateCardXaml(ComponentTitleBox.Text, ComponentBodyBox.Text);
+        component.Xaml = BakeSizeConstraintsIntoXaml(generatedXaml, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
         ComponentXamlBox.Text = component.Xaml;
         SaveTestContainerSettings(component);
 
@@ -1645,22 +1688,31 @@ public partial class MainWindow : Window
             return;
         }
 
-        ComponentXamlBox.Text = xaml;
         SnapshotComponentVersion(component);
-        component.Xaml = xaml;
-        SaveTestContainerSettings(component);
-        App.Db.SaveChanges();
 
+        // IsXamlSafeToParse moet vóór BakeSizeConstraintsIntoXaml -
+        // die parset zelf ook (XamlReader.Parse), dus een te
+        // groot/diep genest voorstel mag ook daar niet in terechtkomen.
         if (!IsXamlSafeToParse(xaml))
         {
+            component.Xaml = xaml;
+            ComponentXamlBox.Text = xaml;
+            SaveTestContainerSettings(component);
+            App.Db.SaveChanges();
             XamlErrorText.Text = $"Te groot/diep genest om te parsen (meer dan {MaxXamlElementCount} elementen) - overgeslagen.";
             XamlErrorText.Visibility = Visibility.Visible;
         }
         else
         {
+            var bakedXaml = BakeSizeConstraintsIntoXaml(xaml, (ContainerSizeMode)WidthModeCombo.SelectedIndex, (ContainerSizeMode)HeightModeCombo.SelectedIndex);
+            component.Xaml = bakedXaml;
+            ComponentXamlBox.Text = bakedXaml;
+            SaveTestContainerSettings(component);
+            App.Db.SaveChanges();
+
             try
             {
-                XamlReader.Parse(xaml);
+                XamlReader.Parse(bakedXaml);
                 XamlErrorText.Visibility = Visibility.Collapsed;
             }
             catch (Exception parseEx)
@@ -1761,21 +1813,53 @@ public partial class MainWindow : Window
             return;
         }
 
+        var (widthMode, width, heightMode, height) = RegionDefaultContainerSize(region);
+
         // Seed a real, immediately-renderable Xaml so a brand new
-        // component never starts out as a bare placeholder.
+        // component never starts out as a bare placeholder. De
+        // Vast/Variabel-standaarden voor deze regio worden meteen in
+        // die XAML gebakken (BakeSizeConstraintsIntoXaml), niet pas bij
+        // de eerste handmatige save.
         App.Db.Components.Add(new StylebookComponent
         {
             Name = name,
             Region = region,
             Title = name,
             BodyText = "Voorbeeldinhoud",
-            Xaml = GenerateCardXaml(name, "Voorbeeldinhoud"),
+            Xaml = BakeSizeConstraintsIntoXaml(GenerateCardXaml(name, "Voorbeeldinhoud"), widthMode, heightMode),
+            TestContainerWidthMode = widthMode,
+            TestContainerWidth = width,
+            TestContainerHeightMode = heightMode,
+            TestContainerHeight = height,
         });
 
         App.Db.SaveChanges();
         nameBox.Clear();
         LoadComponentsByRegion();
     }
+
+    /// <summary>
+    /// Startwaarden voor de testcontainer, afgeleid van de ECHTE
+    /// afmeting van deze regio in Basis.xaml (Header=210 hoog,
+    /// Footer=65 hoog, Menu=256 breed, Actie=48 breed, Inhoud volledig
+    /// flexibel) - zodat een nieuw component meteen op een realistisch
+    /// formaat start in plaats van de generieke 400×260. De "Variabel"-
+    /// dimensie krijgt alleen een representatieve preview-waarde (puur
+    /// visueel voor de schuifbalk-startpositie, geen echte beperking -
+    /// Variabel betekent immers "vult wat er ook is"). Algemeen heeft
+    /// geen Basis-slot (zie PageRegionsInBasis) en blijft daarom op de
+    /// oude generieke standaard.
+    /// </summary>
+    private static (ContainerSizeMode WidthMode, double Width, ContainerSizeMode HeightMode, double Height) RegionDefaultContainerSize(ComponentRegion region) => region switch
+    {
+        ComponentRegion.Header => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 210),
+        ComponentRegion.Menu => (ContainerSizeMode.Fixed, 256, ContainerSizeMode.Variable, 700),
+        ComponentRegion.Inhoud => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Variable, 700),
+        ComponentRegion.Actie => (ContainerSizeMode.Fixed, 48, ContainerSizeMode.Variable, 700),
+        ComponentRegion.Footer => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 65),
+        ComponentRegion.Algemeen => (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260),
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
+    };
 
     private void RenameComponent_Click(object sender, RoutedEventArgs e)
     {

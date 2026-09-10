@@ -485,7 +485,27 @@
                                 <Border.RenderTransform>
                                     <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
                                 </Border.RenderTransform>
-                                <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                                <Grid>
+                                    <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                                    <!-- Sleepbare hoek: alternatief voor de
+                                         ContainerWidthSlider/HeightSlider
+                                         hierboven, zelfde ValueChanged-pad
+                                         (TestContainerResizeThumb_DragDelta
+                                         telt gewoon bij de sliders op). -->
+                                    <Thumb x:Name="TestContainerResizeThumb"
+                                           Width="14" Height="14"
+                                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                           Margin="0,0,-7,-7"
+                                           Cursor="SizeNWSE"
+                                           DragDelta="TestContainerResizeThumb_DragDelta"
+                                           AutomationProperties.Name="Testbox resizen">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{DynamicResource AccentBrush}" CornerRadius="2" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Grid>
                             </Border>
                             <Border x:Name="ProposedTestContainerBorder"
                                     Grid.Column="1"
@@ -583,13 +603,23 @@
                                     </TextBlock>
                                 </Button>
 
-                                <!-- Testcontainer: simuleert of dit component
+                                <!-- Testcontainer: bepaalt of dit component
                                      zich moet aanpassen aan de ruimte waarin
                                      het geplaatst wordt (Variabel) of altijd
                                      zijn eigen afmeting aanhoudt (Vast) - zie
                                      TestContainerBorder/ApplyContainerSimulation
-                                     in code-behind. Alleen een preview-hulpmiddel,
-                                     wijzigt niets aan de opgeslagen XAML. -->
+                                     in code-behind. Werkt ECHT door in de
+                                     opgeslagen XAML (BakeSizeConstraintsIntoXaml,
+                                     aangeroepen bij elke save), niet alleen in
+                                     deze preview - dus dit geldt ook zodra het
+                                     component echt in een pagina/app gebruikt
+                                     wordt. Nieuwe componenten starten al op een
+                                     regio-passende standaard, zie
+                                     RegionDefaultContainerSize. Sleep de
+                                     rechteronderhoek van de testbox hieronder
+                                     om 'm direct te resizen (TestContainerResizeThumb) -
+                                     dat is hetzelfde als deze schuifbalken
+                                     verslepen. -->
                                 <TextBox Text="Testcontainer" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
 
                                 <TextBox Text="Breedte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
@@ -605,8 +635,11 @@
                                 </ComboBox>
 
                                 <TextBox x:Name="ContainerSizeLabel" Text="Containerformaat: 400 × 260 px" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,4" />
-                                <Slider x:Name="ContainerWidthSlider" Minimum="120" Maximum="900" Value="400" ValueChanged="ContainerSize_Changed" />
-                                <Slider x:Name="ContainerHeightSlider" Minimum="80" Maximum="700" Value="260" ValueChanged="ContainerSize_Changed" Margin="0,4,0,0" />
+                                <!-- Bereik verruimd zodat ook Actie's 48px-brede en
+                                     Footer's 65px-hoge regio-standaard (zie
+                                     RegionDefaultContainerSize) binnen bereik vallen. -->
+                                <Slider x:Name="ContainerWidthSlider" Minimum="40" Maximum="1600" Value="400" ValueChanged="ContainerSize_Changed" />
+                                <Slider x:Name="ContainerHeightSlider" Minimum="40" Maximum="900" Value="260" ValueChanged="ContainerSize_Changed" Margin="0,4,0,0" />
 
                                 <TextBox Text="XAML" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
                                 <TextBox x:Name="ComponentXamlBox"
