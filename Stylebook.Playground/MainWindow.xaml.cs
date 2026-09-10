@@ -337,6 +337,26 @@ public partial class MainWindow : Window
     {
         _builderMode = mode;
 
+        // De regio-ListBoxen worden gedeeld met Paginabouwer (zie
+        // LoadPageRegionsIntoSelections) - zonder dit bleef een
+        // pagina-gekoppeld component daar geselecteerd staan zodra je
+        // naar Componentenbouwer wisselde, waardoor "+" dat bestaande
+        // component stilzwijgend hernoemde in plaats van een nieuwe aan
+        // te maken, en Verwijderen het verkeerde component raakte.
+        if (mode == BuilderMode.ComponentBuilder)
+        {
+            ClearAllRegionListSelections();
+            _lastSelectedComponent = null;
+            ComponentTitleBox.Text = string.Empty;
+            ComponentBodyBox.Text = string.Empty;
+            ComponentXamlBox.Text = string.Empty;
+            XamlErrorText.Visibility = Visibility.Collapsed;
+        }
+        else if (mode == BuilderMode.PageBuilder)
+        {
+            LoadPageRegionsIntoSelections();
+        }
+
         var editingAllowed = mode == BuilderMode.ComponentBuilder;
         HeaderEditRow.IsEnabled = editingAllowed;
         MenuEditRow.IsEnabled = editingAllowed;
@@ -423,6 +443,15 @@ public partial class MainWindow : Window
             {
                 ComponentsListBox(region).SelectedItem = null;
             }
+        }
+    }
+
+    /// <summary>Zoals DeselectOtherRegionLists, maar zonder uitzondering - gebruikt bij het overschakelen naar Componentenbouwer zodat die altijd met een schone lei begint.</summary>
+    private void ClearAllRegionListSelections()
+    {
+        foreach (ComponentRegion region in Enum.GetValues<ComponentRegion>())
+        {
+            ComponentsListBox(region).SelectedItem = null;
         }
     }
 
