@@ -412,7 +412,16 @@
                                      FontSize="{StaticResource FontSizeSmall}" />
                         </Grid>
 
-                        <Grid Grid.Row="1">
+                        <!-- Ctrl+scrollwiel zoomt ORIGINEEL en (indien
+                             zichtbaar) VOORSTEL altijd samen - ze delen
+                             deze ene ScaleTransform. Zie
+                             ComponentPreviewZoom_MouseWheel. -->
+                        <Grid Grid.Row="1"
+                              RenderTransformOrigin="0.5,0.5"
+                              PreviewMouseWheel="ComponentPreviewZoom_MouseWheel">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
+                            </Grid.RenderTransform>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition x:Name="ProposedColumnDefinition" Width="0" />

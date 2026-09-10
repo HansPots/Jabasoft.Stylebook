@@ -590,6 +590,30 @@ public partial class MainWindow : Window
         ContainerSizeLabel.Text = $"Containerformaat: {ContainerWidthSlider.Value:0} × {ContainerHeightSlider.Value:0} px";
     }
 
+    private const double ComponentPreviewMinZoom = 0.25;
+    private const double ComponentPreviewMaxZoom = 3.0;
+
+    /// <summary>
+    /// Ctrl+scrollwiel zoomt de geïsoleerde Componentenbouwer-preview
+    /// (ORIGINEEL en, indien zichtbaar, AI-VOORSTEL ernaast - ze delen
+    /// dezelfde ScaleTransform, zie MainWindow.xaml). Zonder Ctrl doet
+    /// het wiel niets - er is hier toch geen scrollbare inhoud onder.
+    /// </summary>
+    private void ComponentPreviewZoom_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers != ModifierKeys.Control)
+        {
+            return;
+        }
+
+        e.Handled = true;
+
+        var factor = e.Delta > 0 ? 1.1 : 1.0 / 1.1;
+        var newScale = Math.Clamp(ComponentPreviewZoomTransform.ScaleX * factor, ComponentPreviewMinZoom, ComponentPreviewMaxZoom);
+        ComponentPreviewZoomTransform.ScaleX = newScale;
+        ComponentPreviewZoomTransform.ScaleY = newScale;
+    }
+
     /// <summary>Re-renders the pending AI proposal (if there is one) so it picks up a Vast/Variabel or container-size change made while it's on screen - ORIGINEEL and AI-VOORSTEL always compare at the same settings.</summary>
     private void RefreshProposalPreview()
     {
