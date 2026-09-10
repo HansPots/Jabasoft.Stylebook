@@ -525,7 +525,36 @@ public partial class MainWindow : Window
         }
 
         var position = e.GetPosition(CompositionCanvas);
-        PlaceComponentOnCanvas(component, position.X, position.Y);
+        var left = Math.Clamp(position.X, 0, Math.Max(0, CompositionCanvas.Width - 20));
+        var top = Math.Clamp(position.Y, 0, Math.Max(0, CompositionCanvas.Height - 20));
+        PlaceComponentOnCanvas(component, left, top);
+    }
+
+    /// <summary>Leest de op dit moment in CompositionRegionPicker gekozen regio.</summary>
+    private ComponentRegion GetSelectedCompositionRegion() =>
+        Enum.Parse<ComponentRegion>((string)((ComboBoxItem)CompositionRegionPicker.SelectedItem).Tag);
+
+    /// <summary>
+    /// Zet het canvas op de ECHTE afmeting van region uit Basis.xaml -
+    /// dezelfde RegionDefaultContainerSize-lookup als de testbox in
+    /// Componentenbouwer gebruikt. Je werkt dus letterlijk binnen het
+    /// formaat waar dit uiteindelijk in terecht moet komen.
+    /// </summary>
+    private void ResizeCompositionCanvasToRegion(ComponentRegion region)
+    {
+        var (_, width, _, height) = RegionDefaultContainerSize(region);
+        CompositionCanvas.Width = width;
+        CompositionCanvas.Height = height;
+    }
+
+    private void CompositionRegionPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        ResizeCompositionCanvasToRegion(GetSelectedCompositionRegion());
     }
 
     /// <summary>
@@ -624,8 +653,14 @@ public partial class MainWindow : Window
         var host = (Border)sender;
         var item = _compositionItems.First(i => i.Visual == host);
         var position = e.GetPosition(CompositionCanvas);
-        var newLeft = position.X - _compositionDragOffset.X;
-        var newTop = position.Y - _compositionDragOffset.Y;
+
+        // Geklemd tussen 0 en canvas-afmeting min het item's eigen
+        // formaat, zodat een versleept component altijd binnen de
+        // regio-box blijft in plaats van 'm te kunnen uitslepen.
+        var maxLeft = Math.Max(0, CompositionCanvas.Width - host.ActualWidth);
+        var maxTop = Math.Max(0, CompositionCanvas.Height - host.ActualHeight);
+        var newLeft = Math.Clamp(position.X - _compositionDragOffset.X, 0, maxLeft);
+        var newTop = Math.Clamp(position.Y - _compositionDragOffset.Y, 0, maxTop);
 
         Canvas.SetLeft(host, newLeft);
         Canvas.SetTop(host, newTop);
@@ -685,6 +720,11 @@ public partial class MainWindow : Window
         _selectedCompositionItem = null;
         CompositionNameBox.Clear();
         CompositionRegionPicker.SelectedIndex = 0;
+
+        // SelectedIndex hierboven vuurt geen SelectionChanged als 'ie al
+        // 0 was - expliciet aanroepen zodat het canvas altijd meteen op
+        // de juiste regio-afmeting staat, ook de allereerste keer.
+        ResizeCompositionCanvasToRegion(GetSelectedCompositionRegion());
     }
 
     /// <summary>
@@ -703,12 +743,12 @@ public partial class MainWindow : Window
     private void SaveComposition_Click(object sender, RoutedEventArgs e)
     {
         var name = CompositionNameBox.Text.Trim();
-        if (name.Length == 0 || _compositionItems.Count == 0 || CompositionRegionPicker.SelectedItem is not ComboBoxItem regionItem)
+        if (name.Length == 0 || _compositionItems.Count == 0)
         {
             return;
         }
 
-        var region = Enum.Parse<ComponentRegion>((string)regionItem.Tag);
+        var region = GetSelectedCompositionRegion();
 
         var flattened = new Canvas();
         foreach (var item in _compositionItems)

@@ -771,18 +771,32 @@
                         </ScrollViewer>
                     </Border>
 
-                    <!-- Het canvas zelf: ruim vast formaat binnen een
-                         ScrollViewer zodat er genoeg ruimte is om vrij te
-                         positioneren. Focusable zodat Delete op een
+                    <!-- Het canvas is de ECHTE afmeting van de gekozen regio
+                         (CompositionRegionPicker hieronder, zie
+                         ResizeCompositionCanvasToRegion/RegionDefaultContainerSize
+                         - dezelfde Basis.xaml-afmetingen als de testbox in
+                         Componentenbouwer) - je werkt dus letterlijk BINNEN
+                         het formaat waar het straks in past, niet op een
+                         los, willekeurig groot canvas. BorderBrush/
+                         BorderThickness maken die grens zichtbaar;
+                         ClipToBounds + de klem-logica in
+                         CompositionCanvas_Drop/CompositionItem_MouseMove
+                         houden geplaatste/versleepte componenten er ook
+                         daadwerkelijk binnen. Focusable zodat Delete op een
                          geselecteerd item werkt. -->
                     <ScrollViewer Grid.Column="1" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <Canvas x:Name="CompositionCanvas"
-                                Width="2000" Height="1200"
-                                Background="{DynamicResource BackgroundBrush}"
-                                AllowDrop="True"
-                                Drop="CompositionCanvas_Drop"
-                                Focusable="True"
-                                KeyDown="CompositionCanvas_KeyDown" />
+                        <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+                                Margin="{StaticResource SpaceMedium}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1">
+                            <Canvas x:Name="CompositionCanvas"
+                                    Background="{DynamicResource BackgroundBrush}"
+                                    ClipToBounds="True"
+                                    AllowDrop="True"
+                                    Drop="CompositionCanvas_Drop"
+                                    Focusable="True"
+                                    KeyDown="CompositionCanvas_KeyDown" />
+                        </Border>
                     </ScrollViewer>
 
                     <DockPanel Grid.Column="1" Grid.Row="1"
@@ -792,7 +806,7 @@
                         <Button DockPanel.Dock="Right" Click="ClearComposition_Click" Style="{StaticResource DeleteComponentButtonStyle}" AutomationProperties.Name="Leegmaken" Margin="4,0,0,0">
                             <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
                         </Button>
-                        <ComboBox x:Name="CompositionRegionPicker" DockPanel.Dock="Right" Width="120" Margin="8,0,0,0">
+                        <ComboBox x:Name="CompositionRegionPicker" DockPanel.Dock="Right" Width="120" Margin="8,0,0,0" SelectionChanged="CompositionRegionPicker_SelectionChanged">
                             <ComboBoxItem Content="Header" Tag="Header" IsSelected="True" />
                             <ComboBoxItem Content="Menu" Tag="Menu" />
                             <ComboBoxItem Content="Inhoud" Tag="Inhoud" />
