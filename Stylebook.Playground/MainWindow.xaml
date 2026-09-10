@@ -129,12 +129,27 @@
                 BorderThickness="0,0,1,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="{StaticResource SpaceMedium}">
-                    <TextBox Text="MENU"
-                             Style="{StaticResource SelectableTextStyle}"
-                             Foreground="{DynamicResource TextMutedBrush}"
-                             FontFamily="{StaticResource AppFontFamily}"
-                             FontSize="{StaticResource FontSizeSmall}"
-                             Margin="0,0,0,16" />
+                    <DockPanel Margin="0,0,0,16">
+                        <!-- Ververst alle uit de database geladen lijsten (componenten,
+                             applicaties/pagina's, de regio-toewijzingen van de huidige
+                             pagina, en het live thema) - nuttig als de database buiten
+                             deze lopende app om is aangepast. Behoudt de huidige
+                             Applicatie-/Pagina-keuze in plaats van terug te springen
+                             naar de eerste, zie RefreshFromDatabase_Click. -->
+                        <Button DockPanel.Dock="Right"
+                                Click="RefreshFromDatabase_Click"
+                                Style="{StaticResource DeleteComponentButtonStyle}"
+                                Margin="4,0,0,0"
+                                AutomationProperties.Name="Ververs">
+                            <TextBlock Text="{StaticResource IconRefresh}" FontFamily="{StaticResource IconFontFamily}" />
+                        </Button>
+                        <TextBox Text="MENU"
+                                 Style="{StaticResource SelectableTextStyle}"
+                                 Foreground="{DynamicResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamily}"
+                                 FontSize="{StaticResource FontSizeSmall}"
+                                 VerticalAlignment="Center" />
+                    </DockPanel>
 
                     <!-- Stijl-wisselaar, bovenaan zodat 'ie voor de hele
                          app geldt (chrome en preview delen dezelfde

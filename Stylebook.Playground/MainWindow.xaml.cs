@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security;
@@ -271,6 +272,50 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Herlaadt alles wat uit de database komt - componenten, Applicaties/
+    /// Pagina's, de regio-toewijzingen van de huidige Pagina, en het live
+    /// thema - voor als de database buiten deze lopende app om is
+    /// gewijzigd (bv. rechtstreeks via SQL). Behoudt de huidige
+    /// Applicatie-/Pagina-keuze (opnieuw opgezocht op Id in de vernieuwde
+    /// lijst) in plaats van, zoals LoadApplications/LoadPages normaal
+    /// doen, terug te springen naar het eerste item - verversen mag de
+    /// lopende sessie niet verstoren.
+    /// </summary>
+    private void RefreshFromDatabase_Click(object sender, RoutedEventArgs e)
+    {
+        var previousApplicationId = _selectedApplication?.Id;
+        var previousPageId = _selectedPage?.Id;
+
+        LoadComponentsByRegion();
+
+        if (_builderMode == BuilderMode.ComponentBuilder)
+        {
+            ClearComponentEditorState();
+        }
+
+        LoadApplications();
+        if (previousApplicationId is { } applicationId)
+        {
+            var application = ApplicationPicker.Items.Cast<DataApplication>().FirstOrDefault(a => a.Id == applicationId);
+            if (application is not null)
+            {
+                ApplicationPicker.SelectedItem = application;
+            }
+        }
+
+        if (previousPageId is { } pageId)
+        {
+            var page = PagePicker.Items.Cast<DataPage>().FirstOrDefault(p => p.Id == pageId);
+            if (page is not null)
+            {
+                PagePicker.SelectedItem = page;
+            }
+        }
+
+        App.ReapplyLiveTheme();
+    }
+
+    /// <summary>
     /// Switches which theme is active app-wide (App.SwitchTheme) - each
     /// theme keeps its own stored tokens, hand-edits included, so this is
     /// non-destructive; it does NOT reset anything back to a preset.
@@ -345,12 +390,7 @@ public partial class MainWindow : Window
         // te maken, en Verwijderen het verkeerde component raakte.
         if (mode == BuilderMode.ComponentBuilder)
         {
-            ClearAllRegionListSelections();
-            _lastSelectedComponent = null;
-            ComponentTitleBox.Text = string.Empty;
-            ComponentBodyBox.Text = string.Empty;
-            ComponentXamlBox.Text = string.Empty;
-            XamlErrorText.Visibility = Visibility.Collapsed;
+            ClearComponentEditorState();
         }
         else if (mode == BuilderMode.PageBuilder)
         {
@@ -453,6 +493,23 @@ public partial class MainWindow : Window
         {
             ComponentsListBox(region).SelectedItem = null;
         }
+    }
+
+    /// <summary>
+    /// Zet de Componentenbouwer terug naar "niets geselecteerd" - gebruikt
+    /// bij het overschakelen naar die modus (SetBuilderMode) en bij
+    /// RefreshFromDatabase_Click, waar de herladen ListBoxen toch andere
+    /// StylebookComponent-objecten bevatten dus een vorige selectie nooit
+    /// meer kan kloppen.
+    /// </summary>
+    private void ClearComponentEditorState()
+    {
+        ClearAllRegionListSelections();
+        _lastSelectedComponent = null;
+        ComponentTitleBox.Text = string.Empty;
+        ComponentBodyBox.Text = string.Empty;
+        ComponentXamlBox.Text = string.Empty;
+        XamlErrorText.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>
@@ -1008,6 +1065,7 @@ public partial class MainWindow : Window
     private static bool IsXamlSafeToParse(string xaml) => xaml.Count(c => c == '<') <= MaxXamlElementCount;
 
     /// <summary>Same rendering CreateComponentVisual uses, but for a raw Xaml string not (yet) attached to a saved component - see ShowProposal.</summary>
+    [DebuggerStepThrough]
     private static FrameworkElement RenderXamlPreview(string name, string? xaml)
     {
         if (string.IsNullOrWhiteSpace(xaml))
