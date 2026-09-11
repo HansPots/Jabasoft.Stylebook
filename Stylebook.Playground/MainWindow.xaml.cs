@@ -837,10 +837,9 @@ public partial class MainWindow : Window
             // SaveTestContainerSettings for the write-back half of this.
             WidthModeCombo.SelectedIndex = (int)selected.TestContainerWidthMode;
             HeightModeCombo.SelectedIndex = (int)selected.TestContainerHeightMode;
-            ContainerWidthSlider.Value = selected.TestContainerWidth;
-            ContainerHeightSlider.Value = selected.TestContainerHeight;
             ComponentFixedWidthBox.Text = selected.FixedWidth?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             ComponentFixedHeightBox.Text = selected.FixedHeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            ApplyTestContainerSize(selected.Region);
         }
 
         SavePageRegionSelection(region, selected);
@@ -966,25 +965,23 @@ public partial class MainWindow : Window
     private static double? ParseFixedSize(string text) =>
         double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : null;
 
-    private void ContainerSize_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    /// <summary>
+    /// Zet de testbox (TestContainerBorder/ProposedTestContainerBorder)
+    /// op de ECHTE, VASTE afmeting van region uit Basis.xaml -
+    /// RegionDefaultContainerSize, dezelfde lookup als Compositie's
+    /// canvas gebruikt. Bewust geen schuifbalken/sleep-hoek meer: de
+    /// testbox mag nooit groter/kleiner worden dan wat de regio
+    /// daadwerkelijk toestaat, anders bouw je tegen een verzonnen
+    /// formaat aan.
+    /// </summary>
+    private void ApplyTestContainerSize(ComponentRegion region)
     {
-        if (_initializing)
-        {
-            return;
-        }
-
-        TestContainerBorder.Width = ContainerWidthSlider.Value;
-        TestContainerBorder.Height = ContainerHeightSlider.Value;
-        ProposedTestContainerBorder.Width = ContainerWidthSlider.Value;
-        ProposedTestContainerBorder.Height = ContainerHeightSlider.Value;
-        ContainerSizeLabel.Text = $"Containerformaat: {ContainerWidthSlider.Value:0} × {ContainerHeightSlider.Value:0} px";
-    }
-
-    /// <summary>Sleepbaar alternatief voor de sliders hierboven - telt de sleepafstand gewoon bij ContainerWidthSlider/HeightSlider op, wat via hun eigen ValueChanged (ContainerSize_Changed) automatisch de testbox en het label bijwerkt.</summary>
-    private void TestContainerResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
-    {
-        ContainerWidthSlider.Value = Math.Clamp(ContainerWidthSlider.Value + e.HorizontalChange, ContainerWidthSlider.Minimum, ContainerWidthSlider.Maximum);
-        ContainerHeightSlider.Value = Math.Clamp(ContainerHeightSlider.Value + e.VerticalChange, ContainerHeightSlider.Minimum, ContainerHeightSlider.Maximum);
+        var (_, width, _, height) = RegionDefaultContainerSize(region);
+        TestContainerBorder.Width = width;
+        TestContainerBorder.Height = height;
+        ProposedTestContainerBorder.Width = width;
+        ProposedTestContainerBorder.Height = height;
+        ContainerSizeLabel.Text = $"Containerformaat ({region}): {width:0} × {height:0} px";
     }
 
     private const double ComponentPreviewMinZoom = 0.25;
@@ -1106,21 +1103,21 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Writes the Testcontainer's current Vast/Variabel + afmeting
+    /// Writes the component's current Vast/Variabel + eigen-afmeting
     /// choices onto the component being saved, so they come back the
-    /// next time it's selected instead of resetting to Vast/400×260 -
-    /// see Component_SelectionChanged for the read-back half. Called
-    /// from every place that actually commits a component to the
-    /// database (GenerateFromProperties_Click, AcceptProposal_Click) -
-    /// not from SaveXaml_Click itself, since that only opens the
-    /// voorstel-vergelijken flow and doesn't write anything yet.
+    /// next time it's selected - see Component_SelectionChanged for the
+    /// read-back half. De testbox zelf (TestContainerBorder) hoort hier
+    /// niet meer bij - die staat altijd vast op de regio-afmeting, zie
+    /// ApplyTestContainerSize. Called from every place that actually
+    /// commits a component to the database (GenerateFromProperties_Click,
+    /// AcceptProposal_Click) - not from SaveXaml_Click itself, since that
+    /// only opens the voorstel-vergelijken flow and doesn't write
+    /// anything yet.
     /// </summary>
     private void SaveTestContainerSettings(StylebookComponent component)
     {
         component.TestContainerWidthMode = (ContainerSizeMode)WidthModeCombo.SelectedIndex;
         component.TestContainerHeightMode = (ContainerSizeMode)HeightModeCombo.SelectedIndex;
-        component.TestContainerWidth = ContainerWidthSlider.Value;
-        component.TestContainerHeight = ContainerHeightSlider.Value;
         component.FixedWidth = ParseFixedSize(ComponentFixedWidthBox.Text);
         component.FixedHeight = ParseFixedSize(ComponentFixedHeightBox.Text);
     }
@@ -1976,13 +1973,16 @@ public partial class MainWindow : Window
             return;
         }
 
-        var (widthMode, width, heightMode, height) = RegionDefaultContainerSize(region);
+        var (widthMode, _, heightMode, _) = RegionDefaultContainerSize(region);
 
         // Seed a real, immediately-renderable Xaml so a brand new
         // component never starts out as a bare placeholder. De
         // Vast/Variabel-standaarden voor deze regio worden meteen in
         // die XAML gebakken (BakeSizeConstraintsIntoXaml), niet pas bij
-        // de eerste handmatige save.
+        // de eerste handmatige save. De testbox zelf heeft geen
+        // opgeslagen afmeting meer - die volgt altijd live uit de regio
+        // (ApplyTestContainerSize), niet uit iets dat hier vastgelegd
+        // wordt.
         App.Db.Components.Add(new StylebookComponent
         {
             Name = name,
@@ -1991,9 +1991,7 @@ public partial class MainWindow : Window
             BodyText = "Voorbeeldinhoud",
             Xaml = BakeSizeConstraintsIntoXaml(GenerateCardXaml(name, "Voorbeeldinhoud"), widthMode, null, heightMode, null),
             TestContainerWidthMode = widthMode,
-            TestContainerWidth = width,
             TestContainerHeightMode = heightMode,
-            TestContainerHeight = height,
         });
 
         App.Db.SaveChanges();

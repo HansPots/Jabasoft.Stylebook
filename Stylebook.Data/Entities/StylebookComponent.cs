@@ -27,10 +27,6 @@ public class StylebookComponent : IAuditableEntity
 
     public ContainerSizeMode TestContainerHeightMode { get; set; } = ContainerSizeMode.Fixed;
 
-    public double TestContainerWidth { get; set; } = 400;
-
-    public double TestContainerHeight { get; set; } = 260;
-
     /// <summary>
     /// Expliciete eigen breedte/hoogte (px) van het component zelf, alleen
     /// van toepassing als de bijbehorende Mode hierboven Fixed is - null
