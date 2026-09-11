@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="Shared.Telemetry/Shared.Telemetry.csproj" />
   <Project Path="Stylebook.Components/Stylebook.Components.csproj" />
   <Project Path="Stylebook.Data/Stylebook.Data.csproj" />
   <Project Path="Stylebook.Playground/Stylebook.Playground.csproj" />
