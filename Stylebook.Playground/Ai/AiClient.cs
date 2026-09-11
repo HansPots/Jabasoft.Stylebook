@@ -1,24 +1,30 @@
-using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
+using Jabasoft.Base.AiBroker;
 
 namespace Stylebook.Playground.Ai;
 
 /// <summary>
-/// Quick-and-dirty AI client, specific to this temporary Playground app -
-/// NOT the family's shared AiBrokerClient (that lives in Jabasoft.Base,
-/// which is currently empty). Talks to whatever local OpenAI-compatible
-/// server the user already has running (LM Studio on :1234, or Ollama
-/// with its OpenAI-compat endpoint) - same provider convention as
-/// JabaSoft.LocalAiStudio's AiConnector, just without its config UI,
-/// per-task model split, or database-backed settings. Meant to be thrown
-/// away and rebuilt against the real broker once Jabasoft.Base exists
-/// again.
+/// Stylebook's thin wrapper around the family's shared
+/// <see cref="IAiBrokerClient"/> - talks to Jabasoft.Broker instead of
+/// calling LM Studio/Ollama directly, so token usage gets recorded
+/// centrally and requests to the same local server queue instead of
+/// racing other JabaSoft apps. Replaces the earlier quick-and-dirty,
+/// Stylebook-only client that talked to the LLM server directly (thrown
+/// away now that Jabasoft.Base/Jabasoft.Broker exist again).
 /// </summary>
-public sealed class AiClient(string serverUrl, string model)
+public sealed class AiClient(AiProvider provider, string serverUrl, string model)
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(10) };
+    private const string ApplicationName = "Stylebook";
+
+    private static readonly IAiBrokerClient Broker = new AiBrokerClient(new HttpClient
+    {
+        BaseAddress = new Uri(AiBrokerClient.DefaultBaseUrl),
+        // Moet gelijk zijn aan (of langer dan) de Broker's eigen "chat"-
+        // HttpClient-timeout (5 minuten, zie Jabasoft.Broker/Program.cs) -
+        // de .NET-default van 100s knapt anders eerder af dan de Broker
+        // een trage/koude lokale modelrespons mag laten duren.
+        Timeout = TimeSpan.FromMinutes(5),
+    });
 
     /// <summary>
     /// history is the conversation so far (role "user"/"assistant",
@@ -28,22 +34,17 @@ public sealed class AiClient(string serverUrl, string model)
     /// </summary>
     public async Task<string> AskAsync(string systemPrompt, IReadOnlyList<(string Role, string Content)> history, CancellationToken cancellationToken = default)
     {
-        var messages = new List<object> { new { role = "system", content = systemPrompt } };
-        messages.AddRange(history.Select(turn => (object)new { role = turn.Role, content = turn.Content }));
+        var messages = new List<ChatMessage> { new("system", systemPrompt) };
+        messages.AddRange(history.Select(turn => new ChatMessage(turn.Role, turn.Content)));
 
-        var requestBody = new { model, messages, temperature = 0.3 };
+        var request = new ChatRequest(provider, serverUrl, model, messages, ApplicationName, Temperature: 0.3);
+        var result = await Broker.ChatAsync(request, cancellationToken);
 
-        using var response = await Http.PostAsJsonAsync(
-            $"{serverUrl.TrimEnd('/')}/v1/chat/completions", requestBody, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(result.ErrorMessage ?? "De AI-broker gaf een lege foutmelding terug.");
+        }
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-
-        return document.RootElement
-            .GetProperty("choices")[0]
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString() ?? string.Empty;
+        return result.Reply;
     }
 }

@@ -1,4 +1,5 @@
 using System.Windows;
+using Jabasoft.Base.AiBroker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Stylebook.Data;
@@ -64,12 +65,22 @@ public partial class App : System.Windows.Application
 
         EnsureApplicationsSeeded();
 
+        var aiProviderName = configuration["AiConnector:Provider"]
+            ?? throw new InvalidOperationException("AiConnector:Provider ontbreekt in appsettings.json.");
+        var aiProvider = Enum.Parse<AiProvider>(aiProviderName);
         var aiServerUrl = configuration["AiConnector:ServerUrl"]
             ?? throw new InvalidOperationException("AiConnector:ServerUrl ontbreekt in appsettings.json.");
         var aiModel = configuration["AiConnector:Model"]
             ?? throw new InvalidOperationException("AiConnector:Model ontbreekt in appsettings.json.");
 
-        Ai = new AiClient(aiServerUrl, aiModel);
+        Ai = new AiClient(aiProvider, aiServerUrl, aiModel);
+
+        // Wie 'm het eerst nodig heeft start 'm - zie
+        // AiBrokerProcessLauncher's eigen doc-comment. Synchroon gewacht
+        // (niet fire-and-forget): zonder draaiende broker werkt "Vraag AI"
+        // toch niet, dus de app mag best even wachten tot 'm bereikbaar is
+        // (of de pogingen opgeeft) vóór het hoofdvenster verschijnt.
+        AiBrokerProcessLauncher.EnsureRunningAsync().GetAwaiter().GetResult();
     }
 
     /// <summary>

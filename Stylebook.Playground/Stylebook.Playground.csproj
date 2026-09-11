@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Stylebook.Components\Stylebook.Components.csproj" />
     <ProjectReference Include="..\Stylebook.Data\Stylebook.Data.csproj" />
+    <ProjectReference Include="..\..\Jabasoft.Base\Jabasoft.Base.csproj" />
   </ItemGroup>
 
   <ItemGroup>
