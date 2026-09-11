@@ -765,7 +765,21 @@ public partial class MainWindow : Window
 
         var region = GetSelectedCompositionRegion();
 
-        var flattened = new Canvas();
+        // Een Canvas krijgt GEEN eigen afmeting van zijn kinderen, zelfs
+        // niet als die met Canvas.Left/Top gepositioneerd zijn - zonder
+        // expliciete Width/Height rendert 'm overal waar dit component
+        // straks getoond wordt (bv. de testbox in Componentenbouwer) op
+        // 0×0, dus onzichtbaar. Zelfde afmeting als het werkgebied waar
+        // je 'm net op hebt samengesteld (CompositionCanvas, al vast op
+        // de regio-afmeting - zie ApplyTestContainerSize/
+        // RegionDefaultContainerSize), plus dezelfde clip zodat niets
+        // buiten die grens uitsteekt.
+        var flattened = new Canvas
+        {
+            Width = CompositionCanvas.Width,
+            Height = CompositionCanvas.Height,
+            ClipToBounds = true,
+        };
         foreach (var item in _compositionItems)
         {
             var visual = CreateComponentVisual(item.Source);
@@ -789,11 +803,24 @@ public partial class MainWindow : Window
             flattened.Children.Add(visual);
         }
 
+        // Vast + expliciete FixedWidth/Height (i.p.v. leeg = "natuurlijke
+        // afmeting"): een Canvas HEEFT geen natuurlijke afmeting - zonder
+        // dit zou ApplySizeConstraints de zojuist gebakken Width/Height
+        // bij elke preview weer terugzetten naar NaN (Auto), en een
+        // Canvas met Auto-afmeting rendert altijd op 0×0, ongeacht zijn
+        // (met Canvas.Left/Top gepositioneerde) kinderen. Variabel is
+        // hier ook geen optie: de kinderen staan op vaste pixelposities,
+        // dus uitrekken naar een andere breedte/hoogte zou ze niet mee
+        // laten schalen - alleen kloppend bij precies dit formaat.
         App.Db.Components.Add(new StylebookComponent
         {
             Name = name,
             Region = region,
             Xaml = XamlWriter.Save(flattened),
+            TestContainerWidthMode = ContainerSizeMode.Fixed,
+            TestContainerHeightMode = ContainerSizeMode.Fixed,
+            FixedWidth = CompositionCanvas.Width,
+            FixedHeight = CompositionCanvas.Height,
         });
 
         App.Db.SaveChanges();
