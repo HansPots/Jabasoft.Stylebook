@@ -465,6 +465,18 @@ public partial class MainWindow : Window
         FooterEditRow.IsEnabled = editingAllowed;
         AlgemeenEditRow.IsEnabled = editingAllowed;
 
+        // Omgekeerd van editingAllowed: een regio-toewijzing weghalen
+        // (terug naar "leeg") hoort alleen bij Paginabouwer, niet bij
+        // Componentenbouwer (waar dezelfde ListBoxen iets heel anders
+        // betekenen - zie ClearRegionSelection_Click).
+        var pageBuilderAllowed = mode == BuilderMode.PageBuilder;
+        HeaderClearSelectionButton.IsEnabled = pageBuilderAllowed;
+        MenuClearSelectionButton.IsEnabled = pageBuilderAllowed;
+        InhoudClearSelectionButton.IsEnabled = pageBuilderAllowed;
+        ActieClearSelectionButton.IsEnabled = pageBuilderAllowed;
+        FooterClearSelectionButton.IsEnabled = pageBuilderAllowed;
+        AlgemeenClearSelectionButton.IsEnabled = pageBuilderAllowed;
+
         PageBuilderBasis.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
@@ -871,6 +883,21 @@ public partial class MainWindow : Window
 
         SavePageRegionSelection(region, selected);
         RefreshPreview();
+    }
+
+    /// <summary>
+    /// Paginabouwer only (zie SetBuilderMode's pageBuilderAllowed): haalt
+    /// de gekozen component voor region op de HUIDIGE pagina weer weg -
+    /// zet de ListBox-selectie op null, wat via het bestaande
+    /// Component_SelectionChanged-pad (SavePageRegionSelection) de
+    /// PageRegion-rij bijwerkt naar "geen component" en de Basis-preview
+    /// terugzet naar "(leeg)". Het component zelf blijft gewoon bestaan -
+    /// dit haalt alleen de koppeling met deze pagina weg.
+    /// </summary>
+    private void ClearRegionSelection_Click(object sender, RoutedEventArgs e)
+    {
+        var region = Enum.Parse<ComponentRegion>((string)((Button)sender).Tag);
+        ComponentsListBox(region).SelectedItem = null;
     }
 
     private void DeselectOtherRegionLists(ComponentRegion keep)

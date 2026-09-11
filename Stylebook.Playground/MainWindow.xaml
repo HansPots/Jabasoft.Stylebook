@@ -284,6 +284,17 @@
                     <Expander Header="Header">
                         <StackPanel>
                             <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <!-- Alleen bruikbaar in Paginabouwer (IsEnabled
+                                 via SetBuilderMode) - haalt de gekozen
+                                 component voor deze regio op DEZE pagina
+                                 weer weg (terug naar "leeg"), zonder het
+                                 component zelf te verwijderen. -->
+                            <Button x:Name="HeaderClearSelectionButton" Tag="Header" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="HeaderEditRow" Margin="0,8,0,8">
                                 <Button Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -301,6 +312,12 @@
                     <Expander Header="Menu">
                         <StackPanel>
                             <ListBox x:Name="MenuComponents" Tag="Menu" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <Button x:Name="MenuClearSelectionButton" Tag="Menu" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="MenuEditRow" Margin="0,8,0,8">
                                 <Button Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -318,6 +335,12 @@
                     <Expander Header="Inhoud">
                         <StackPanel>
                             <ListBox x:Name="InhoudComponents" Tag="Inhoud" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <Button x:Name="InhoudClearSelectionButton" Tag="Inhoud" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="InhoudEditRow" Margin="0,8,0,8">
                                 <Button Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -335,6 +358,12 @@
                     <Expander Header="Actie">
                         <StackPanel>
                             <ListBox x:Name="ActieComponents" Tag="Actie" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <Button x:Name="ActieClearSelectionButton" Tag="Actie" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="ActieEditRow" Margin="0,8,0,8">
                                 <Button Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -352,6 +381,12 @@
                     <Expander Header="Footer">
                         <StackPanel>
                             <ListBox x:Name="FooterComponents" Tag="Footer" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <Button x:Name="FooterClearSelectionButton" Tag="Footer" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="FooterEditRow" Margin="0,8,0,8">
                                 <Button Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -369,6 +404,12 @@
                     <Expander Header="Algemeen">
                         <StackPanel>
                             <ListBox x:Name="AlgemeenComponents" Tag="Algemeen" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
+                            <Button x:Name="AlgemeenClearSelectionButton" Tag="Algemeen" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
+                                <TextBlock>
+                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
+                                    <Run Text=" Leegmaken" />
+                                </TextBlock>
+                            </Button>
                             <DockPanel x:Name="AlgemeenEditRow" Margin="0,8,0,8">
                                 <Button Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
                                     <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
@@ -398,7 +439,23 @@
              geïsoleerd, zonder schil eromheen; StylebookContent toont het
              hand-bewerkbare palet. -->
         <Grid x:Name="StylePreviewArea" Grid.Column="1">
-            <controls:Basis x:Name="PageBuilderBasis" />
+            <!-- Het paginavoorbeeld staat vast op 1920×1080 (liggend) - het
+                 doelscherm-formaat waar de app straks echt op draait, NIET
+                 de breedte van dit Stylebook-venster zelf (dat blijft
+                 2560×1140, zie MainWindow's eigen Width/Height). Zonder
+                 deze vaste maat rekte Basis mee tot de volledige breedte
+                 van StylePreviewArea (~2300px), veel breder dan 1920 -
+                 vandaar de zichtbare rand + ScrollViewer, zelfde patroon
+                 als de regio-vergrendelde testbox/Compositie-canvas. -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Margin="{StaticResource SpaceMedium}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        ClipToBounds="True">
+                    <controls:Basis x:Name="PageBuilderBasis" Width="1920" Height="1080" />
+                </Border>
+            </ScrollViewer>
 
             <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
