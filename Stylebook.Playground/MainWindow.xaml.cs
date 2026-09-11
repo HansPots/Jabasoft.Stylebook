@@ -17,6 +17,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Xml;
+using System.Xml.Linq;
 using Microsoft.Web.WebView2.Core;
 using Stylebook.Components.Theming;
 using Stylebook.Data;
@@ -833,7 +835,7 @@ public partial class MainWindow : Window
         {
             Name = name,
             Region = region,
-            Xaml = XamlWriter.Save(flattened),
+            Xaml = FormatXaml(XamlWriter.Save(flattened)),
             TestContainerWidthMode = ContainerSizeMode.Fixed,
             TestContainerHeightMode = ContainerSizeMode.Fixed,
             FixedWidth = CompositionCanvas.Width,
@@ -1153,7 +1155,39 @@ public partial class MainWindow : Window
             }
 
             ApplySizeConstraints(root, widthMode, fixedWidth, heightMode, fixedHeight);
-            return XamlWriter.Save(root);
+            return FormatXaml(XamlWriter.Save(root));
+        }
+        catch (Exception)
+        {
+            return xaml;
+        }
+    }
+
+    /// <summary>
+    /// XamlWriter.Save schrijft altijd één ononderbroken regel zonder
+    /// inspringing - onleesbaar zodra iemand de opgeslagen XAML wil
+    /// nakijken (bv. in de XAML-box of rechtstreeks in de database).
+    /// Herformatteert met inspringing zonder de inhoud te wijzigen; lukt
+    /// dat onverhoopt niet, dan de string ongewijzigd teruggeven - nooit
+    /// een component kapot maken aan deze cosmetische stap.
+    /// </summary>
+    private static string FormatXaml(string xaml)
+    {
+        try
+        {
+            var document = XDocument.Parse(xaml);
+            using var stringWriter = new System.IO.StringWriter();
+            using (var xmlWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings
+                   {
+                       Indent = true,
+                       IndentChars = "    ",
+                       OmitXmlDeclaration = true,
+                   }))
+            {
+                document.Save(xmlWriter);
+            }
+
+            return stringWriter.ToString();
         }
         catch (Exception)
         {
