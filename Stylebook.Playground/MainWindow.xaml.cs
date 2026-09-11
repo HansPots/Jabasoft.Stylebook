@@ -197,7 +197,12 @@ public partial class MainWindow : Window
 
     private void LoadComponentsByRegion()
     {
-        var componentsByRegion = App.Db.Components.AsEnumerable().ToLookup(c => c.Region);
+        // Alfabetisch (Ordinal, zelfde StringComparer als Applicatie-/
+        // Pagina-/Compositie-palette hieronder al gebruikten) - was
+        // voorheen gewoon database-volgorde (aanmaakvolgorde).
+        var componentsByRegion = App.Db.Components.AsEnumerable()
+            .OrderBy(c => c.Name, StringComparer.Ordinal)
+            .ToLookup(c => c.Region);
 
         HeaderComponents.ItemsSource = componentsByRegion[ComponentRegion.Header].ToList();
         MenuComponents.ItemsSource = componentsByRegion[ComponentRegion.Menu].ToList();
