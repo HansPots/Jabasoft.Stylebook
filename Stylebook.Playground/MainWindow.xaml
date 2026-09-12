@@ -9,6 +9,7 @@
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
         Height="1140" Width="2560"
+        WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}">
 
     <Window.Resources>
