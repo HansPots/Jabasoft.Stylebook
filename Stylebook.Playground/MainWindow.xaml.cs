@@ -1772,24 +1772,21 @@ public partial class MainWindow : Window
                "Footer-regio geplaatst die zelf al de juiste afmeting bepaalt en vult (zie Basis.xaml); " +
                "een vaste maat op het root-element overschrijft dat en zorgt dat het component niet meer " +
                "de volledige regio vult, ook al was dat er in de vorige versie niet in gezet.\n" +
-               "Vervang je een losse CornerRadius=\"...\" attribuut door theming:CornerRadiusParts (nodig " +
-               "zodra meerdere hoeken elk hun eigen token/waarde moeten krijgen, zie CornerRadiusParts.cs), " +
-               "zet dan ALTIJD alle vier de hoeken expliciet (TopLeft, TopRight, BottomRight, BottomLeft) - " +
-               "ook de hoeken die 0 zijn. Nooit een hoek weglaten omdat 'ie toch op 0 uitkomt: de hele set " +
-               "moet in één oogopslag duidelijk zijn zonder dat je de impliciete 0-standaard hoeft te kennen.\n" +
-               "theming:CornerRadiusParts (en MarginParts/PaddingParts) werken UITSLUITEND op een Border - " +
-               "nooit op een Rectangle, Ellipse, Path of andere Shape: de code-behind negeert het stilzwijgend " +
-               "op elk ander elementtype (geen foutmelding, gewoon geen effect), dus de hoeken lijken dan " +
-               "wel gezet maar veranderen in werkelijkheid niets. Een Rectangle heeft geen CornerRadius-" +
-               "property; gebruik daar RadiusX/RadiusY met een letterlijk getal (nooit een DynamicResource- " +
-               "tokenverwijzing, want een Radius-token is van het type CornerRadius en RadiusX/RadiusY zijn " +
-               "van het type double - dat type-verschil maakt de XAML ongeldig). Moet een ronde hoek op een " +
-               "vlak element per se een token volgen, gebruik dan een Border met Background in plaats van " +
-               "een Rectangle met Fill.\n" +
+               "Gebruik NOOIT theming:CornerRadiusParts, theming:MarginParts of theming:PaddingParts - die " +
+               "attached-property-syntax is te foutgevoelig gebleken (per ongeluk als los kind-element " +
+               "neergezet, of toegepast op een elementtype zoals Rectangle waar de code hem stilzwijgend " +
+               "negeert). Moet een CornerRadius/Margin/Padding per hoek/zijde verschillen, gebruik dan een " +
+               "gewone letterlijke komma-lijst met getallen (bv. CornerRadius=\"6,6,0,0\") - geen tokens " +
+               "combineren in zo'n lijst; zijn alle hoeken/zijden gelijk, dan mag de hele attribuutwaarde één " +
+               "{DynamicResource TokenNaam} zijn.\n" +
                "Typ nooit zelf een hex-kleurcode (#RRGGBB of #AARRGGBB), ook niet als je denkt de juiste " +
                "waarde te kennen - gebruik altijd {DynamicResource TokenNaam} uit de kleurenlijst hieronder. " +
                "Een handmatig getypte hexwaarde kan per ongeluk afwijken van het bedoelde token en breekt " +
                "bovendien de themabaarheid (de kleur volgt dan niet meer mee als het thema wisselt).\n" +
+               "Het root-element van je antwoord MOET zelf xmlns=\"http://schemas.microsoft.com/winfx/2006/" +
+               "xaml/presentation\" declareren (rechtstreeks op dat root-element, niet alleen op een geneste " +
+               "child) - zonder deze declaratie kent de parser zelfs standaardtypes als Grid of Border niet " +
+               "en faalt de hele XAML, met een fout als \"Cannot create unknown type 'Grid'\".\n" +
                DbThemeBuilder.DescribeForAi(App.Db, App.CurrentTheme);
     }
 

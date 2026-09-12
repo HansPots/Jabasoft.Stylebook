@@ -159,31 +159,15 @@ public static class DbThemeBuilder
             hoekronding, afstand, lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit
             StaticResource, want deze XAML wordt at runtime geparsed zonder ambient resource-context, waardoor
             StaticResource niet oplost. Voor Margin/Padding/Thickness/CornerRadius mag een token-referentie alleen
-            de VOLLEDIGE attribuutwaarde zijn - nooit combineren met losse cijfers of meerdere tokens in dezelfde
-            komma-waarde (dus niet eerst 0,0,0, en dan pas de referentie, en ook niet twee tokens samen in een
-            waarde); gebruik voor zulke eigenschappen ofwel uitsluitend letterlijke getallen, ofwel uitsluitend een
-            token-referentie als hele waarde. Moet een Border per hoek een andere hoekronding hebben (dus niet alle
-            vier gelijk) EN moet dat via tokens - dan kan het CornerRadius-attribuut zelf niet gebruikt worden. Zet
-            in plaats daarvan op de Border het namespace-voorvoegsel xmlns:theming gelijk aan clr-namespace:
-            Stylebook.Components.Theming;assembly=Stylebook.Components, en gebruik per hoek een eigen apart
-            attribuut - theming:CornerRadiusParts.TopLeft, theming:CornerRadiusParts.TopRight,
-            theming:CornerRadiusParts.BottomRight en theming:CornerRadiusParts.BottomLeft - elk met DynamicResource
-            verwijzend naar de gewenste token, precies zoals bij elk ander attribuut. Elk van die vier attributen
-            mag zelf weer ofwel een token ofwel een letterlijk getal zijn (bv. 0 voor een rechte hoek), nooit
-            gemixed binnen dat ene attribuut. Een hoek die je weglaat wordt 0. Hetzelfde probleem, dezelfde
-            oplossing geldt voor Margin (theming:MarginParts.Left/Top/Right/Bottom) en voor de Padding van een
-            Border of Control (theming:PaddingParts.Left/Top/Right/Bottom) zodra niet alle zijden gelijk hoeven te
-            zijn maar er wel ergens een token gebruikt moet worden - ook daar wordt een weggelaten zijde 0, en mag
-            elke zijde apart ofwel een token ofwel een letterlijk getal zijn. Zet nooit ALSNOG een gewoon
-            Margin- of Padding-attribuut op hetzelfde element als je deze Parts-attributen gebruikt - die vervangen
-            het volledig, een los Margin/Padding-attribuut ernaast wordt genegeerd. Elke Spacing-token is altijd een
-            positieve grootte, maar een naar-buiten-getrokken Margin/Padding-zijde (bv. een kop die net buiten de
-            rand van zijn kaart uitsteekt) is vaak negatief - daar bestaat geen apart negatief token voor. Zet in
-            dat geval naast de gewone theming:MarginParts.Zijde of theming:PaddingParts.Zijde ook het bijbehorende
-            theming:MarginParts.ZijdeNegative="True" (of PaddingParts.ZijdeNegative) - dat maakt precies die ene
-            zijde negatief, ook als de waarde zelf van een token komt. Alleen relevant voor Margin/Padding, niet
-            voor CornerRadius (een negatieve hoekronding bestaat niet). Voeg geen XML-commentaar toe in
-            de XAML.
+            de VOLLEDIGE attribuutwaarde zijn, en alleen als alle hoeken/zijden gelijk moeten zijn - nooit
+            combineren met losse cijfers of meerdere tokens in dezelfde komma-waarde. Moeten de hoeken/zijden van
+            elkaar verschillen (dus niet alle vier/alle kanten gelijk), gebruik dan een gewone letterlijke
+            komma-lijst met getallen (bv. CornerRadius="6,6,0,0" of Margin="0,0,0,-8") - geen tokens combineren in
+            zo'n lijst. Gebruik NOOIT theming:CornerRadiusParts, theming:MarginParts of theming:PaddingParts: die
+            attached-property-syntax is foutgevoelig gebleken (per ongeluk als los kind-element neergezet in
+            plaats van als attribuut, of toegepast op een elementtype zoals Rectangle waar de onderliggende code
+            hem stilzwijgend negeert) en is daarom niet meer toegestaan, ook al staat de klasse nog in de
+            codebase. Voeg geen XML-commentaar toe in de XAML.
             Kleuren:
             {Section(DesignTokenCategory.Color)}
             Hoekronding:
