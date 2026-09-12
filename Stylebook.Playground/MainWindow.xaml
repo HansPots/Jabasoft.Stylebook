@@ -724,7 +724,8 @@
                                          Height="360"
                                          TextWrapping="NoWrap"
                                          HorizontalScrollBarVisibility="Auto"
-                                         VerticalScrollBarVisibility="Auto" />
+                                         VerticalScrollBarVisibility="Auto"
+                                         TextChanged="ComponentXamlBox_TextChanged" />
 
                                 <TextBox x:Name="XamlErrorText"
                                          Style="{StaticResource SelectableTextStyle}"

@@ -1022,6 +1022,27 @@ public partial class MainWindow : Window
         RefreshProposalPreview();
     }
 
+    /// <summary>
+    /// Live-update zodra ComponentXamlBox handmatig getypt wordt terwijl
+    /// er al een voorstel openstaat (zie ShowProposal) - zonder dit bleef
+    /// de AI-VOORSTEL-afbeelding hangen op de tekst van het moment dat
+    /// het voorstel ontstond, ook als je daarna in deze box verder
+    /// typte (alleen de Monaco-vergelijker zelf was hierop aangesloten,
+    /// via OnMonacoWebMessage). Vóór er een voorstel is (_proposedXaml
+    /// null) doet dit niets - dan gebeurt er pas iets bij het klikken op
+    /// "Opslaan en toepassen" (SaveXaml_Click).
+    /// </summary>
+    private void ComponentXamlBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_initializing || _proposedXaml is null)
+        {
+            return;
+        }
+
+        _proposedXaml = ComponentXamlBox.Text;
+        RefreshProposalPreview();
+    }
+
     /// <summary>Leeg of geen geldig getal = "geen expliciete waarde" (null) - het component houdt dan zijn natuurlijke afmeting aan.</summary>
     private static double? ParseFixedSize(string text) =>
         double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : null;
