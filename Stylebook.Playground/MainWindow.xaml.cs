@@ -1755,14 +1755,22 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Base instruction for every AI call: the Stylebook's current,
-    /// possibly hand-edited token values (see DbThemeBuilder.DescribeForAi
-    /// - this is the "kies daaruit" palette, not a suggestion the model
-    /// can ignore). Deliberately does NOT embed "the current XAML" here -
-    /// that goes into the outgoing user question instead (see
-    /// AskAi_Click), explicitly tied to "wat nu op het scherm staat" for
-    /// this specific turn, rather than living in the system prompt where
-    /// it'd compete with what the conversation history already shows.
+    /// Base instruction for every AI call. Deliberately does NOT send the
+    /// Stylebook's design-token catalog (see DbThemeBuilder.DescribeForAi,
+    /// no longer called here) or instruct the model to reference tokens
+    /// via DynamicResource at all - that "kies daaruit" approach caused
+    /// repeated, hard-to-predict failures (a token's type not matching
+    /// the property it's applied to, an attached-property mistaken for a
+    /// child element, a hallucinated hex value). Every value in the
+    /// model's answer is now a plain literal instead, including replacing
+    /// any DynamicResource/StaticResource reference already present in
+    /// the XAML it's editing - fewer failure modes, at the cost of an
+    /// AI-touched component no longer re-theming live. Also does NOT
+    /// embed "the current XAML" here - that goes into the outgoing user
+    /// question instead (see AskAi_Click), explicitly tied to "wat nu op
+    /// het scherm staat" for this specific turn, rather than living in
+    /// the system prompt where it'd compete with what the conversation
+    /// history already shows.
     /// </summary>
     private string BuildAiSystemPrompt()
     {
@@ -1776,18 +1784,20 @@ public partial class MainWindow : Window
                "attached-property-syntax is te foutgevoelig gebleken (per ongeluk als los kind-element " +
                "neergezet, of toegepast op een elementtype zoals Rectangle waar de code hem stilzwijgend " +
                "negeert). Moet een CornerRadius/Margin/Padding per hoek/zijde verschillen, gebruik dan een " +
-               "gewone letterlijke komma-lijst met getallen (bv. CornerRadius=\"6,6,0,0\") - geen tokens " +
-               "combineren in zo'n lijst; zijn alle hoeken/zijden gelijk, dan mag de hele attribuutwaarde één " +
-               "{DynamicResource TokenNaam} zijn.\n" +
-               "Typ nooit zelf een hex-kleurcode (#RRGGBB of #AARRGGBB), ook niet als je denkt de juiste " +
-               "waarde te kennen - gebruik altijd {DynamicResource TokenNaam} uit de kleurenlijst hieronder. " +
-               "Een handmatig getypte hexwaarde kan per ongeluk afwijken van het bedoelde token en breekt " +
-               "bovendien de themabaarheid (de kleur volgt dan niet meer mee als het thema wisselt).\n" +
+               "gewone letterlijke komma-lijst met getallen (bv. CornerRadius=\"6,6,0,0\").\n" +
+               "Gebruik NERGENS {DynamicResource ...} of {StaticResource ...} - schrijf overal de " +
+               "daadwerkelijke, letterlijke waarde: een hex-kleurcode voor Fill/Background/Foreground/" +
+               "BorderBrush, en een gewoon getal voor CornerRadius/Margin/Padding/FontSize. Staat er in de " +
+               "HUIDIGE XAML die je aanpast al een {DynamicResource ...}- of {StaticResource ...}-verwijzing " +
+               "(ook ergens waar je zelf niets aan wijzigt), vervang die dan ALSNOG door een letterlijke " +
+               "waarde die er visueel bij past - laat er nooit een staan.\n" +
+               "Een Rectangle heeft geen CornerRadius-property (dat bestaat alleen op Border) - gebruik voor " +
+               "een Rectangle RadiusX/RadiusY (allebei een letterlijk getal, nooit een tokenverwijzing want " +
+               "dat type past sowieso niet meer sinds tokens hier niet meer gebruikt worden).\n" +
                "Het root-element van je antwoord MOET zelf xmlns=\"http://schemas.microsoft.com/winfx/2006/" +
                "xaml/presentation\" declareren (rechtstreeks op dat root-element, niet alleen op een geneste " +
                "child) - zonder deze declaratie kent de parser zelfs standaardtypes als Grid of Border niet " +
-               "en faalt de hele XAML, met een fout als \"Cannot create unknown type 'Grid'\".\n" +
-               DbThemeBuilder.DescribeForAi(App.Db, App.CurrentTheme);
+               "en faalt de hele XAML, met een fout als \"Cannot create unknown type 'Grid'\".\n";
     }
 
     /// <summary>
