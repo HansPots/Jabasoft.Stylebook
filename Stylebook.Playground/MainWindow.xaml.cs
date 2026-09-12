@@ -1783,17 +1783,28 @@ public partial class MainWindow : Window
                "Gebruik NOOIT theming:CornerRadiusParts, theming:MarginParts of theming:PaddingParts - die " +
                "attached-property-syntax is te foutgevoelig gebleken (per ongeluk als los kind-element " +
                "neergezet, of toegepast op een elementtype zoals Rectangle waar de code hem stilzwijgend " +
-               "negeert). Moet een CornerRadius/Margin/Padding per hoek/zijde verschillen, gebruik dan een " +
-               "gewone letterlijke komma-lijst met getallen (bv. CornerRadius=\"6,6,0,0\").\n" +
+               "negeert).\n" +
                "Gebruik NERGENS {DynamicResource ...} of {StaticResource ...} - schrijf overal de " +
-               "daadwerkelijke, letterlijke waarde: een hex-kleurcode voor Fill/Background/Foreground/" +
-               "BorderBrush, en een gewoon getal voor CornerRadius/Margin/Padding/FontSize. Staat er in de " +
-               "HUIDIGE XAML die je aanpast al een {DynamicResource ...}- of {StaticResource ...}-verwijzing " +
-               "(ook ergens waar je zelf niets aan wijzigt), vervang die dan ALSNOG door een letterlijke " +
-               "waarde die er visueel bij past - laat er nooit een staan.\n" +
+               "daadwerkelijke, letterlijke waarde. Staat er in de HUIDIGE XAML die je aanpast al een " +
+               "{DynamicResource ...}- of {StaticResource ...}-verwijzing (ook ergens waar je zelf niets aan " +
+               "wijzigt), vervang die dan ALSNOG door een letterlijke waarde die er visueel bij past - laat " +
+               "er nooit een staan.\n" +
+               "Voorbeeld van een simpel, egaal gekleurd vlak met ronde hoeken - dit is de basisvorm, gebruik " +
+               "'m als uitgangspunt:\n" +
+               "  <Border xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"\n" +
+               "          Width=\"48\" Height=\"48\"\n" +
+               "          Background=\"#800080\"\n" +
+               "          CornerRadius=\"10,10,10,10\" />\n" +
+               "Kleur ALTIJD als hex-kleurcode (#RRGGBB of #AARRGGBB), zoals Background hierboven - nooit een " +
+               "kleurnaam of een tokenverwijzing.\n" +
+               "CornerRadius (en ook Margin/Padding/Thickness) ALTIJD als vier losse waarden in deze volgorde: " +
+               "TopLeft,TopRight,BottomRight,BottomLeft (Margin/Padding: Left,Top,Right,Bottom) - OOK als alle " +
+               "vier gelijk zijn, dus nooit de kortere vorm CornerRadius=\"10\". Reden: zo kan een latere " +
+               "vraag over precies één hoek/zijde (bv. \"maak de linkeronderhoek scherper\") gericht die ene " +
+               "waarde aanpassen, zonder de andere drie te hoeven raden of laten staan wat ze al waren.\n" +
                "Een Rectangle heeft geen CornerRadius-property (dat bestaat alleen op Border) - gebruik voor " +
-               "een Rectangle RadiusX/RadiusY (allebei een letterlijk getal, nooit een tokenverwijzing want " +
-               "dat type past sowieso niet meer sinds tokens hier niet meer gebruikt worden).\n" +
+               "een Rectangle RadiusX/RadiusY (beide een letterlijk getal, één waarde per attribuut - " +
+               "Rectangle ondersteunt geen vier aparte hoeken).\n" +
                "Het root-element van je antwoord MOET zelf xmlns=\"http://schemas.microsoft.com/winfx/2006/" +
                "xaml/presentation\" declareren (rechtstreeks op dat root-element, niet alleen op een geneste " +
                "child) - zonder deze declaratie kent de parser zelfs standaardtypes als Grid of Border niet " +
@@ -1993,6 +2004,29 @@ public partial class MainWindow : Window
         }
         else
         {
+            // Het voorstel kan zelf al een expliciete Width/Height op het
+            // root-element zetten (toegestaan zodra dat expliciet
+            // gevraagd is, zie BuildAiSystemPrompt) - zonder dit hieronder
+            // over te nemen in Eigen breedte/hoogte zou BakeSizeConstraints
+            // die maat direct weer terugzetten naar Auto (bij Vast zonder
+            // eigen waarde), en rendert een leeg element (bv. een Border
+            // zonder kinderen) op 0x0 - onzichtbaar, ook al klopte het
+            // voorstel zelf prima.
+            if (TryParseXaml(xaml, out var proposedElement) && proposedElement is not null)
+            {
+                if (!double.IsNaN(proposedElement.Width))
+                {
+                    WidthModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
+                    ComponentFixedWidthBox.Text = proposedElement.Width.ToString(CultureInfo.InvariantCulture);
+                }
+
+                if (!double.IsNaN(proposedElement.Height))
+                {
+                    HeightModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
+                    ComponentFixedHeightBox.Text = proposedElement.Height.ToString(CultureInfo.InvariantCulture);
+                }
+            }
+
             var bakedXaml = BakeSizeConstraintsIntoXaml(
                 xaml,
                 (ContainerSizeMode)WidthModeCombo.SelectedIndex,
