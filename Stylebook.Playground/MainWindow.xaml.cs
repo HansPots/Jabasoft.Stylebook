@@ -1777,6 +1777,19 @@ public partial class MainWindow : Window
                "zet dan ALTIJD alle vier de hoeken expliciet (TopLeft, TopRight, BottomRight, BottomLeft) - " +
                "ook de hoeken die 0 zijn. Nooit een hoek weglaten omdat 'ie toch op 0 uitkomt: de hele set " +
                "moet in één oogopslag duidelijk zijn zonder dat je de impliciete 0-standaard hoeft te kennen.\n" +
+               "theming:CornerRadiusParts (en MarginParts/PaddingParts) werken UITSLUITEND op een Border - " +
+               "nooit op een Rectangle, Ellipse, Path of andere Shape: de code-behind negeert het stilzwijgend " +
+               "op elk ander elementtype (geen foutmelding, gewoon geen effect), dus de hoeken lijken dan " +
+               "wel gezet maar veranderen in werkelijkheid niets. Een Rectangle heeft geen CornerRadius-" +
+               "property; gebruik daar RadiusX/RadiusY met een letterlijk getal (nooit een DynamicResource- " +
+               "tokenverwijzing, want een Radius-token is van het type CornerRadius en RadiusX/RadiusY zijn " +
+               "van het type double - dat type-verschil maakt de XAML ongeldig). Moet een ronde hoek op een " +
+               "vlak element per se een token volgen, gebruik dan een Border met Background in plaats van " +
+               "een Rectangle met Fill.\n" +
+               "Typ nooit zelf een hex-kleurcode (#RRGGBB of #AARRGGBB), ook niet als je denkt de juiste " +
+               "waarde te kennen - gebruik altijd {DynamicResource TokenNaam} uit de kleurenlijst hieronder. " +
+               "Een handmatig getypte hexwaarde kan per ongeluk afwijken van het bedoelde token en breekt " +
+               "bovendien de themabaarheid (de kleur volgt dan niet meer mee als het thema wisselt).\n" +
                DbThemeBuilder.DescribeForAi(App.Db, App.CurrentTheme);
     }
 
