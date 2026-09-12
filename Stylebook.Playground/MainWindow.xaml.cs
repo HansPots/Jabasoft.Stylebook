@@ -878,13 +878,7 @@ public partial class MainWindow : Window
             ClearProposal(); // a pending AI proposal belongs to whichever component was selected when it was asked for.
             _aiConversation.Clear(); // same for the conversation itself - it was about that component's XAML.
 
-            // Indices line up 1-to-1 with ContainerSizeMode (Fixed=0,
-            // Variable=1, same order as the ComboBoxItems in XAML) - see
-            // SaveTestContainerSettings for the write-back half of this.
-            WidthModeCombo.SelectedIndex = (int)selected.TestContainerWidthMode;
-            HeightModeCombo.SelectedIndex = (int)selected.TestContainerHeightMode;
-            ComponentFixedWidthBox.Text = selected.FixedWidth?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            ComponentFixedHeightBox.Text = selected.FixedHeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            LoadFixedSizeFields(selected);
             ApplyTestContainerSize(selected.Region);
         }
 
@@ -1933,6 +1927,7 @@ public partial class MainWindow : Window
     private void ShowProposal(string componentName, string originalXaml, string proposedXaml)
     {
         _proposedXaml = proposedXaml;
+        SyncFixedSizeFromProposal(proposedXaml);
         var proposedElement = RenderXamlPreview(componentName, proposedXaml);
         ApplyContainerSimulation(proposedElement);
         ProposedPreviewContent.Content = proposedElement;
@@ -1943,6 +1938,58 @@ public partial class MainWindow : Window
         XamlComparisonRow.Visibility = Visibility.Visible;
         XamlComparisonSplitter.Visibility = Visibility.Visible;
         ProposalActionsRow.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>
+    /// Het voorstel kan zelf al een expliciete Width/Height op het
+    /// root-element zetten (toegestaan zodra dat expliciet gevraagd is,
+    /// zie BuildAiSystemPrompt) - zonder dit over te nemen in Eigen
+    /// breedte/hoogte zou de VOORSTEL-preview (en later Overnemen, via
+    /// BakeSizeConstraintsIntoXaml) die maat direct weer terugzetten naar
+    /// Auto (bij Vast zonder eigen waarde), en een leeg element (bv. een
+    /// Border zonder kinderen) rendert dan onzichtbaar op 0x0 - ook al
+    /// klopte het voorstel zelf prima. Aangeroepen vanuit ShowProposal,
+    /// dus dit staat al goed vóór de eerste render van het voorstel én
+    /// vóór een latere Overnemen (die leest dezelfde velden opnieuw).
+    /// </summary>
+    private void SyncFixedSizeFromProposal(string proposedXaml)
+    {
+        if (!TryParseXaml(proposedXaml, out var proposedElement) || proposedElement is null)
+        {
+            return;
+        }
+
+        if (!double.IsNaN(proposedElement.Width))
+        {
+            WidthModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
+            ComponentFixedWidthBox.Text = proposedElement.Width.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (!double.IsNaN(proposedElement.Height))
+        {
+            HeightModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
+            ComponentFixedHeightBox.Text = proposedElement.Height.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>
+    /// Zet WidthModeCombo/HeightModeCombo/ComponentFixedWidthBox/
+    /// ComponentFixedHeightBox terug naar wat er voor dit component
+    /// daadwerkelijk is opgeslagen - gebruikt bij het selecteren van een
+    /// component (Component_SelectionChanged) én bij het verwerpen van
+    /// een voorstel (DiscardProposal_Click, want SyncFixedSizeFromProposal
+    /// kan deze velden tijdens het voorstel hebben overschreven met de
+    /// waarden UIT dat voorstel).
+    /// </summary>
+    private void LoadFixedSizeFields(StylebookComponent component)
+    {
+        // Indices line up 1-to-1 with ContainerSizeMode (Fixed=0,
+        // Variable=1, same order as the ComboBoxItems in XAML) - see
+        // SaveTestContainerSettings for the write-back half of this.
+        WidthModeCombo.SelectedIndex = (int)component.TestContainerWidthMode;
+        HeightModeCombo.SelectedIndex = (int)component.TestContainerHeightMode;
+        ComponentFixedWidthBox.Text = component.FixedWidth?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+        ComponentFixedHeightBox.Text = component.FixedHeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
     }
 
     private void ClearProposal()
@@ -2004,29 +2051,6 @@ public partial class MainWindow : Window
         }
         else
         {
-            // Het voorstel kan zelf al een expliciete Width/Height op het
-            // root-element zetten (toegestaan zodra dat expliciet
-            // gevraagd is, zie BuildAiSystemPrompt) - zonder dit hieronder
-            // over te nemen in Eigen breedte/hoogte zou BakeSizeConstraints
-            // die maat direct weer terugzetten naar Auto (bij Vast zonder
-            // eigen waarde), en rendert een leeg element (bv. een Border
-            // zonder kinderen) op 0x0 - onzichtbaar, ook al klopte het
-            // voorstel zelf prima.
-            if (TryParseXaml(xaml, out var proposedElement) && proposedElement is not null)
-            {
-                if (!double.IsNaN(proposedElement.Width))
-                {
-                    WidthModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
-                    ComponentFixedWidthBox.Text = proposedElement.Width.ToString(CultureInfo.InvariantCulture);
-                }
-
-                if (!double.IsNaN(proposedElement.Height))
-                {
-                    HeightModeCombo.SelectedIndex = (int)ContainerSizeMode.Fixed;
-                    ComponentFixedHeightBox.Text = proposedElement.Height.ToString(CultureInfo.InvariantCulture);
-                }
-            }
-
             var bakedXaml = BakeSizeConstraintsIntoXaml(
                 xaml,
                 (ContainerSizeMode)WidthModeCombo.SelectedIndex,
@@ -2062,6 +2086,16 @@ public partial class MainWindow : Window
         // bij een handmatige wijziging via SaveXaml_Click; een AI-voorstel
         // raakte de box toch al nooit aan, dus daar is dit een no-op.
         ComponentXamlBox.Text = _lastSelectedComponent?.Xaml ?? string.Empty;
+
+        // SyncFixedSizeFromProposal (aangeroepen vanuit ShowProposal) kan
+        // Eigen breedte/hoogte hebben gezet op de waarden UIT het
+        // voorstel - die horen niet te blijven staan als het voorstel
+        // wordt afgewezen.
+        if (_lastSelectedComponent is { } component)
+        {
+            LoadFixedSizeFields(component);
+        }
+
         AiAnswerBox.Text = "Voorstel genegeerd.";
     }
 
