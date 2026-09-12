@@ -1,0 +1,105 @@
+<UserControl x:Class="Stylebook.Playground.Scratch.HeaderHpoDesigner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="#FF1E1E1E">
+
+    <!--
+        Scratch-kopie van het "HPO header"-component (Stylebook-database,
+        Header-regio) - zie ComponentDesigner.xaml voor het algemene
+        gebruik van dit soort bestanden. Dit exemplaar begint NIET leeg:
+        de XAML hieronder is exact wat er nu in de database staat, zodat
+        je meteen in Blend/de VS-Designer kunt slepen/resizen zonder eerst
+        zelf iets te hoeven plakken.
+
+        Let op: dit is bewust GEEN onderdeel van de draaiende app (niets
+        verwijst hiernaar) - puur een ontwerp-hulpmiddel. Een aanpassing
+        hier komt pas in Stylebook/Jabasoft terecht als de resulterende
+        XAML teruggezet wordt in de database (component "HPO header").
+    -->
+    <Canvas Width="1200" Height="210" ClipToBounds="True" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib">
+        <StackPanel Orientation="Horizontal" Canvas.Left="1094" Canvas.Top="5">
+            <Button BorderThickness="0,0,0,0" Background="#00FFFFFF" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource FontSizeSmall}" Width="34" Height="32">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Panel.Background}" Name="Bd">
+                            <ContentPresenter Content="{TemplateBinding ContentControl.Content}" ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}" ContentStringFormat="{TemplateBinding ContentControl.ContentStringFormat}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="UIElement.IsMouseOver">
+                                <Setter Property="Panel.Background" TargetName="Bd">
+                                    <Setter.Value>
+                                        <DynamicResource ResourceKey="BorderBrush" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Trigger.Value>
+                                    <s:Boolean>True</s:Boolean>
+                                </Trigger.Value>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>—</Button>
+            <Button BorderThickness="0,0,0,0" Background="#00FFFFFF" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource FontSizeSmall}" Width="34" Height="32">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Panel.Background}" Name="Bd">
+                            <ContentPresenter Content="{TemplateBinding ContentControl.Content}" ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}" ContentStringFormat="{TemplateBinding ContentControl.ContentStringFormat}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="UIElement.IsMouseOver">
+                                <Setter Property="Panel.Background" TargetName="Bd">
+                                    <Setter.Value>
+                                        <DynamicResource ResourceKey="BorderBrush" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Trigger.Value>
+                                    <s:Boolean>True</s:Boolean>
+                                </Trigger.Value>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>□</Button>
+            <Button BorderThickness="0,0,0,0" Background="#00FFFFFF" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource FontSizeSmall}" Width="34" Height="32">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Panel.Background}" Name="Bd">
+                            <ContentPresenter Content="{TemplateBinding ContentControl.Content}" ContentTemplate="{TemplateBinding ContentControl.ContentTemplate}" ContentStringFormat="{TemplateBinding ContentControl.ContentStringFormat}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="UIElement.IsMouseOver">
+                                <Setter Property="Panel.Background" TargetName="Bd">
+                                    <Setter.Value>
+                                        <DynamicResource ResourceKey="AccentBrush" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Trigger.Value>
+                                    <s:Boolean>True</s:Boolean>
+                                </Trigger.Value>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>✕</Button>
+        </StackPanel>
+        <Grid Width="1094" Height="47" HorizontalAlignment="Center" VerticalAlignment="Center" Canvas.Left="0" Canvas.Top="0">
+            <Viewbox>
+                <Canvas Width="600" Height="48">
+                    <Rectangle RadiusX="4" RadiusY="4" Width="600" Height="48">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                <LinearGradientBrush.GradientStops>
+                                    <GradientStop Color="{DynamicResource HeaderGradientStartColor}" Offset="0" />
+                                    <GradientStop Color="{DynamicResource HeaderGradientMidColor}" Offset="0.45" />
+                                    <GradientStop Color="{DynamicResource HeaderGradientEndColor}" Offset="1" />
+                                </LinearGradientBrush.GradientStops>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Canvas>
+            </Viewbox>
+        </Grid>
+        <Border CornerRadius="0,0,0,24" Background="#FF8E89FF" Width="48" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" Canvas.Left="0" Canvas.Top="110" />
+    </Canvas>
+
+</UserControl>
