@@ -189,12 +189,34 @@ public partial class MainWindow : Window
         await MonacoDiffView.CoreWebView2.ExecuteScriptAsync("window.clearDiffContent()");
     }
 
-    /// <summary>Called from a style-reference-bar row click - see BuildStyleReferenceBar. Runs entirely in JS (window.replaceSelectionWithToken) since Monaco's selection/edit APIs live there.</summary>
-    private async void ReplaceSelectionWithToken(string tokenName)
+    /// <summary>
+    /// Called from a style-reference-bar row click - see
+    /// BuildStyleReferenceBar. Inserts the token's literal value (never a
+    /// DynamicResource reference - same reasoning as the AI prompt: a
+    /// literal always fits in a comma-list like CornerRadius/Margin/
+    /// Padding, so no Parts-attribute rewriting is needed at all anymore).
+    /// Targets whichever editor is actually live: the Monaco diff view
+    /// while a proposal/comparison is open (its own selection/edit APIs
+    /// live in JS, see window.replaceSelectionWithValue), otherwise
+    /// ComponentXamlBox directly. Using Monaco's selection unconditionally
+    /// - even when ComponentXamlBox was the box actually visible and
+    /// selected in - was exactly the earlier bug: the click landed on
+    /// whatever Monaco's own, unrelated selection happened to be.
+    /// </summary>
+    private async void InsertTokenValue(string value)
     {
-        await _monacoReady.Task;
-        await MonacoDiffView.CoreWebView2.ExecuteScriptAsync(
-            $"window.replaceSelectionWithToken({JsonSerializer.Serialize(tokenName)})");
+        if (_proposedXaml is not null)
+        {
+            await _monacoReady.Task;
+            await MonacoDiffView.CoreWebView2.ExecuteScriptAsync(
+                $"window.replaceSelectionWithValue({JsonSerializer.Serialize(value)})");
+            return;
+        }
+
+        var insertAt = ComponentXamlBox.SelectionStart;
+        ComponentXamlBox.SelectedText = value;
+        ComponentXamlBox.CaretIndex = insertAt + value.Length;
+        ComponentXamlBox.Focus();
     }
 
     private void LoadComponentsByRegion()
@@ -1452,11 +1474,11 @@ public partial class MainWindow : Window
     /// Naslag van elk stijl-token (icoon/swatch + naam) voor de balk links
     /// van de preview in Componentenbouwer - hergebruikt dezelfde icoon-
     /// generatie als het Stylebook-tabblad (CreatePreview), zonder de
-    /// Apply-kant. Elke rij is klikbaar: selecteer een letterlijke waarde
-    /// in het VOORSTEL (rechterkant van de diff-editor) en klik een token
-    /// om die selectie te vervangen door {DynamicResource TokenNaam} - zie
-    /// ReplaceSelectionWithToken. Zonder selectie voegt het token gewoon
-    /// in op de cursorpositie.
+    /// Apply-kant. Elke rij is klikbaar: selecteer een stukje tekst (in
+    /// ComponentXamlBox, of in het VOORSTEL rechts als er een open staat)
+    /// en klik een token om die selectie te vervangen door de
+    /// LETTERLIJKE waarde van dat token - zie InsertTokenValue. Zonder
+    /// selectie voegt het token gewoon in op de cursorpositie.
     /// </summary>
     private FrameworkElement BuildStyleReferenceBar()
     {
@@ -1500,8 +1522,8 @@ public partial class MainWindow : Window
             };
             row.Children.Add(nameLabel);
 
-            var tokenName = token.Name;
-            row.PreviewMouseLeftButtonDown += (_, _) => ReplaceSelectionWithToken(tokenName);
+            var tokenValue = token.Value;
+            row.PreviewMouseLeftButtonDown += (_, _) => InsertTokenValue(tokenValue);
             row.MouseEnter += (_, _) => row.SetResourceReference(Panel.BackgroundProperty, "BorderBrush");
             row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
 
