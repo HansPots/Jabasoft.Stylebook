@@ -138,50 +138,5 @@ public static class DbThemeBuilder
         return dictionary;
     }
 
-    /// <summary>
-    /// Plain-text summary of the CURRENT (possibly hand-edited) token
-    /// values for the given theme, for an AI system prompt - see
-    /// DesignTokenCatalog.DescribeForAi for the static-file equivalent
-    /// this replaces for Stylebook.Playground.
-    /// </summary>
-    public static string DescribeForAi(StylebookDbContext db, DataTheme theme)
-    {
-        var tokens = db.DesignTokens.Where(t => t.Theme == theme).AsEnumerable().ToList();
-
-        string Section(DesignTokenCategory category) => string.Join(
-            '\n', tokens.Where(t => t.Category == category).Select(t => $"  {DisplayName(t)} = {t.Value}"));
-
-        var fontFamily = tokens.FirstOrDefault(t => t.Category == DesignTokenCategory.FontFamily);
-
-        return $"""
-            Beschikbare stijl-tokens voor thema {theme} (het handmatig aangepaste Stylebook) - bouw het ontwerp
-            UITSLUITEND met deze tokens, verzin geen eigen kleur, ronding of maat. Refereer ALLE tokens (kleur,
-            hoekronding, afstand, lettertype, tekstgrootte) via DynamicResource met de TokenNaam - nooit
-            StaticResource, want deze XAML wordt at runtime geparsed zonder ambient resource-context, waardoor
-            StaticResource niet oplost. Voor Margin/Padding/Thickness/CornerRadius mag een token-referentie alleen
-            de VOLLEDIGE attribuutwaarde zijn, en alleen als alle hoeken/zijden gelijk moeten zijn - nooit
-            combineren met losse cijfers of meerdere tokens in dezelfde komma-waarde. Moeten de hoeken/zijden van
-            elkaar verschillen (dus niet alle vier/alle kanten gelijk), gebruik dan een gewone letterlijke
-            komma-lijst met getallen (bv. CornerRadius="6,6,0,0" of Margin="0,0,0,-8") - geen tokens combineren in
-            zo'n lijst. Gebruik NOOIT theming:CornerRadiusParts, theming:MarginParts of theming:PaddingParts: die
-            attached-property-syntax is foutgevoelig gebleken (per ongeluk als los kind-element neergezet in
-            plaats van als attribuut, of toegepast op een elementtype zoals Rectangle waar de onderliggende code
-            hem stilzwijgend negeert) en is daarom niet meer toegestaan, ook al staat de klasse nog in de
-            codebase. Voeg geen XML-commentaar toe in de XAML.
-            Kleuren:
-            {Section(DesignTokenCategory.Color)}
-            Hoekronding:
-            {Section(DesignTokenCategory.Radius)}
-            Afstand:
-            {Section(DesignTokenCategory.Spacing)}
-            Lettertype: {fontFamily?.Name} = "{fontFamily?.Value}"
-            Tekstgrootte:
-            {Section(DesignTokenCategory.FontSize)}
-            """;
-    }
-
-    private static string DisplayName(DesignToken token) =>
-        token.Category == DesignTokenCategory.Color ? token.Name.Replace("Color", "Brush", StringComparison.Ordinal) : token.Name;
-
     private static string Format(double value) => value.ToString(CultureInfo.InvariantCulture);
 }

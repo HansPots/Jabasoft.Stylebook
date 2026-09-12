@@ -746,25 +746,9 @@
                                     </TextBlock>
                                 </Button>
 
-                                <TextBox Text="AI" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
-                                <TextBox x:Name="AiQuestionBox"
+                                <TextBox x:Name="ProposalStatusText"
                                          Style="{StaticResource EditorFieldStyle}"
                                          Height="60"
-                                         AcceptsReturn="True" />
-
-                                <Button x:Name="AskAiButton"
-                                        Click="AskAi_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}"
-                                        AutomationProperties.Name="Vraag AI">
-                                    <TextBlock>
-                                        <Run Text="{StaticResource IconAutoAwesome}" FontFamily="{StaticResource IconFontFamily}" />
-                                        <Run Text=" Vraag AI" />
-                                    </TextBlock>
-                                </Button>
-
-                                <TextBox x:Name="AiAnswerBox"
-                                         Style="{StaticResource EditorFieldStyle}"
-                                         Height="200"
                                          IsReadOnly="True"
                                          Margin="0,8,0,0" />
                             </StackPanel>

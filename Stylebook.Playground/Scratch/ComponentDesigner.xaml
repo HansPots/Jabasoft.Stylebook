@@ -27,6 +27,6 @@
         Let op: dit is bewust GEEN onderdeel van de draaiende app (niets
         verwijst hiernaar) - puur een ontwerp-hulpmiddel.
     -->
-    <Border CornerRadius="0,0,0,24" Background="#FF8E89FF" Width="48" Height="96" HorizontalAlignment="Center" VerticalAlignment="Center" />
+    <Border CornerRadius="0,0,0,24" Background="#FF8E89FF" Width="48" Height="142" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
 </UserControl>

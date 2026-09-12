@@ -1,10 +1,8 @@
 using System.Windows;
-using Jabasoft.Base.AiBroker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Stylebook.Data;
 using Stylebook.Data.Entities;
-using Stylebook.Playground.Ai;
 using Stylebook.Playground.Theming;
 using DataApplication = Stylebook.Data.Entities.Application;
 using DataPage = Stylebook.Data.Entities.Page;
@@ -17,8 +15,6 @@ namespace Stylebook.Playground;
 public partial class App : System.Windows.Application
 {
     public static StylebookDbContext Db { get; private set; } = null!;
-
-    public static AiClient Ai { get; private set; } = null!;
 
     /// <summary>Which theme is currently active app-wide - persisted in AppSettings so it survives a restart, since DesignTokens no longer implies a "current" theme now every theme has its own rows. Change via SwitchTheme, never set directly.</summary>
     public static Theme CurrentTheme { get; private set; }
@@ -64,23 +60,6 @@ public partial class App : System.Windows.Application
         Resources.MergedDictionaries.Add(_liveThemeDictionary);
 
         EnsureApplicationsSeeded();
-
-        var aiProviderName = configuration["AiConnector:Provider"]
-            ?? throw new InvalidOperationException("AiConnector:Provider ontbreekt in appsettings.json.");
-        var aiProvider = Enum.Parse<AiProvider>(aiProviderName);
-        var aiServerUrl = configuration["AiConnector:ServerUrl"]
-            ?? throw new InvalidOperationException("AiConnector:ServerUrl ontbreekt in appsettings.json.");
-        var aiModel = configuration["AiConnector:Model"]
-            ?? throw new InvalidOperationException("AiConnector:Model ontbreekt in appsettings.json.");
-
-        Ai = new AiClient(aiProvider, aiServerUrl, aiModel);
-
-        // Wie 'm het eerst nodig heeft start 'm - zie
-        // AiBrokerProcessLauncher's eigen doc-comment. Synchroon gewacht
-        // (niet fire-and-forget): zonder draaiende broker werkt "Vraag AI"
-        // toch niet, dus de app mag best even wachten tot 'm bereikbaar is
-        // (of de pogingen opgeeft) vóór het hoofdvenster verschijnt.
-        AiBrokerProcessLauncher.EnsureRunningAsync().GetAwaiter().GetResult();
     }
 
     /// <summary>

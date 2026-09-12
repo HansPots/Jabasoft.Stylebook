@@ -101,18 +101,8 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _loadingPageRegions;
 
-    /// <summary>An AI-proposed Xaml awaiting Overnemen/Negeren - see ShowProposal. Null when there's nothing to compare.</summary>
+    /// <summary>A hand-typed proposal awaiting Overnemen/Negeren - see ShowProposal. Null when there's nothing to compare.</summary>
     private string? _proposedXaml;
-
-    /// <summary>
-    /// The AI conversation so far for the selected component (oldest
-    /// first), so a follow-up question ("maak 'm nog scherper") builds on
-    /// what the AI just answered instead of starting over each time.
-    /// Cleared whenever the "current XAML" it was talking about goes
-    /// away from under it - a different component gets selected, or the
-    /// Componentenbouwer tab is left.
-    /// </summary>
-    private readonly List<(string Role, string Content)> _aiConversation = [];
 
     /// <summary>Completes once MonacoDiffView's page has actually loaded Monaco (CDN script loading is async) - SetMonacoDiffContent awaits this so a proposal shown before that finishes still lands correctly.</summary>
     private readonly TaskCompletionSource _monacoReady = new();
@@ -192,9 +182,9 @@ public partial class MainWindow : Window
     /// <summary>
     /// Called from a style-reference-bar row click - see
     /// BuildStyleReferenceBar. Inserts the token's literal value (never a
-    /// DynamicResource reference - same reasoning as the AI prompt: a
-    /// literal always fits in a comma-list like CornerRadius/Margin/
-    /// Padding, so no Parts-attribute rewriting is needed at all anymore).
+    /// DynamicResource reference - a literal always fits in a comma-list
+    /// like CornerRadius/Margin/Padding, so no Parts-attribute rewriting
+    /// is needed at all anymore).
     /// Targets whichever editor is actually live: the Monaco diff view
     /// while a proposal/comparison is open (its own selection/edit APIs
     /// live in JS, see window.replaceSelectionWithValue), otherwise
@@ -515,7 +505,6 @@ public partial class MainWindow : Window
         if (mode != BuilderMode.ComponentBuilder)
         {
             ClearProposal();
-            _aiConversation.Clear();
         }
         else
         {
@@ -897,8 +886,7 @@ public partial class MainWindow : Window
             ComponentBodyBox.Text = selected.BodyText ?? string.Empty;
             ComponentXamlBox.Text = selected.Xaml ?? string.Empty;
             XamlErrorText.Visibility = Visibility.Collapsed;
-            ClearProposal(); // a pending AI proposal belongs to whichever component was selected when it was asked for.
-            _aiConversation.Clear(); // same for the conversation itself - it was about that component's XAML.
+            ClearProposal(); // a pending proposal belongs to whichever component was selected when it was created.
 
             LoadFixedSizeFields(selected);
             ApplyTestContainerSize(selected.Region);
@@ -1041,7 +1029,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Live-update zodra ComponentXamlBox handmatig getypt wordt terwijl
     /// er al een voorstel openstaat (zie ShowProposal) - zonder dit bleef
-    /// de AI-VOORSTEL-afbeelding hangen op de tekst van het moment dat
+    /// de VOORSTEL-afbeelding hangen op de tekst van het moment dat
     /// het voorstel ontstond, ook als je daarna in deze box verder
     /// typte (alleen de Monaco-vergelijker zelf was hierop aangesloten,
     /// via OnMonacoWebMessage). Vóór er een voorstel is (_proposedXaml
@@ -1087,7 +1075,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Ctrl+scrollwiel zoomt de geïsoleerde Componentenbouwer-preview -
-    /// ORIGINEEL en, indien zichtbaar, AI-VOORSTEL ernaast zoomen altijd
+    /// ORIGINEEL en, indien zichtbaar, VOORSTEL ernaast zoomen altijd
     /// samen, maar elk rond ZIJN EIGEN middelpunt (twee losse
     /// ScaleTransforms, zie MainWindow.xaml) - niet rond het midden van
     /// de omvattende twee-koloms-Grid, anders schuift ORIGINEEL bij het
@@ -1113,7 +1101,7 @@ public partial class MainWindow : Window
         ProposedPreviewZoomTransform.ScaleY = newScale;
     }
 
-    /// <summary>Re-renders the pending AI proposal (if there is one) so it picks up a Vast/Variabel or container-size change made while it's on screen - ORIGINEEL and AI-VOORSTEL always compare at the same settings.</summary>
+    /// <summary>Re-renders the pending proposal (if there is one) so it picks up a Vast/Variabel or container-size change made while it's on screen - ORIGINEEL and VOORSTEL always compare at the same settings.</summary>
     private void RefreshProposalPreview()
     {
         if (_proposedXaml is not { } xaml || _lastSelectedComponent is not { } component)
@@ -1649,8 +1637,8 @@ public partial class MainWindow : Window
     /// <summary>
     /// XamlReader.Parse and WPF's layout engine (Measure/Arrange) are both
     /// recursive, proportional to nesting depth - absurdly large or
-    /// deeply nested XAML (an accidental whole-clipboard paste, a
-    /// runaway AI response) can genuinely blow the stack.
+    /// deeply nested XAML (an accidental whole-clipboard paste) can
+    /// genuinely blow the stack.
     /// StackOverflowException cannot be caught in .NET (not even by
     /// App's DispatcherUnhandledException) - the whole process dies with
     /// no error message at all. The number of '<' characters is a crude
@@ -1752,10 +1740,10 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Advanced-edit path: a hand-typed XAML change goes through the same
-    /// voorstel-vergelijken-Overnemen flow as an AI answer (ShowProposal)
-    /// instead of saving straight away - a typo never lands in the
-    /// database or destabilizes the live preview; you see it next to the
+    /// Advanced-edit path: a hand-typed XAML change goes through the
+    /// voorstel-vergelijken-Overnemen flow (ShowProposal) instead of
+    /// saving straight away - a typo never lands in the database or
+    /// destabilizes the live preview; you see it next to the
     /// last-known-good version first and explicitly accept it.
     /// </summary>
     private void SaveXaml_Click(object sender, RoutedEventArgs e)
@@ -1767,162 +1755,7 @@ public partial class MainWindow : Window
 
         XamlErrorText.Visibility = Visibility.Collapsed;
         ShowProposal(component.Name, component.Xaml ?? string.Empty, ComponentXamlBox.Text);
-        AiAnswerBox.Text = "Vergelijk hiernaast met het origineel, en klik Overnemen om te bewaren.";
-    }
-
-    /// <summary>
-    /// Base instruction for every AI call. Deliberately does NOT send the
-    /// Stylebook's design-token catalog (see DbThemeBuilder.DescribeForAi,
-    /// no longer called here) or instruct the model to reference tokens
-    /// via DynamicResource at all - that "kies daaruit" approach caused
-    /// repeated, hard-to-predict failures (a token's type not matching
-    /// the property it's applied to, an attached-property mistaken for a
-    /// child element, a hallucinated hex value). Every value in the
-    /// model's answer is now a plain literal instead, including replacing
-    /// any DynamicResource/StaticResource reference already present in
-    /// the XAML it's editing - fewer failure modes, at the cost of an
-    /// AI-touched component no longer re-theming live. Also does NOT
-    /// embed "the current XAML" here - that goes into the outgoing user
-    /// question instead (see AskAi_Click), explicitly tied to "wat nu op
-    /// het scherm staat" for this specific turn, rather than living in
-    /// the system prompt where it'd compete with what the conversation
-    /// history already shows.
-    /// </summary>
-    private string BuildAiSystemPrompt()
-    {
-        return "Je bent een assistent die WPF-XAML-componenten voor Stylebook bouwt en aanpast.\n" +
-               "Zet nooit een expliciete Width of Height op het root-element van de component, tenzij " +
-               "daar expliciet om gevraagd wordt - dit component wordt in een Header/Menu/Inhoud/Actie/" +
-               "Footer-regio geplaatst die zelf al de juiste afmeting bepaalt en vult (zie Basis.xaml); " +
-               "een vaste maat op het root-element overschrijft dat en zorgt dat het component niet meer " +
-               "de volledige regio vult, ook al was dat er in de vorige versie niet in gezet.\n" +
-               "Gebruik NOOIT theming:CornerRadiusParts, theming:MarginParts of theming:PaddingParts - die " +
-               "attached-property-syntax is te foutgevoelig gebleken (per ongeluk als los kind-element " +
-               "neergezet, of toegepast op een elementtype zoals Rectangle waar de code hem stilzwijgend " +
-               "negeert).\n" +
-               "Gebruik NERGENS {DynamicResource ...} of {StaticResource ...} - schrijf overal de " +
-               "daadwerkelijke, letterlijke waarde. Staat er in de HUIDIGE XAML die je aanpast al een " +
-               "{DynamicResource ...}- of {StaticResource ...}-verwijzing (ook ergens waar je zelf niets aan " +
-               "wijzigt), vervang die dan ALSNOG door een letterlijke waarde die er visueel bij past - laat " +
-               "er nooit een staan.\n" +
-               "Voorbeeld van een simpel, egaal gekleurd vlak met ronde hoeken - dit is de basisvorm, gebruik " +
-               "'m als uitgangspunt:\n" +
-               "  <Border xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\"\n" +
-               "          Width=\"48\" Height=\"48\"\n" +
-               "          Background=\"#800080\"\n" +
-               "          CornerRadius=\"10,10,10,10\" />\n" +
-               "Kleur ALTIJD als hex-kleurcode (#RRGGBB of #AARRGGBB), zoals Background hierboven - nooit een " +
-               "kleurnaam of een tokenverwijzing.\n" +
-               "CornerRadius (en ook Margin/Padding/Thickness) ALTIJD als vier losse waarden in deze volgorde: " +
-               "TopLeft,TopRight,BottomRight,BottomLeft (Margin/Padding: Left,Top,Right,Bottom) - OOK als alle " +
-               "vier gelijk zijn, dus nooit de kortere vorm CornerRadius=\"10\". Reden: zo kan een latere " +
-               "vraag over precies één hoek/zijde (bv. \"maak de linkeronderhoek scherper\") gericht die ene " +
-               "waarde aanpassen, zonder de andere drie te hoeven raden of laten staan wat ze al waren.\n" +
-               "Een Rectangle heeft geen CornerRadius-property (dat bestaat alleen op Border) - gebruik voor " +
-               "een Rectangle RadiusX/RadiusY (beide een letterlijk getal, één waarde per attribuut - " +
-               "Rectangle ondersteunt geen vier aparte hoeken).\n" +
-               "Het root-element van je antwoord MOET zelf xmlns=\"http://schemas.microsoft.com/winfx/2006/" +
-               "xaml/presentation\" declareren (rechtstreeks op dat root-element, niet alleen op een geneste " +
-               "child) - zonder deze declaratie kent de parser zelfs standaardtypes als Grid of Border niet " +
-               "en faalt de hele XAML, met een fout als \"Cannot create unknown type 'Grid'\".\n";
-    }
-
-    /// <summary>
-    /// Asks the AI for the updated Xaml reflecting the question/request,
-    /// plus a short summary of what it changed. When the Xaml part
-    /// actually parses, shows it as a proposal next to the original (see
-    /// ShowProposal) instead of applying it - "Overnemen" is the only
-    /// thing that ever saves it - and puts the summary (not the raw
-    /// markup) in the answer box, so you can read what changed without
-    /// having to diff the Xaml yourself. When the answer isn't in the
-    /// requested Xaml format (the model explained instead of producing
-    /// markup, or a genuinely informational question was asked), falls
-    /// back to just showing the raw text - one button handles both, no
-    /// need to guess which of two buttons a given question needs.
-    /// </summary>
-    private async void AskAi_Click(object sender, RoutedEventArgs e)
-    {
-        var question = AiQuestionBox.Text.Trim();
-        if (question.Length == 0 || _lastSelectedComponent is not { } component)
-        {
-            return;
-        }
-
-        // Het antwoord (XAML) zoals nu op het scherm staat gaat expliciet
-        // MEE met de vraag zelf, niet (alleen) in de systeemprompt - het
-        // nog-niet-geaccepteerde voorstel als er een is (zodat een
-        // vervolgvraag daarop doorbouwt), anders de opgeslagen versie.
-        // Vastleggen VOORDAT ClearProposal() zo dadelijk _proposedXaml wist.
-        var currentXaml = _proposedXaml ?? component.Xaml ?? string.Empty;
-
-        var originalContent = AskAiButton.Content;
-        AskAiButton.IsEnabled = false;
-        AskAiButton.Content = "Bezig...";
-        AiAnswerBox.Text = string.Empty;
-        ClearProposal();
-
-        try
-        {
-            var systemPrompt = BuildAiSystemPrompt() +
-                "\nAntwoord in exact dit formaat, zonder markdown-codeblokken:\n" +
-                "SAMENVATTING: <een korte zin die samenvat wat je hebt aangepast>\n" +
-                "XAML:\n<de volledige, aangepaste XAML>";
-
-            var questionWithScreenXaml = currentXaml.Length > 0
-                ? $"Dit is de huidige XAML van '{component.Name}', zoals nu op het scherm staat:\n{currentXaml}\n\nVraag: {question}"
-                : question;
-
-            var history = new List<(string Role, string Content)>(_aiConversation) { ("user", questionWithScreenXaml) };
-            var raw = await App.Ai.AskAsync(systemPrompt, history);
-            var hasSummaryFormat = TryExtractSummaryAndXaml(raw, out var summary, out var xamlPart);
-            var xaml = StripMarkdownFence(hasSummaryFormat ? xamlPart : raw);
-
-            // In de bewaarde geschiedenis blijft de vraag kort (zonder de
-            // meegestuurde XAML) - die stond toch al in het vorige
-            // assistant-antwoord, dus dat zou de geschiedenis nodeloos
-            // opblazen bij elke vervolgvraag.
-            _aiConversation.Add(("user", question));
-            _aiConversation.Add(("assistant", raw));
-
-            if (TryParseXaml(xaml, out _))
-            {
-                ShowProposal(component.Name, component.Xaml ?? string.Empty, xaml);
-                AiAnswerBox.Text = hasSummaryFormat && summary.Length > 0 ? summary : xaml;
-            }
-            else
-            {
-                AiAnswerBox.Text = raw;
-            }
-        }
-        catch (Exception ex)
-        {
-            AiAnswerBox.Text = $"Kon geen antwoord krijgen van de AI-server: {ex.Message}";
-        }
-        finally
-        {
-            AskAiButton.IsEnabled = true;
-            AskAiButton.Content = originalContent;
-        }
-    }
-
-    /// <summary>Splits a "SAMENVATTING: ...\nXAML:\n..." formatted answer apart. Returns false (xaml = the whole answer) when the model didn't follow the format, so the caller can still try to use it as-is.</summary>
-    private static bool TryExtractSummaryAndXaml(string answer, out string summary, out string xaml)
-    {
-        const string xamlMarker = "XAML:";
-        var xamlIndex = answer.IndexOf(xamlMarker, StringComparison.OrdinalIgnoreCase);
-        if (xamlIndex < 0)
-        {
-            summary = string.Empty;
-            xaml = answer;
-            return false;
-        }
-
-        const string summaryMarker = "SAMENVATTING:";
-        var beforeXaml = answer[..xamlIndex];
-        var summaryIndex = beforeXaml.IndexOf(summaryMarker, StringComparison.OrdinalIgnoreCase);
-        summary = (summaryIndex >= 0 ? beforeXaml[(summaryIndex + summaryMarker.Length)..] : beforeXaml).Trim();
-        xaml = answer[(xamlIndex + xamlMarker.Length)..].Trim();
-        return true;
+        ProposalStatusText.Text = "Vergelijk hiernaast met het origineel, en klik Overnemen om te bewaren.";
     }
 
     private static bool TryParseXaml(string xaml, out FrameworkElement? element)
@@ -1945,7 +1778,7 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Renders the AI's proposed Xaml next to the current component (same Vast/Variabel + testcontainer-afmeting as ORIGINEEL, zie ApplyContainerSimulation), shows both versions' source underneath, and reveals Overnemen/Negeren.</summary>
+    /// <summary>Renders the proposed Xaml next to the current component (same Vast/Variabel + testcontainer-afmeting as ORIGINEEL, zie ApplyContainerSimulation), shows both versions' source underneath, and reveals Overnemen/Negeren.</summary>
     private void ShowProposal(string componentName, string originalXaml, string proposedXaml)
     {
         _proposedXaml = proposedXaml;
@@ -1964,8 +1797,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Het voorstel kan zelf al een expliciete Width/Height op het
-    /// root-element zetten (toegestaan zodra dat expliciet gevraagd is,
-    /// zie BuildAiSystemPrompt) - zonder dit over te nemen in Eigen
+    /// root-element zetten - zonder dit over te nemen in Eigen
     /// breedte/hoogte zou de VOORSTEL-preview (en later Overnemen, via
     /// BakeSizeConstraintsIntoXaml) die maat direct weer terugzetten naar
     /// Auto (bij Vast zonder eigen waarde), en een leeg element (bv. een
@@ -2032,8 +1864,8 @@ public partial class MainWindow : Window
     /// crash. e.Handled = true stops the process from dying, but it does
     /// NOT finish the layout pass that was in progress - the subtree
     /// being measured when the exception hit (almost always the proposal
-    /// preview, since that's the one place externally-supplied XAML - AI
-    /// or hand-typed - gets rendered) is left stuck at zero size, which
+    /// preview, since that's the one place hand-typed XAML gets rendered
+    /// before being saved) is left stuck at zero size, which
     /// looks like "the editor disappeared" even though _proposedXaml and
     /// every visibility flag are still exactly what they were. Simply
     /// forcing another layout pass would hit the same broken content and
@@ -2049,7 +1881,7 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Commits the pending AI proposal exactly like a manual "Opslaan en toepassen" would - errors included, so a bad answer is visible and recoverable rather than silently discarded.</summary>
+    /// <summary>Commits the pending proposal - errors included, so a bad edit is visible and recoverable rather than silently discarded.</summary>
     private void AcceptProposal_Click(object sender, RoutedEventArgs e)
     {
         if (_proposedXaml is not { } xaml || _lastSelectedComponent is not { } component)
@@ -2097,16 +1929,15 @@ public partial class MainWindow : Window
         }
 
         ClearProposal();
-        AiAnswerBox.Text = "Voorstel overgenomen en opgeslagen.";
+        ProposalStatusText.Text = "Voorstel overgenomen en opgeslagen.";
         RefreshPreview();
     }
 
     private void DiscardProposal_Click(object sender, RoutedEventArgs e)
     {
         ClearProposal();
-        // Zet de XAML-editor terug naar de opgeslagen versie - relevant
-        // bij een handmatige wijziging via SaveXaml_Click; een AI-voorstel
-        // raakte de box toch al nooit aan, dus daar is dit een no-op.
+        // Zet de XAML-editor terug naar de opgeslagen versie - het
+        // voorstel zelf raakte de box toch al nooit aan (zie SaveXaml_Click).
         ComponentXamlBox.Text = _lastSelectedComponent?.Xaml ?? string.Empty;
 
         // SyncFixedSizeFromProposal (aangeroepen vanuit ShowProposal) kan
@@ -2118,21 +1949,7 @@ public partial class MainWindow : Window
             LoadFixedSizeFields(component);
         }
 
-        AiAnswerBox.Text = "Voorstel genegeerd.";
-    }
-
-    /// <summary>Models tend to wrap XAML in ```xml fences even when told not to - strip it if present.</summary>
-    private static string StripMarkdownFence(string text)
-    {
-        var trimmed = text.Trim();
-        if (!trimmed.StartsWith("```", StringComparison.Ordinal))
-        {
-            return trimmed;
-        }
-
-        var afterOpeningFence = trimmed[(trimmed.IndexOf('\n') + 1)..];
-        var closingFenceIndex = afterOpeningFence.LastIndexOf("```", StringComparison.Ordinal);
-        return (closingFenceIndex >= 0 ? afterOpeningFence[..closingFenceIndex] : afterOpeningFence).Trim();
+        ProposalStatusText.Text = "Voorstel genegeerd.";
     }
 
     private static string GenerateCardXaml(string title, string bodyText)
