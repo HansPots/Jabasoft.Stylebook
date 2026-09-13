@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -529,6 +531,138 @@ public partial class MainWindow : Window
         LoadLibraryPagePicker(LibraryPageInhoudPicker, ComponentRegion.Inhoud, discovered);
         LoadLibraryPagePicker(LibraryPageActiePicker, ComponentRegion.Actie, discovered);
         LoadLibraryPagePicker(LibraryPageFooterPicker, ComponentRegion.Footer, discovered);
+
+        LoadPageDraftApps();
+    }
+
+    /// <summary>
+    /// Map waar Pagina-concepten als los JSON-bestand bewaard worden,
+    /// genest als App/Pagina.json - WELK component per regio gekozen is,
+    /// geen gegenereerd bestand. Ligt in de brontree (niet de
+    /// build-output) zodat concepten meegaan in git, net als
+    /// Scratch/ComponentDesigner.xaml - vandaar het 3x "omhoog" vanaf de
+    /// build-output.
+    /// </summary>
+    private static readonly string PageDraftsDirectory = Path.GetFullPath(
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Scratch", "PageDrafts"));
+
+    /// <summary>Welk component (Type.FullName, of null = "(leeg)") er per regio gekozen was toen een Pagina-concept werd opgeslagen.</summary>
+    private sealed record PageDraft(string? Header, string? Menu, string? Inhoud, string? Actie, string? Footer);
+
+    /// <summary>Vult PageDraftAppBox met de mappen (app-namen) die al minstens één opgeslagen concept hebben, en ververst de Pagina-lijst voor de huidige App-tekst.</summary>
+    private void LoadPageDraftApps()
+    {
+        PageDraftAppBox.ItemsSource = Directory.Exists(PageDraftsDirectory)
+            ? Directory.GetDirectories(PageDraftsDirectory)
+                .Select(Path.GetFileName)
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList()
+            : Array.Empty<string>();
+
+        LoadPageDraftPages();
+    }
+
+    /// <summary>Vult PageDraftPageBox met de opgeslagen conceptnamen voor de App die nu in PageDraftAppBox staat (getypt of gekozen).</summary>
+    private void LoadPageDraftPages()
+    {
+        var appDirectory = Path.Combine(PageDraftsDirectory, PageDraftAppBox.Text.Trim());
+        PageDraftPageBox.ItemsSource = PageDraftAppBox.Text.Trim().Length > 0 && Directory.Exists(appDirectory)
+            ? Directory.GetFiles(appDirectory, "*.json")
+                .Select(Path.GetFileNameWithoutExtension)
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToList()
+            : Array.Empty<string>();
+    }
+
+    /// <summary>App gewijzigd (gekozen uit de lijst, of getypt en de focus kwijt) - ververst welke pagina's er voor die app bestaan en probeert meteen te laden.</summary>
+    private void PageDraftApp_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        LoadPageDraftPages();
+        TryLoadPageDraft();
+    }
+
+    /// <summary>Pagina gewijzigd (gekozen uit de lijst, of getypt en de focus kwijt) - probeert het concept voor de huidige App+Pagina te laden.</summary>
+    private void PageDraftPage_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        TryLoadPageDraft();
+    }
+
+    /// <summary>Laadt het concept voor de huidige App+Pagina-tekst terug in de vijf keuzelijsten, als dat bestand bestaat - anders gebeurt er niets (zo kun je een NIEUWE naam intypen zonder de huidige keuzes kwijt te raken).</summary>
+    private void TryLoadPageDraft()
+    {
+        var app = PageDraftAppBox.Text.Trim();
+        var page = PageDraftPageBox.Text.Trim();
+        if (app.Length == 0 || page.Length == 0)
+        {
+            return;
+        }
+
+        var path = Path.Combine(PageDraftsDirectory, app, $"{page}.json");
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        var draft = JsonSerializer.Deserialize<PageDraft>(File.ReadAllText(path));
+        if (draft is null)
+        {
+            return;
+        }
+
+        SelectPageDraftOption(LibraryPageHeaderPicker, draft.Header);
+        SelectPageDraftOption(LibraryPageMenuPicker, draft.Menu);
+        SelectPageDraftOption(LibraryPageInhoudPicker, draft.Inhoud);
+        SelectPageDraftOption(LibraryPageActiePicker, draft.Actie);
+        SelectPageDraftOption(LibraryPageFooterPicker, draft.Footer);
+    }
+
+    /// <summary>
+    /// Zoekt de LibraryPageOption in een regio-keuzelijst die bij het
+    /// bewaarde Type.FullName hoort - een component dat sindsdien
+    /// hernoemd/verwijderd is valt terug op "(leeg)" (eerste optie) in
+    /// plaats van een fout te geven.
+    /// </summary>
+    private static void SelectPageDraftOption(ComboBox picker, string? typeFullName)
+    {
+        var options = (IReadOnlyList<LibraryPageOption>)picker.ItemsSource;
+        picker.SelectedItem = options.FirstOrDefault(option => option.Type?.FullName == typeFullName) ?? options[0];
+    }
+
+    /// <summary>Bewaart de huidige vijf regio-keuzes onder de App+Pagina die nu in de twee velden staat - overschrijft stilzwijgend een concept met dezelfde App+Pagina.</summary>
+    private void SavePageDraft_Click(object sender, RoutedEventArgs e)
+    {
+        var app = PageDraftAppBox.Text.Trim();
+        var page = PageDraftPageBox.Text.Trim();
+        if (app.Length == 0 || page.Length == 0)
+        {
+            return;
+        }
+
+        var draft = new PageDraft(
+            (LibraryPageHeaderPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
+            (LibraryPageMenuPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
+            (LibraryPageInhoudPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
+            (LibraryPageActiePicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
+            (LibraryPageFooterPicker.SelectedItem as LibraryPageOption)?.Type?.FullName);
+
+        var appDirectory = Path.Combine(PageDraftsDirectory, app);
+        Directory.CreateDirectory(appDirectory);
+        File.WriteAllText(Path.Combine(appDirectory, $"{page}.json"), JsonSerializer.Serialize(draft, new JsonSerializerOptions { WriteIndented = true }));
+
+        LoadPageDraftApps();
+        PageDraftAppBox.Text = app;
+        LoadPageDraftPages();
+        PageDraftPageBox.Text = page;
     }
 
     /// <summary>One choice in a Pagina-region ComboBox - "(leeg)" (Type null) or a discovered real UserControl.</summary>

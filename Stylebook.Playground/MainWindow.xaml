@@ -35,6 +35,15 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         </Style>
+        <!-- Naam-invoerveld - gebruikt bij het opslaan van een Pagina-concept. -->
+        <Style TargetType="TextBox" x:Key="NameEntryStyle">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
+            <Setter Property="Padding" Value="4" />
+        </Style>
         <Style TargetType="TextBox" x:Key="EditorFieldStyle">
             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -273,6 +282,26 @@
 
                                         <TextBox Text="FOOTER" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
                                         <ComboBox x:Name="LibraryPageFooterPicker" Tag="Footer" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <!-- Concepten: bewaart WELK component per regio gekozen is (geen
+                                             gegenereerd bestand) onder App + Pagina, zodat je makkelijker
+                                             kunt wisselen/vergelijken dan met losse bestanden in Visual
+                                             Studio. Beide keuzelijsten zijn editeerbaar (IsEditable) - een
+                                             bestaande naam kiezen laadt 'm, een nieuwe intypen begint een
+                                             nieuw concept. Pas als je tevreden bent, zeg je het tegen Claude
+                                             om 'm daadwerkelijk in de app te bouwen (zie
+                                             Apps/Jabasoft/Hoofdscherm.xaml als voorbeeld). -->
+                                        <TextBox Text="CONCEPTEN" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,24,0,4" />
+                                        <TextBox Text="App" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="PageDraftAppBox" IsEditable="True" SelectionChanged="PageDraftApp_Changed" LostFocus="PageDraftApp_Changed" Margin="0,0,0,8" />
+                                        <TextBox Text="Pagina" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="PageDraftPageBox" IsEditable="True" SelectionChanged="PageDraftPage_Changed" LostFocus="PageDraftPage_Changed" Margin="0,0,0,8" />
+                                        <Button Click="SavePageDraft_Click" Style="{StaticResource AddComponentButtonStyle}" HorizontalAlignment="Left" AutomationProperties.Name="Concept opslaan">
+                                            <TextBlock>
+                                                <Run Text="{StaticResource IconSave}" FontFamily="{StaticResource IconFontFamily}" />
+                                                <Run Text=" Opslaan" />
+                                            </TextBlock>
+                                        </Button>
                                     </StackPanel>
                                 </ScrollViewer>
                             </Border>
