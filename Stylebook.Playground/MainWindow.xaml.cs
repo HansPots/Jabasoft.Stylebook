@@ -50,6 +50,15 @@ public partial class MainWindow : Window
 
         /// <summary>Drag existing components onto a free canvas, stack/position them, then flatten into one new component - see SaveComposition_Click.</summary>
         Composition,
+
+        /// <summary>Read-only live preview of the REAL, compiled UserControls migrated to Stylebook.Components (Controls/&lt;Region&gt;/*) - no database, see DiscoverLibraryControls.</summary>
+        Library,
+    }
+
+    /// <summary>One region-tagged UserControl type found by DiscoverLibraryControls - ToString() drives LibraryComponents' display.</summary>
+    private sealed record LibraryEntry(ComponentRegion Region, Type Type)
+    {
+        public override string ToString() => $"{Region} - {Type.Name}";
     }
 
     private sealed record ThemePresetOption(ComponentsTheme Value, string Label);
@@ -445,6 +454,8 @@ public partial class MainWindow : Window
 
     private void CompositionMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Composition);
 
+    private void LibraryMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Library);
+
     /// <summary>
     /// Gates component editing to the Componentenbouwer tab: the
     /// Paginabouwer and Stylebook tabs only ever look, they can never
@@ -500,6 +511,7 @@ public partial class MainWindow : Window
         ComponentBuilderCanvas.Visibility = mode == BuilderMode.ComponentBuilder ? Visibility.Visible : Visibility.Collapsed;
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
         CompositionCanvasArea.Visibility = mode == BuilderMode.Composition ? Visibility.Visible : Visibility.Collapsed;
+        LibraryCanvasArea.Visibility = mode == BuilderMode.Library ? Visibility.Visible : Visibility.Collapsed;
         PageContextPicker.Visibility = mode == BuilderMode.PageBuilder ? Visibility.Visible : Visibility.Collapsed;
 
         if (mode != BuilderMode.ComponentBuilder)
@@ -516,6 +528,13 @@ public partial class MainWindow : Window
         if (mode == BuilderMode.Stylebook)
         {
             StylebookContent.Content ??= BuildStylebookPanel();
+        }
+        else if (mode == BuilderMode.Library)
+        {
+            // Altijd opnieuw opbouwen (niet gecached) - een net toegevoegde
+            // UserControl-klasse (herbouwd project) moet meteen verschijnen
+            // zonder Stylebook.Playground te hoeven herstarten.
+            LoadLibraryControls();
         }
         else if (mode != BuilderMode.Composition)
         {
@@ -2062,6 +2081,71 @@ public partial class MainWindow : Window
         ComponentRegion.Algemeen => (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260),
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
+
+    /// <summary>
+    /// Vindt elke publieke, niet-abstracte UserControl-subklasse in
+    /// Stylebook.Components waarvan de namespace eindigt op een
+    /// ComponentRegion-naam (bv. Stylebook.Components.Controls.Header ->
+    /// regio Header) - dat is meteen de regio-tagging, zonder aparte
+    /// attributen nodig. Puur reflectie over de al geladen assembly, geen
+    /// database erbij betrokken - zie idempotent-sauteeing-valley.md.
+    /// </summary>
+    private static IEnumerable<LibraryEntry> DiscoverLibraryControls()
+    {
+        var assembly = typeof(Stylebook.Components.Controls.Basis).Assembly;
+        foreach (var type in assembly.GetTypes())
+        {
+            if (!type.IsPublic || type.IsAbstract || !typeof(UserControl).IsAssignableFrom(type))
+            {
+                continue;
+            }
+
+            var lastNamespaceSegment = type.Namespace?.Split('.').LastOrDefault();
+            if (lastNamespaceSegment is not null && Enum.TryParse<ComponentRegion>(lastNamespaceSegment, out var region))
+            {
+                yield return new LibraryEntry(region, type);
+            }
+        }
+    }
+
+    /// <summary>Vult LibraryComponents met de op dit moment gevonden echte UserControls - zie DiscoverLibraryControls.</summary>
+    private void LoadLibraryControls()
+    {
+        LibraryComponents.ItemsSource = DiscoverLibraryControls()
+            .OrderBy(entry => (int)entry.Region)
+            .ThenBy(entry => entry.Type.Name, StringComparer.Ordinal)
+            .ToList();
+        LibraryPreviewContent.Content = null;
+        LibraryContainerSizeLabel.Text = "Containerformaat: -";
+    }
+
+    /// <summary>
+    /// Instantieert de gekozen UserControl ECHT (Activator.CreateInstance,
+    /// geen XamlReader.Parse - dit IS al een gecompileerde klasse) en toont
+    /// 'm op de echte containerafmeting van zijn regio (zelfde
+    /// RegionDefaultContainerSize-lookup als Componentenbouwer/Compositie).
+    /// Kleuren volgen nog steeds het live thema, want DynamicResource
+    /// resolvet via de visual tree zodra dit element ergens in
+    /// gehangen wordt - alleen de STRUCTUUR komt nu uit een bestand.
+    /// </summary>
+    private void LibraryComponents_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LibraryComponents.SelectedItem is not LibraryEntry entry)
+        {
+            LibraryPreviewContent.Content = null;
+            LibraryContainerSizeLabel.Text = "Containerformaat: -";
+            return;
+        }
+
+        var (widthMode, width, heightMode, height) = RegionDefaultContainerSize(entry.Region);
+        LibraryTestContainerBorder.Width = width;
+        LibraryTestContainerBorder.Height = height;
+        LibraryContainerSizeLabel.Text = $"Containerformaat ({entry.Region}): {width:0} × {height:0} px";
+
+        var element = (FrameworkElement)Activator.CreateInstance(entry.Type)!;
+        ApplySizeConstraints(element, widthMode, null, heightMode, null);
+        LibraryPreviewContent.Content = element;
+    }
 
     private void RenameComponent_Click(object sender, RoutedEventArgs e)
     {

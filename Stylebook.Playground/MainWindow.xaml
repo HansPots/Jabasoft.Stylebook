@@ -193,6 +193,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <RadioButton x:Name="PageBuilderModeButton"
                                      Grid.Column="3"
@@ -245,6 +246,17 @@
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{StaticResource IconLayers}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
                                 <TextBlock Text="Compositie" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="LibraryModeButton"
+                                     Grid.Column="4"
+                                     GroupName="BuilderMode"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="LibraryMode_Checked"
+                                     AutomationProperties.Name="Bibliotheek">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconDashboard}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Bibliotheek" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                     </Grid>
@@ -846,6 +858,60 @@
                         </ComboBox>
                         <TextBox x:Name="CompositionNameBox" Style="{StaticResource NewComponentNameStyle}" />
                     </DockPanel>
+                </Grid>
+            </Border>
+
+            <!-- Bibliotheek: puur bekijken, geen database - toont de
+                 ECHTE, gecompileerde UserControls uit Stylebook.Components
+                 (Controls/<Regio>/*), gevonden via reflectie (zie
+                 DiscoverLibraryControls in code-behind). Dit is de
+                 live-previewhost voor componenten die naar bestanden zijn
+                 gemigreerd - zie idempotent-sauteeing-valley.md. -->
+            <Border x:Name="LibraryCanvasArea" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,0,1,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ListBox x:Name="LibraryComponents"
+                                     Margin="{StaticResource SpaceMedium}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     SelectionChanged="LibraryComponents_SelectionChanged" />
+                        </ScrollViewer>
+                    </Border>
+
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border x:Name="LibraryTestContainerBorder"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    ClipToBounds="True">
+                                <ContentControl x:Name="LibraryPreviewContent" />
+                            </Border>
+                        </Border>
+
+                        <TextBox x:Name="LibraryContainerSizeLabel"
+                                 Grid.Row="1"
+                                 Text="Containerformaat: -"
+                                 Style="{StaticResource SelectableTextStyle}"
+                                 Foreground="{DynamicResource TextMutedBrush}"
+                                 FontFamily="{StaticResource AppFontFamily}"
+                                 FontSize="{StaticResource FontSizeSmall}"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,8,0,16" />
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
