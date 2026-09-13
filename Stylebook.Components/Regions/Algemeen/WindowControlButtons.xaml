@@ -1,0 +1,69 @@
+<UserControl x:Class="Stylebook.Components.Regions.Algemeen.WindowControlButtons"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+
+    <!-- Algemeen: rij van drie vensterknopjes (minimaliseren/herstellen/
+         sluiten) - puur decoratief, geen echte window-commando's
+         gekoppeld. Ook gebruikt (inline gekopieerd) in HpoHeader. -->
+    <StackPanel Orientation="Horizontal">
+
+        <Button Width="34" Height="32" Background="Transparent" BorderThickness="0"
+                Foreground="{DynamicResource TextPrimaryBrush}"
+                FontSize="{DynamicResource FontSizeSmall}"
+                Content="&#8212;">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BorderBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+
+        <Button Width="34" Height="32" Background="Transparent" BorderThickness="0"
+                Foreground="{DynamicResource TextPrimaryBrush}"
+                FontSize="{DynamicResource FontSizeSmall}"
+                Content="&#9633;">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BorderBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+
+        <Button Width="34" Height="32" Background="Transparent" BorderThickness="0"
+                Foreground="{DynamicResource TextPrimaryBrush}"
+                FontSize="{DynamicResource FontSizeSmall}"
+                Content="&#10005;">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Button.Template>
+        </Button>
+
+    </StackPanel>
+
+</UserControl>

@@ -4,8 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Stylebook.Data;
 using Stylebook.Data.Entities;
 using Stylebook.Playground.Theming;
-using DataApplication = Stylebook.Data.Entities.Application;
-using DataPage = Stylebook.Data.Entities.Page;
 
 namespace Stylebook.Playground;
 
@@ -58,31 +56,6 @@ public partial class App : System.Windows.Application
         CurrentTheme = Db.AppSettings.Single().CurrentTheme;
         _liveThemeDictionary = DbThemeBuilder.Build(Db, CurrentTheme);
         Resources.MergedDictionaries.Add(_liveThemeDictionary);
-
-        EnsureApplicationsSeeded();
-    }
-
-    /// <summary>
-    /// "Jabasoft" is the first real JabaSoft family member being styled
-    /// through the multi-app Stylebook (Applications/Pages/PageRegions) -
-    /// seeds it once, with a single "Hoofdscherm" page, if it doesn't
-    /// exist yet. Only ever adds - never resets an existing Application's
-    /// or Page's data, unlike DbThemeBuilder.EnsureSeeded's per-theme
-    /// upsert (there's no "preset" to reset an Application back to).
-    /// </summary>
-    private static void EnsureApplicationsSeeded()
-    {
-        if (Db.Applications.Any(a => a.Name == "Jabasoft"))
-        {
-            return;
-        }
-
-        var jabasoft = new DataApplication { Name = "Jabasoft" };
-        Db.Applications.Add(jabasoft);
-        Db.SaveChanges();
-
-        Db.Pages.Add(new DataPage { ApplicationId = jabasoft.Id, Name = "Hoofdscherm" });
-        Db.SaveChanges();
     }
 
     /// <summary>Call after saving DesignTokens changes so the edit is visible immediately, everywhere.</summary>
@@ -156,17 +129,6 @@ public partial class App : System.Windows.Application
         {
             try
             {
-                // Vóór de dialoog: het onderbroken layout-pas laat de kapotte
-                // subtree (bijna altijd het voorstel - dat is de enige plek
-                // waar van-buitenaf-aangeleverde XAML gerenderd wordt) op
-                // grootte 0 achter, wat aanvoelt als "de editor is weg"
-                // terwijl _proposedXaml en alle Visibility-vlaggen nog gewoon
-                // kloppen. Het voorstel verwerpen (zie
-                // MainWindow.RecoverFromUnhandledException) haalt de kapotte
-                // inhoud weg vóór de gebruiker de melding wegklikt, zodat de
-                // app al hersteld is zodra ze "OK" zien.
-                (Current.MainWindow as MainWindow)?.RecoverFromUnhandledException();
-
                 MessageBox.Show(
                     $"Er ging iets onverwacht mis, maar de app blijft draaien:\n\n{message}",
                     "Onverwachte fout",

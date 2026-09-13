@@ -4,8 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
-        xmlns:theming="clr-namespace:Stylebook.Components.Theming;assembly=Stylebook.Components"
-        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         mc:Ignorable="d"
         Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
         Height="1140" Width="2560"
@@ -13,37 +11,12 @@
         Background="{DynamicResource BackgroundBrush}">
 
     <Window.Resources>
-        <!-- Gedeelde look voor een sleepbare resize-hoek (Thumb) - gebruikt
-             door TestContainerResizeThumb hieronder (XAML) EN door elk
-             geplaatst item in Compositie-modus (code-behind, via
-             FindResource - zie PlaceComponentOnCanvas). Eén kleine
-             AccentBrush-gekleurde vierkant, verder geen chrome. -->
-        <ControlTemplate x:Key="ResizeThumbHandleTemplate" TargetType="Thumb">
-            <Border Background="{DynamicResource AccentBrush}" CornerRadius="2" />
-        </ControlTemplate>
-
-        <!-- Gedeelde look voor de inklapbare regio-secties in de menustrook. -->
-        <Style TargetType="Expander">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeBody}" />
-            <Setter Property="Margin" Value="0,0,0,4" />
-        </Style>
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
-        </Style>
-        <!-- Naam-invoer + toevoegen-knop onderaan elke regio-sectie. -->
-        <Style TargetType="TextBox" x:Key="NewComponentNameStyle">
-            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
-            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
-            <Setter Property="Padding" Value="4" />
         </Style>
         <Style TargetType="Button" x:Key="AddComponentButtonStyle">
             <!-- Foreground is AccentForegroundBrush, niet TextPrimaryBrush:
@@ -57,22 +30,10 @@
             <Setter Property="Padding" Value="8,4" />
             <Setter Property="Margin" Value="4,0,0,0" />
         </Style>
-        <!-- Verwijder-knop: bewust ingetogen (Surface i.p.v. Accent), staat
-             alleen naast dezelfde ListBox als de toevoegen/hernoemen-knop. -->
+        <!-- Verwijder-/herstel-knop: bewust ingetogen (Surface i.p.v. Accent). -->
         <Style TargetType="Button" x:Key="DeleteComponentButtonStyle" BasedOn="{StaticResource AddComponentButtonStyle}">
             <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-        </Style>
-        <!-- Componentenbouwer: eigenschappen-paneel + XAML-editor naast de
-             geïsoleerde preview. -->
-        <!-- TargetType TextBox (niet TextBlock): een label-achtige tekst die
-             wel selecteerbaar/kopieerbaar moet zijn, zie SelectableTextStyle
-             in Stylebook.Components/Styles/Controls.xaml. -->
-        <Style TargetType="TextBox" x:Key="EditorLabelStyle" BasedOn="{StaticResource SelectableTextStyle}">
-            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
-            <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="{StaticResource FontSizeSmall}" />
-            <Setter Property="Margin" Value="0,12,0,4" />
         </Style>
         <Style TargetType="TextBox" x:Key="EditorFieldStyle">
             <Setter Property="Background" Value="{DynamicResource BackgroundBrush}" />
@@ -90,8 +51,8 @@
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="Height" Value="32" />
         </Style>
-        <!-- Paginabouwer/Componentenbouwer-tabs: RadioButtons die zich als
-             tabblad gedragen (GroupName houdt ze onderling exclusief). -->
+        <!-- Stylebook/Bibliotheek-tabs: RadioButtons die zich als tabblad
+             gedragen (GroupName houdt ze onderling exclusief). -->
         <Style TargetType="RadioButton" x:Key="BuilderModeTabStyle">
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
             <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
@@ -121,10 +82,8 @@
 
     <!--
         Vaste indeling van het style-venster: links een 256px strook voor
-        het menu (welke component/stijl je bekijkt), rechts het style-
-        oppervlak zelf waar de daadwerkelijke styling te zien is. De
-        definitieve Stylebook-app krijgt dezelfde twee-koloms opzet; dit
-        is de tijdelijke, werkende versie ervan.
+        het menu (thema-kiezer + modus-schakelaar), rechts het style-
+        oppervlak zelf waar de daadwerkelijke styling te zien is.
     -->
     <Grid>
         <Grid.ColumnDefinitions>
@@ -139,27 +98,12 @@
                 BorderThickness="0,0,1,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="{StaticResource SpaceMedium}">
-                    <DockPanel Margin="0,0,0,16">
-                        <!-- Ververst alle uit de database geladen lijsten (componenten,
-                             applicaties/pagina's, de regio-toewijzingen van de huidige
-                             pagina, en het live thema) - nuttig als de database buiten
-                             deze lopende app om is aangepast. Behoudt de huidige
-                             Applicatie-/Pagina-keuze in plaats van terug te springen
-                             naar de eerste, zie RefreshFromDatabase_Click. -->
-                        <Button DockPanel.Dock="Right"
-                                Click="RefreshFromDatabase_Click"
-                                Style="{StaticResource DeleteComponentButtonStyle}"
-                                Margin="4,0,0,0"
-                                AutomationProperties.Name="Ververs">
-                            <TextBlock Text="{StaticResource IconRefresh}" FontFamily="{StaticResource IconFontFamily}" />
-                        </Button>
-                        <TextBox Text="MENU"
-                                 Style="{StaticResource SelectableTextStyle}"
-                                 Foreground="{DynamicResource TextMutedBrush}"
-                                 FontFamily="{StaticResource AppFontFamily}"
-                                 FontSize="{StaticResource FontSizeSmall}"
-                                 VerticalAlignment="Center" />
-                    </DockPanel>
+                    <TextBox Text="MENU"
+                             Style="{StaticResource SelectableTextStyle}"
+                             Foreground="{DynamicResource TextMutedBrush}"
+                             FontFamily="{StaticResource AppFontFamily}"
+                             FontSize="{StaticResource FontSizeSmall}"
+                             Margin="0,0,0,16" />
 
                     <!-- Stijl-wisselaar, bovenaan zodat 'ie voor de hele
                          app geldt (chrome en preview delen dezelfde
@@ -180,52 +124,16 @@
                             Margin="0,0,0,16"
                             AutomationProperties.Name="Herstel naar standaard" />
 
-                    <!-- Paginabouwer: componenten plaatsen in Header/Menu/
-                         Inhoud/Actie/Footer, geen componentwijzigingen.
-                         Componentenbouwer: 1 component geïsoleerd bekijken
-                         en bouwen, hier mag wel toegevoegd/hernoemd/
-                         verwijderd worden. Stylebook: het palet met de
-                         hand aanpassen - zie StylebookMode_Checked en
-                         BuildStylebookPanel in code-behind. -->
+                    <!-- Stylebook: het palet met de hand aanpassen - zie
+                         StylebookMode_Checked/BuildStylebookPanel.
+                         Bibliotheek: de echte, gecompileerde componenten
+                         uit Stylebook.Components bekijken/samenstellen -
+                         zie LibraryMode_Checked. -->
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <RadioButton x:Name="PageBuilderModeButton"
-                                     Grid.Column="3"
-                                     GroupName="BuilderMode"
-                                     Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="PageBuilderMode_Checked"
-                                     AutomationProperties.Name="Pagina">
-                            <!-- Icoon boven de tekst i.p.v. ernaast: deze
-                                 kolommen zijn te smal voor "Component"/
-                                 "Stylebook" naast een icoon zonder af te
-                                 knippen. AutomationProperties.Name gezet
-                                 op elke knop/tab hieronder die icoon+tekst
-                                 combineert - Content is dan geen kale
-                                 string meer, dus de standaard
-                                 toegankelijke naam (voor schermlezers)
-                                 zou anders leeg/onduidelijk worden. -->
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{StaticResource IconPage}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Pagina" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
-                            </StackPanel>
-                        </RadioButton>
-                        <RadioButton x:Name="ComponentBuilderModeButton"
-                                     Grid.Column="1"
-                                     GroupName="BuilderMode"
-                                     Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="ComponentBuilderMode_Checked"
-                                     AutomationProperties.Name="Component">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{StaticResource IconWidgets}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Component" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
-                            </StackPanel>
-                        </RadioButton>
                         <RadioButton x:Name="StylebookModeButton"
                                      Grid.Column="0"
                                      GroupName="BuilderMode"
@@ -237,19 +145,8 @@
                                 <TextBlock Text="Stylebook" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton x:Name="CompositionModeButton"
-                                     Grid.Column="2"
-                                     GroupName="BuilderMode"
-                                     Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="CompositionMode_Checked"
-                                     AutomationProperties.Name="Compositie">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{StaticResource IconLayers}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Compositie" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
-                            </StackPanel>
-                        </RadioButton>
                         <RadioButton x:Name="LibraryModeButton"
-                                     Grid.Column="4"
+                                     Grid.Column="1"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="LibraryMode_Checked"
@@ -260,616 +157,25 @@
                             </StackPanel>
                         </RadioButton>
                     </Grid>
-
-                    <!-- Applicatie/Pagina-kiezer: alleen zichtbaar in
-                         Paginabouwer (zie SetBuilderMode). Zodra een
-                         Pagina gekozen is, worden de regio-keuzes
-                         hieronder niet meer alleen live voorbeeldstatus -
-                         ze worden ook opgeslagen (PageRegions) en bij
-                         het herkiezen van die pagina weer teruggezet,
-                         zie ApplicationPicker_SelectionChanged/
-                         PagePicker_SelectionChanged/Component_SelectionChanged. -->
-                    <StackPanel x:Name="PageContextPicker" Margin="0,0,0,16">
-                        <TextBox Text="APPLICATIE" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
-                        <ComboBox x:Name="ApplicationPicker" DisplayMemberPath="Name" SelectionChanged="ApplicationPicker_SelectionChanged" Margin="0,0,0,8" />
-
-                        <TextBox Text="PAGINA" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
-                        <ComboBox x:Name="PagePicker" DisplayMemberPath="Name" SelectionChanged="PagePicker_SelectionChanged" Margin="0,0,0,8" />
-                        <!-- Zelfde toevoegen-patroon als bij een component:
-                             naam intypen + Enter of "+". -->
-                        <DockPanel>
-                            <Button Click="AddPage_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Nieuwe pagina toevoegen">
-                                <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                            </Button>
-                            <TextBox x:Name="NewPageNameBox" KeyDown="NewPageName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                        </DockPanel>
-                    </StackPanel>
-
-                    <!-- Componentbeheer per Basis-regio, klap open om de
-                         daarin opgeslagen componenten (Stylebook.Data) te
-                         zien. "+" maakt ALTIJD een nieuw component aan
-                         (negeert een eventuele selectie) - Hernoemen (potlood)
-                         en Verwijderen (x) werken alleen op het geselecteerde
-                         component en staan daarom uit zolang niets
-                         geselecteerd is. Bewust twee losse knoppen: "+" mocht
-                         nooit meer per ongeluk een bestaand component
-                         overschrijven, zie CreateComponent/RenameComponent. -->
-                    <Expander Header="Header">
-                        <StackPanel>
-                            <ListBox x:Name="HeaderComponents" Tag="Header" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <!-- Alleen bruikbaar in Paginabouwer (IsEnabled
-                                 via SetBuilderMode) - haalt de gekozen
-                                 component voor deze regio op DEZE pagina
-                                 weer weg (terug naar "leeg"), zonder het
-                                 component zelf te verwijderen. -->
-                            <Button x:Name="HeaderClearSelectionButton" Tag="Header" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="HeaderEditRow" Margin="0,8,0,8">
-                                <Button Tag="Header" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Header" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="HeaderRenameButton" Tag="Header" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="HeaderNewComponentName" Tag="Header" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
-                    <Expander Header="Menu">
-                        <StackPanel>
-                            <ListBox x:Name="MenuComponents" Tag="Menu" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <Button x:Name="MenuClearSelectionButton" Tag="Menu" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="MenuEditRow" Margin="0,8,0,8">
-                                <Button Tag="Menu" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Menu" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="MenuRenameButton" Tag="Menu" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="MenuNewComponentName" Tag="Menu" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
-                    <Expander Header="Inhoud">
-                        <StackPanel>
-                            <ListBox x:Name="InhoudComponents" Tag="Inhoud" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <Button x:Name="InhoudClearSelectionButton" Tag="Inhoud" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="InhoudEditRow" Margin="0,8,0,8">
-                                <Button Tag="Inhoud" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Inhoud" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="InhoudRenameButton" Tag="Inhoud" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="InhoudNewComponentName" Tag="Inhoud" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
-                    <Expander Header="Actie">
-                        <StackPanel>
-                            <ListBox x:Name="ActieComponents" Tag="Actie" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <Button x:Name="ActieClearSelectionButton" Tag="Actie" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="ActieEditRow" Margin="0,8,0,8">
-                                <Button Tag="Actie" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Actie" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="ActieRenameButton" Tag="Actie" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="ActieNewComponentName" Tag="Actie" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
-                    <Expander Header="Footer">
-                        <StackPanel>
-                            <ListBox x:Name="FooterComponents" Tag="Footer" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <Button x:Name="FooterClearSelectionButton" Tag="Footer" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="FooterEditRow" Margin="0,8,0,8">
-                                <Button Tag="Footer" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Footer" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="FooterRenameButton" Tag="Footer" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="FooterNewComponentName" Tag="Footer" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
-                    <Expander Header="Algemeen">
-                        <StackPanel>
-                            <ListBox x:Name="AlgemeenComponents" Tag="Algemeen" DisplayMemberPath="Name" SelectionChanged="Component_SelectionChanged" />
-                            <Button x:Name="AlgemeenClearSelectionButton" Tag="Algemeen" Click="ClearRegionSelection_Click" Style="{StaticResource DeleteComponentButtonStyle}" HorizontalAlignment="Left" Margin="0,4,0,8" AutomationProperties.Name="Leegmaken">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Leegmaken" />
-                                </TextBlock>
-                            </Button>
-                            <DockPanel x:Name="AlgemeenEditRow" Margin="0,8,0,8">
-                                <Button Tag="Algemeen" Click="DeleteComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Verwijderen">
-                                    <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button Tag="Algemeen" Click="AddComponent_Click" Style="{StaticResource AddComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Toevoegen">
-                                    <TextBlock Text="{StaticResource IconAdd}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <Button x:Name="AlgemeenRenameButton" Tag="Algemeen" Click="RenameComponent_Click" Style="{StaticResource DeleteComponentButtonStyle}" DockPanel.Dock="Right" AutomationProperties.Name="Hernoemen" IsEnabled="False">
-                                    <TextBlock Text="{StaticResource IconEdit}" FontFamily="{StaticResource IconFontFamily}" />
-                                </Button>
-                                <TextBox x:Name="AlgemeenNewComponentName" Tag="Algemeen" KeyDown="NewComponentName_KeyDown" Style="{StaticResource NewComponentNameStyle}" />
-                            </DockPanel>
-                        </StackPanel>
-                    </Expander>
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
         <!-- Style-oppervlak: hier komt de daadwerkelijke styling/preview te
-             staan. Geen eigen Resources meer hier - deze app gebruikt nog
-             maar 1 stijl (Visual Studio), DB-gestuurd (zie App.xaml.cs en
-             Theming/DbThemeBuilder.cs), dus alles valt gewoon door naar
-             Application.Resources. Drie lagen, maar maar 1 zichtbaar (zie
-             SetBuilderMode in code-behind): PageBuilderBasis toont de
-             volledige Basis-schil met per regio het geselecteerde
-             component; ComponentBuilderCanvas toont precies 1 component,
-             geïsoleerd, zonder schil eromheen; StylebookContent toont het
-             hand-bewerkbare palet. -->
+             staan. Twee lagen, maar maar 1 zichtbaar (zie SetBuilderMode
+             in code-behind): StylebookContent toont het hand-bewerkbare
+             palet; LibraryCanvasArea toont de echte, gecompileerde
+             componenten uit Stylebook.Components. -->
         <Grid x:Name="StylePreviewArea" Grid.Column="1">
-            <!-- Het paginavoorbeeld staat vast op 1920×1080 (liggend) - het
-                 doelscherm-formaat waar de app straks echt op draait, NIET
-                 de breedte van dit Stylebook-venster zelf (dat blijft
-                 2560×1140, zie MainWindow's eigen Width/Height). Zonder
-                 deze vaste maat rekte Basis mee tot de volledige breedte
-                 van StylePreviewArea (~2300px), veel breder dan 1920 -
-                 vandaar de zichtbare rand + ScrollViewer, zelfde patroon
-                 als de regio-vergrendelde testbox/Compositie-canvas. -->
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <Border HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Margin="{StaticResource SpaceMedium}"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        ClipToBounds="True">
-                    <controls:Basis x:Name="PageBuilderBasis" Width="1920" Height="1080" />
-                </Border>
-            </ScrollViewer>
-
-            <Border x:Name="ComponentBuilderCanvas" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180" />
-                        <ColumnDefinition Width="*" MinWidth="300" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition x:Name="PropertiesColumn" Width="420" MinWidth="280" MaxWidth="700" />
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Style-referentiebalk: alleen-lezen overzicht van de
-                         stijl-tokens (icoon/swatch + naam, geen waarde, geen
-                         bewerken) zodat je tijdens het bouwen kunt zien wat
-                         er beschikbaar is zonder naar Stylebook te wisselen.
-                         Zie BuildStyleReferenceBar in code-behind. -->
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource SurfaceBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,0,1,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ContentControl x:Name="StyleReferenceBar" Margin="{StaticResource SpaceMedium}" />
-                        </ScrollViewer>
-                    </Border>
-
-                    <!-- Kolom 1: geïsoleerde preview, en - zodra "Pas toe
-                         op XAML" een voorstel heeft - het AI-voorstel
-                         ernaast, zodat je kunt vergelijken vóór je het
-                         overneemt (zie ShowProposal/AcceptProposal_Click/
-                         DiscardProposal_Click). ProposedColumn begint op
-                         0 breed; alleen ShowProposal zet 'm open. -->
-                    <Grid Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition x:Name="XamlComparisonRowDefinition" Height="160" MinHeight="60" MaxHeight="500" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <Grid x:Name="ProposalLabelsRow" Grid.Row="0" Visibility="Collapsed" Margin="0,16,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="ORIGINEEL" HorizontalAlignment="Center"
-                                     Style="{StaticResource SelectableTextStyle}"
-                                     Foreground="{DynamicResource TextMutedBrush}"
-                                     FontFamily="{StaticResource AppFontFamily}"
-                                     FontSize="{StaticResource FontSizeSmall}" />
-                            <TextBox Grid.Column="1" Text="VOORSTEL" HorizontalAlignment="Center"
-                                     Style="{StaticResource SelectableTextStyle}"
-                                     Foreground="{DynamicResource TextMutedBrush}"
-                                     FontFamily="{StaticResource AppFontFamily}"
-                                     FontSize="{StaticResource FontSizeSmall}" />
-                        </Grid>
-
-                        <!-- Ctrl+scrollwiel zoomt ORIGINEEL en (indien
-                             zichtbaar) VOORSTEL altijd samen, zie
-                             ComponentPreviewZoom_MouseWheel. Elk vak heeft
-                             ZIJN EIGEN ScaleTransform+RenderTransformOrigin
-                             (niet één gedeelde transform op deze omvattende
-                             Grid) - anders verschuift het middelpunt zodra
-                             VOORSTEL verschijnt (kolom "*" gaat dan van de
-                             volledige breedte naar de helft), waardoor
-                             ORIGINEEL bij een afwijkend zoomniveau buiten
-                             beeld kon schuiven. Was precies de bug: na
-                             zoomen en op "Opslaan en toepassen" klikken was
-                             er "geen preview meer" te zien. -->
-                        <Grid Grid.Row="1" PreviewMouseWheel="ComponentPreviewZoom_MouseWheel">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition x:Name="ProposedColumnDefinition" Width="0" />
-                            </Grid.ColumnDefinitions>
-                            <!-- Testcontainer: simuleert de ruimte waarin dit
-                                 component straks geplaatst wordt. Breedte/
-                                 hoogte hier bestuurbaar met de sliders in
-                                 EIGENSCHAPPEN (of de sleep-hoek eronder); of
-                                 het component zelf meekrimpt/-groeit hangt af
-                                 van WidthModeCombo/HeightModeCombo (zie
-                                 ApplyContainerSimulation) - "Vast" laat de
-                                 eigen (XAML-)afmeting staan, "Variabel" vult
-                                 'm de container. BorderBrush+BorderThickness
-                                 geven de box nu ALTIJD een zichtbare rand
-                                 (niet meer alleen de lichte overlay) - sinds
-                                 regio's standaard op Variabel staan (zie
-                                 RegionDefaultContainerSize) vult het
-                                 component vaak de hele box, waardoor de
-                                 overlay alleen niet meer te zien was.
-                                 ClipToBounds knipt content af die buiten de
-                                 box zou vallen, zodat je nooit meer ziet dan
-                                 wat er echt past. Beide kolommen (ORIGINEEL
-                                 en AI-VOORSTEL) delen dezelfde afmeting, zie
-                                 ContainerSize_Changed. -->
-                            <Border x:Name="TestContainerBorder"
-                                    Grid.Column="0"
-                                    Width="400" Height="260"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Background="#14FFFFFF"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    ClipToBounds="True"
-                                    RenderTransformOrigin="0.5,0.5">
-                                <Border.RenderTransform>
-                                    <ScaleTransform x:Name="ComponentPreviewZoomTransform" ScaleX="1" ScaleY="1" />
-                                </Border.RenderTransform>
-                                <ContentControl x:Name="ComponentBuilderContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                            </Border>
-                            <Border x:Name="ProposedTestContainerBorder"
-                                    Grid.Column="1"
-                                    Width="400" Height="260"
-                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Background="#14FFFFFF"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    ClipToBounds="True"
-                                    Visibility="Collapsed"
-                                    RenderTransformOrigin="0.5,0.5">
-                                <Border.RenderTransform>
-                                    <ScaleTransform x:Name="ProposedPreviewZoomTransform" ScaleX="1" ScaleY="1" />
-                                </Border.RenderTransform>
-                                <ContentControl x:Name="ProposedPreviewContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                            </Border>
-                        </Grid>
-
-                        <!-- Sleepbalkje boven de XAML-vergelijking, alleen
-                             zichtbaar/bruikbaar zodra er een antwoord staat
-                             (zie ShowProposal/ClearProposal) - versleept
-                             XamlComparisonRowDefinition's hoogte. -->
-                        <GridSplitter x:Name="XamlComparisonSplitter"
-                                      Grid.Row="2"
-                                      Height="5"
-                                      Margin="0,12,0,0"
-                                      HorizontalAlignment="Stretch"
-                                      VerticalAlignment="Center"
-                                      ResizeDirection="Rows"
-                                      ResizeBehavior="PreviousAndNext"
-                                      Background="{DynamicResource BorderBrush}"
-                                      Visibility="Collapsed" />
-
-                        <!-- Monaco's eigen diff-editor (via WebView2) i.p.v.
-                             twee losse tekstvelden: ORIGINEEL (links, nooit
-                             bewerkbaar - originalEditable: false in de HTML)
-                             en het voorstel (rechts, wel bewerkbaar) in één
-                             widget met echte regel-voor-regel diff-
-                             markering. Inhoud gaat heen en weer via de
-                             WebView2-postMessage-brug, zie
-                             InitializeMonacoDiffEditor/SetMonacoDiffContent/
-                             OnMonacoWebMessage in code-behind. -->
-                        <Grid x:Name="XamlComparisonRow" Grid.Row="3" Visibility="Collapsed" Margin="0,4,0,0">
-                            <wv2:WebView2 x:Name="MonacoDiffView" />
-                        </Grid>
-
-                        <StackPanel x:Name="ProposalActionsRow" Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed" Margin="0,16,0,16">
-                            <Button Click="AcceptProposal_Click" Style="{StaticResource EditorActionButtonStyle}" AutomationProperties.Name="Overnemen">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconCheck}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Overnemen" />
-                                </TextBlock>
-                            </Button>
-                            <Button Click="DiscardProposal_Click" Margin="8,0,0,0" Style="{StaticResource EditorActionButtonStyle}" AutomationProperties.Name="Negeren">
-                                <TextBlock>
-                                    <Run Text="{StaticResource IconClose}" FontFamily="{StaticResource IconFontFamily}" />
-                                    <Run Text=" Negeren" />
-                                </TextBlock>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-
-                    <GridSplitter Grid.Column="2"
-                                  Width="5"
-                                  HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Stretch"
-                                  ResizeBehavior="PreviousAndNext"
-                                  Background="{DynamicResource BorderBrush}" />
-
-                    <!-- Bewerk-paneel: eigenschappen bovenaan (snel, beperkt
-                         tot titel/inhoud-tekst), de eigenlijke XAML
-                         eronder (alles, brontekst). Beide schrijven naar
-                         hetzelfde Xaml-veld - wie het laatst opslaat wint. -->
-                    <Border Grid.Column="3"
-                            Background="{DynamicResource SurfaceBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1,0,0,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="{StaticResource SpaceMedium}">
-                                <TextBox Text="EIGENSCHAPPEN"
-                                         Style="{StaticResource SelectableTextStyle}"
-                                         Foreground="{DynamicResource TextMutedBrush}"
-                                         FontFamily="{StaticResource AppFontFamily}"
-                                         FontSize="{StaticResource FontSizeSmall}" />
-
-                                <TextBox Text="Titel" Style="{StaticResource EditorLabelStyle}" />
-                                <TextBox x:Name="ComponentTitleBox" Style="{StaticResource EditorFieldStyle}" AcceptsReturn="False" />
-
-                                <TextBox Text="Inhoud" Style="{StaticResource EditorLabelStyle}" />
-                                <TextBox x:Name="ComponentBodyBox" Style="{StaticResource EditorFieldStyle}" Height="70" />
-
-                                <Button Click="GenerateFromProperties_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}"
-                                        AutomationProperties.Name="Genereer en opslaan">
-                                    <TextBlock>
-                                        <Run Text="{StaticResource IconAutoAwesome}" FontFamily="{StaticResource IconFontFamily}" />
-                                        <Run Text=" Genereer en opslaan" />
-                                    </TextBlock>
-                                </Button>
-
-                                <!-- Testcontainer: bepaalt of dit component
-                                     zich moet aanpassen aan de ruimte waarin
-                                     het geplaatst wordt (Variabel) of altijd
-                                     zijn eigen afmeting aanhoudt (Vast) - zie
-                                     TestContainerBorder/ApplyContainerSimulation
-                                     in code-behind. Werkt ECHT door in de
-                                     opgeslagen XAML (BakeSizeConstraintsIntoXaml,
-                                     aangeroepen bij elke save), niet alleen in
-                                     deze preview - dus dit geldt ook zodra het
-                                     component echt in een pagina/app gebruikt
-                                     wordt.
-
-                                     De testbox ZELF (het kader eromheen) is
-                                     bewust NIET meer versleepbaar/instelbaar -
-                                     die staat altijd vast op de echte
-                                     afmeting van de regio waar dit component
-                                     bij hoort (RegionDefaultContainerSize,
-                                     ApplyTestContainerSize), zodat je hier
-                                     nooit per ongeluk in een verkeerd/
-                                     verzonnen formaat aan het bouwen bent. -->
-                                <TextBox Text="Testcontainer" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
-
-                                <TextBox Text="Breedte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <ComboBox x:Name="WidthModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,4">
-                                    <ComboBoxItem Content="Vast (eigen breedte)" IsSelected="True" />
-                                    <ComboBoxItem Content="Variabel (vult container)" />
-                                </ComboBox>
-                                <!-- Alleen van toepassing bij "Vast" - leeg
-                                     laten houdt de natuurlijke (XAML-eigen)
-                                     afmeting aan, zoals voorheen altijd het
-                                     geval was; een getal hier overschrijft
-                                     'm expliciet (ApplySizeConstraints). -->
-                                <TextBox Text="Eigen breedte (px), leeg = natuurlijke afmeting" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <TextBox x:Name="ComponentFixedWidthBox"
-                                         Style="{StaticResource NewComponentNameStyle}"
-                                         TextChanged="ComponentFixedSize_Changed"
-                                         Margin="0,2,0,8" />
-
-                                <TextBox Text="Hoogte" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <ComboBox x:Name="HeightModeCombo" SelectionChanged="ContainerSimulation_Changed" Margin="0,2,0,4">
-                                    <ComboBoxItem Content="Vast (eigen hoogte)" IsSelected="True" />
-                                    <ComboBoxItem Content="Variabel (vult container)" />
-                                </ComboBox>
-                                <TextBox Text="Eigen hoogte (px), leeg = natuurlijke afmeting" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" />
-                                <TextBox x:Name="ComponentFixedHeightBox"
-                                         Style="{StaticResource NewComponentNameStyle}"
-                                         TextChanged="ComponentFixedSize_Changed"
-                                         Margin="0,2,0,8" />
-
-                                <!-- Puur informatief - het regio-formaat
-                                     staat vast, zie ApplyTestContainerSize.
-                                     Geen schuifbalken/sleep-hoek meer, die
-                                     suggereerden dat dit instelbaar was. -->
-                                <TextBox x:Name="ContainerSizeLabel" Text="Containerformaat: 400 × 260 px" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,4,0,0" />
-
-                                <TextBox Text="XAML" Style="{StaticResource EditorLabelStyle}" Margin="0,24,0,4" />
-                                <TextBox x:Name="ComponentXamlBox"
-                                         Style="{StaticResource EditorFieldStyle}"
-                                         FontFamily="Consolas"
-                                         Height="360"
-                                         TextWrapping="NoWrap"
-                                         HorizontalScrollBarVisibility="Auto"
-                                         VerticalScrollBarVisibility="Auto"
-                                         TextChanged="ComponentXamlBox_TextChanged" />
-
-                                <TextBox x:Name="XamlErrorText"
-                                         Style="{StaticResource SelectableTextStyle}"
-                                         Foreground="Tomato"
-                                         FontFamily="{StaticResource AppFontFamily}"
-                                         FontSize="{StaticResource FontSizeSmall}"
-                                         TextWrapping="Wrap"
-                                         Margin="0,8,0,0"
-                                         Visibility="Collapsed" />
-
-                                <Button Click="SaveXaml_Click"
-                                        Style="{StaticResource EditorActionButtonStyle}"
-                                        AutomationProperties.Name="Opslaan en toepassen">
-                                    <TextBlock>
-                                        <Run Text="{StaticResource IconSave}" FontFamily="{StaticResource IconFontFamily}" />
-                                        <Run Text=" Opslaan en toepassen" />
-                                    </TextBlock>
-                                </Button>
-
-                                <TextBox x:Name="ProposalStatusText"
-                                         Style="{StaticResource EditorFieldStyle}"
-                                         Height="60"
-                                         IsReadOnly="True"
-                                         Margin="0,8,0,0" />
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Border>
-                </Grid>
-            </Border>
-
-            <!-- Stylebook: het vaste palet, beide thema's naast elkaar, puur
-                 referentie - opgebouwd in code-behind (BuildStylebookPanel)
-                 uit Stylebook.Components.Theming.DesignTokenCatalog, zodat
-                 dit nooit uit de pas loopt met wat de thema-bestanden echt
-                 bevatten. -->
             <ContentControl x:Name="StylebookContent" Visibility="Collapsed" />
-
-            <!-- Compositie: componenten uit de platte palette naar het
-                 canvas slepen en vrij positioneren/over elkaar leggen -
-                 laatst gesleept komt bovenop (WPF's eigen Canvas-
-                 tekenvolgorde, geen aparte z-index nodig). "Opslaan als
-                 component" slaat NIET een levend lagen-systeem op, maar
-                 serialiseert de samengestelde boom eenmalig plat naar één
-                 nieuwe StylebookComponent - zie SaveComposition_Click. -->
-            <Border x:Name="CompositionCanvasArea" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <!-- Platte lijst van ALLE componenten (niet per regio
-                         zoals in Componentenbouwer) - voor vrij
-                         samenstellen wil je juist componenten uit
-                         verschillende regio's kunnen combineren. -->
-                    <Border Grid.Column="0" Grid.Row="0" Grid.RowSpan="2"
-                            Background="{DynamicResource SurfaceBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,0,1,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ListBox x:Name="CompositionPalette"
-                                     DisplayMemberPath="Name"
-                                     Margin="{StaticResource SpaceMedium}"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     PreviewMouseLeftButtonDown="CompositionPalette_PreviewMouseLeftButtonDown"
-                                     PreviewMouseMove="CompositionPalette_PreviewMouseMove" />
-                        </ScrollViewer>
-                    </Border>
-
-                    <!-- Het canvas is de ECHTE afmeting van de gekozen regio
-                         (CompositionRegionPicker hieronder, zie
-                         ResizeCompositionCanvasToRegion/RegionDefaultContainerSize
-                         - dezelfde Basis.xaml-afmetingen als de testbox in
-                         Componentenbouwer) - je werkt dus letterlijk BINNEN
-                         het formaat waar het straks in past, niet op een
-                         los, willekeurig groot canvas. BorderBrush/
-                         BorderThickness maken die grens zichtbaar;
-                         ClipToBounds + de klem-logica in
-                         CompositionCanvas_Drop/CompositionItem_MouseMove
-                         houden geplaatste/versleepte componenten er ook
-                         daadwerkelijk binnen. Focusable zodat Delete op een
-                         geselecteerd item werkt. -->
-                    <ScrollViewer Grid.Column="1" Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-                                Margin="{StaticResource SpaceMedium}"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1">
-                            <Canvas x:Name="CompositionCanvas"
-                                    Background="{DynamicResource BackgroundBrush}"
-                                    ClipToBounds="True"
-                                    AllowDrop="True"
-                                    Drop="CompositionCanvas_Drop"
-                                    Focusable="True"
-                                    KeyDown="CompositionCanvas_KeyDown" />
-                        </Border>
-                    </ScrollViewer>
-
-                    <DockPanel Grid.Column="1" Grid.Row="1"
-                               Background="{DynamicResource SurfaceBrush}"
-                               Margin="{StaticResource SpaceMedium}">
-                        <Button DockPanel.Dock="Right" Click="SaveComposition_Click" Style="{StaticResource AddComponentButtonStyle}" Content="Opslaan als component" Margin="4,0,0,0" />
-                        <Button DockPanel.Dock="Right" Click="ClearComposition_Click" Style="{StaticResource DeleteComponentButtonStyle}" AutomationProperties.Name="Leegmaken" Margin="4,0,0,0">
-                            <TextBlock Text="{StaticResource IconDelete}" FontFamily="{StaticResource IconFontFamily}" />
-                        </Button>
-                        <ComboBox x:Name="CompositionRegionPicker" DockPanel.Dock="Right" Width="120" Margin="8,0,0,0" SelectionChanged="CompositionRegionPicker_SelectionChanged">
-                            <ComboBoxItem Content="Header" Tag="Header" IsSelected="True" />
-                            <ComboBoxItem Content="Menu" Tag="Menu" />
-                            <ComboBoxItem Content="Inhoud" Tag="Inhoud" />
-                            <ComboBoxItem Content="Actie" Tag="Actie" />
-                            <ComboBoxItem Content="Footer" Tag="Footer" />
-                            <ComboBoxItem Content="Algemeen" Tag="Algemeen" />
-                        </ComboBox>
-                        <TextBox x:Name="CompositionNameBox" Style="{StaticResource NewComponentNameStyle}" />
-                    </DockPanel>
-                </Grid>
-            </Border>
 
             <!-- Bibliotheek: puur bekijken, geen database - toont de
                  ECHTE, gecompileerde UserControls uit Stylebook.Components
                  (Regions/<Regio>/*), gevonden via reflectie (zie
-                 DiscoverLibraryControls in code-behind). Dit is de
-                 live-previewhost voor componenten die naar bestanden zijn
-                 gemigreerd - zie idempotent-sauteeing-valley.md. Twee
-                 standen: Onderdeel (1 component isoleren) en Pagina (per
-                 regio een component kiezen, samen in een echte Basis). -->
-            <Border x:Name="LibraryCanvasArea" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
+                 DiscoverLibraryControls in code-behind). Twee standen:
+                 Onderdeel (1 component isoleren) en Pagina (per regio een
+                 component kiezen, samen in een echte Basis). -->
+            <Border x:Name="LibraryCanvasArea" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -889,7 +195,7 @@
                     </StackPanel>
 
                     <Grid Grid.Row="1">
-                        <!-- Onderdeel: precies zoals eerder - 1 component isoleren. -->
+                        <!-- Onderdeel: 1 component isoleren. -->
                         <Grid x:Name="LibraryComponentPanel">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="220" />

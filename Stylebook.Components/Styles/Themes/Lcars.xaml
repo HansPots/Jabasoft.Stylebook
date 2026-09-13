@@ -27,8 +27,19 @@
          achtergrond+voorgrond gebruikt worden). -->
     <Color x:Key="AccentForegroundColor">#000000</Color>
 
+    <!-- Header-regio gradiënten (HpoHeader e.a.) - zelfde waarden als de
+         database-tokens van hetzelfde thema (zie DesignTokens-tabel),
+         hier ook statisch beschikbaar zodat een app zonder live
+         database-verbinding (elke app behalve Stylebook.Playground) ze
+         ook kan resolven. -->
+    <Color x:Key="HeaderGradientStartColor">#FFB16C</Color>
+    <Color x:Key="HeaderGradientMidColor">#FF8066</Color>
+    <Color x:Key="HeaderGradientEndColor">#B63C50</Color>
+    <Color x:Key="HeaderSideGradientStartColor">#8E89FF</Color>
+    <Color x:Key="HeaderSideGradientEndColor">#7774F5</Color>
+
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
-    <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentColorDark}" />
+    <SolidColorBrush x:Key="AccentBrushDark" Color="{StaticResource AccentColorDark}" />
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
@@ -36,5 +47,10 @@
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
     <SolidColorBrush x:Key="Text01Brush" Color="{StaticResource Text01Color}" />
     <SolidColorBrush x:Key="AccentForegroundBrush" Color="{StaticResource AccentForegroundColor}" />
+    <SolidColorBrush x:Key="HeaderGradientStartBrush" Color="{StaticResource HeaderGradientStartColor}" />
+    <SolidColorBrush x:Key="HeaderGradientMidBrush" Color="{StaticResource HeaderGradientMidColor}" />
+    <SolidColorBrush x:Key="HeaderGradientEndBrush" Color="{StaticResource HeaderGradientEndColor}" />
+    <SolidColorBrush x:Key="HeaderSideGradientStartBrush" Color="{StaticResource HeaderSideGradientStartColor}" />
+    <SolidColorBrush x:Key="HeaderSideGradientEndBrush" Color="{StaticResource HeaderSideGradientEndColor}" />
 
 </ResourceDictionary>

@@ -6,29 +6,14 @@ namespace Stylebook.Data;
 
 public sealed class StylebookDbContext(DbContextOptions<StylebookDbContext> options) : DbContext(options)
 {
-    public DbSet<StylebookComponent> Components => Set<StylebookComponent>();
-
     public DbSet<DesignToken> DesignTokens => Set<DesignToken>();
 
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
-    public DbSet<Application> Applications => Set<Application>();
-
-    public DbSet<Page> Pages => Set<Page>();
-
-    public DbSet<PageRegion> PageRegions => Set<PageRegion>();
-
-    public DbSet<ComponentVersion> ComponentVersions => Set<ComponentVersion>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new StylebookComponentConfiguration());
         modelBuilder.ApplyConfiguration(new DesignTokenConfiguration());
         modelBuilder.ApplyConfiguration(new AppSettingConfiguration());
-        modelBuilder.ApplyConfiguration(new ApplicationConfiguration());
-        modelBuilder.ApplyConfiguration(new PageConfiguration());
-        modelBuilder.ApplyConfiguration(new PageRegionConfiguration());
-        modelBuilder.ApplyConfiguration(new ComponentVersionConfiguration());
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
