@@ -20,25 +20,48 @@
     </d:UserControl.Resources>
 
     <!-- Algemeen: de LCARS-gradiëntbalk (ook los van HpoHeader bruikbaar).
-         Links loopt de balk door in een elleboog naar beneden (48px breed,
-         buitenbocht linksonder = 48) in de startkleur van de gradiënt - de
-         gradiënt zelf begint pas ná die bocht, bij de balk. -->
+         Links loopt de balk door in een elleboog naar beneden (48px breed).
+         De bocht linksboven is een echte, dikke ring-vorm (geen scherpe
+         binnenhoek): een groot kwartrond (buitenstraal 96) met daarin een
+         kleiner kwartrond (binnenstraal 48) uitgesneden via een Path met
+         FillRule="EvenOdd" - het verschil (96-48=48) is precies de breedte
+         van de balk/elleboog, dus de "band" heeft overal dezelfde dikte,
+         en zowel de buiten- als de binnenbocht ogen rond in plaats van
+         scherp. De onderkant van de elleboog gebruikt nog wel de simpele
+         hoek-truc (CornerRadius = breedte) omdat dat daar een rond
+         uiteinde geeft, geen binnenhoek. -->
     <Grid Width="Auto" Height="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
         <Viewbox>
-            <Canvas Width="648" Height="200">
+            <Canvas Width="696" Height="200">
+                <Path Fill="{DynamicResource HeaderGradientStartBrush}"
+                      Canvas.Left="0" Canvas.Top="0">
+                    <Path.Data>
+                        <PathGeometry FillRule="EvenOdd">
+                            <PathFigure StartPoint="96,0" IsClosed="True">
+                                <ArcSegment Point="0,96" Size="96,96" IsLargeArc="False" SweepDirection="Counterclockwise" />
+                                <LineSegment Point="96,96" />
+                            </PathFigure>
+                            <PathFigure StartPoint="96,48" IsClosed="True">
+                                <ArcSegment Point="48,96" Size="48,48" IsLargeArc="False" SweepDirection="Counterclockwise" />
+                                <LineSegment Point="96,96" />
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
+
                 <Border theming:CornerRadiusParts.TopLeft="0"
                         theming:CornerRadiusParts.TopRight="0"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="48"
                         Background="{DynamicResource HeaderGradientStartBrush}"
-                        Canvas.Left="0" Canvas.Top="0"
-                        Width="48" Height="200" />
+                        Canvas.Left="48" Canvas.Top="96"
+                        Width="48" Height="104" />
 
                 <Border theming:CornerRadiusParts.TopLeft="0"
                         theming:CornerRadiusParts.TopRight="4"
                         theming:CornerRadiusParts.BottomRight="4"
                         theming:CornerRadiusParts.BottomLeft="0"
-                        Canvas.Left="48" Canvas.Top="0"
+                        Canvas.Left="96" Canvas.Top="48"
                         Width="600" Height="48">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
