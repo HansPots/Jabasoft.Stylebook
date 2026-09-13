@@ -1,0 +1,23 @@
+<UserControl x:Class="Stylebook.Components.Regions.Inhoud.InhoudBase"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="1616" d:DesignHeight="805">
+
+    <!--
+        Startpunt voor een nieuwe Inhoud-regio component: al op de echte
+        afmeting die Basis.xaml voor Inhoud overlaat (1920 minus Menu 256
+        minus Actie 48 = 1616 breed, 1080 minus Header 210 minus Footer
+        65 = 805 hoog) - Inhoud is in de draaiende app zelf volledig
+        flexibel (vult wat er is), dit is puur een representatieve
+        ontwerp-maat. Kopieer dit bestand, hernoem de klasse (x:Class
+        hierboven en InhoudBase.xaml.cs), en vul de Grid hieronder met
+        je eigen inhoud.
+    -->
+    <Grid Width="1616" Height="805" Background="{DynamicResource BackgroundBrush}">
+
+    </Grid>
+
+</UserControl>

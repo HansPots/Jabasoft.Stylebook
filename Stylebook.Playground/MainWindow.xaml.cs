@@ -2085,17 +2085,21 @@ public partial class MainWindow : Window
     /// <summary>
     /// Vindt elke publieke, niet-abstracte UserControl-subklasse in
     /// Stylebook.Components waarvan de namespace eindigt op een
-    /// ComponentRegion-naam (bv. Stylebook.Components.Controls.Header ->
+    /// ComponentRegion-naam (bv. Stylebook.Components.Regions.Header ->
     /// regio Header) - dat is meteen de regio-tagging, zonder aparte
     /// attributen nodig. Puur reflectie over de al geladen assembly, geen
     /// database erbij betrokken - zie idempotent-sauteeing-valley.md.
+    /// Slaat "...Base"-klassen over (bv. HeaderBase) - dat zijn lege
+    /// kopieer-startpunten voor een nieuw component (zie Regions/Header/
+    /// HeaderBase.xaml), geen afgerond component om te bekijken.
     /// </summary>
     private static IEnumerable<LibraryEntry> DiscoverLibraryControls()
     {
         var assembly = typeof(Stylebook.Components.Controls.Basis).Assembly;
         foreach (var type in assembly.GetTypes())
         {
-            if (!type.IsPublic || type.IsAbstract || !typeof(UserControl).IsAssignableFrom(type))
+            if (!type.IsPublic || type.IsAbstract || !typeof(UserControl).IsAssignableFrom(type) ||
+                type.Name.EndsWith("Base", StringComparison.Ordinal))
             {
                 continue;
             }

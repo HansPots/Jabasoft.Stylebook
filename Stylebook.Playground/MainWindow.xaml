@@ -863,7 +863,7 @@
 
             <!-- Bibliotheek: puur bekijken, geen database - toont de
                  ECHTE, gecompileerde UserControls uit Stylebook.Components
-                 (Controls/<Regio>/*), gevonden via reflectie (zie
+                 (Regions/<Regio>/*), gevonden via reflectie (zie
                  DiscoverLibraryControls in code-behind). Dit is de
                  live-previewhost voor componenten die naar bestanden zijn
                  gemigreerd - zie idempotent-sauteeing-valley.md. -->
