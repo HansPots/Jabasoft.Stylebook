@@ -2,7 +2,6 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Stylebook.Components.Controls"
-             xmlns:header="clr-namespace:Stylebook.Components.Regions.Header"
              xmlns:footer="clr-namespace:Stylebook.Components.Regions.Footer"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -24,9 +23,11 @@
 
     <!--
         De opgeslagen paginacompositie voor Jabasoft's hoofdscherm - een
-        Basis met Header/Footer al ingevuld met de echte, gemigreerde
-        componenten (HpoHeader/Footerbalk). Menu/Inhoud/Actie zijn BEWUST
-        niet gebakken: in de echte, draaiende Jabasoft.App zijn dat de
+        Basis met Footer al ingevuld met het echte, gemigreerde component
+        (Footerbalk). Header staat tijdelijk leeg: HpoHeader is weggehaald
+        (niet meer in gebruik) - hier komt op een later moment een nieuw
+        Header-component in te staan. Menu/Inhoud/Actie zijn BEWUST niet
+        gebakken: in de echte, draaiende Jabasoft.App zijn dat de
         FUNCTIONELE app-launcherlijst en de instellingen-knop (code-
         behind, zie Jabasoft.App/MainWindow.xaml.cs) - dit component geeft
         die drie slots gewoon door aan zijn eigen MenuContent/MainContent/
@@ -37,9 +38,6 @@
         nodig te hebben - zie idempotent-sauteeing-valley.md.
     -->
     <controls:Basis x:Name="Shell">
-        <controls:Basis.HeaderContent>
-            <header:HpoHeader />
-        </controls:Basis.HeaderContent>
         <controls:Basis.FooterContent>
             <footer:Footerbalk />
         </controls:Basis.FooterContent>

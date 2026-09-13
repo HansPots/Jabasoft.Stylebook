@@ -312,7 +312,13 @@
                                         BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="1"
                                         ClipToBounds="True">
-                                    <controls:Basis x:Name="LibraryPageBasis" Width="1920" Height="1080" />
+                                    <!-- Toont ofwel de vijf-regio-samenstelling (LibraryPageBasis,
+                                         standaard) ofwel - als App+Pagina een al bestaande, ECHTE
+                                         Apps/<App>/<Pagina>.xaml is zonder opgeslagen concept - die
+                                         pagina rechtstreeks (zie TryLoadPageDraft). -->
+                                    <ContentControl x:Name="LibraryPagePreviewHost">
+                                        <controls:Basis x:Name="LibraryPageBasis" Width="1920" Height="1080" />
+                                    </ContentControl>
                                 </Border>
                             </ScrollViewer>
                         </Grid>

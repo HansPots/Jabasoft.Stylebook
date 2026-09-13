@@ -519,8 +519,12 @@ public partial class MainWindow : Window
     {
         var discovered = DiscoverLibraryControls().ToList();
 
+        // Alfabetisch op regionaam, dan op componentnaam - zelfde volgorde
+        // als Visual Studio's Solution Explorer laat zien (mappen en
+        // bestanden allebei alfabetisch), niet de declaratievolgorde van
+        // het ComponentRegion-enum.
         LibraryComponents.ItemsSource = discovered
-            .OrderBy(entry => (int)entry.Region)
+            .OrderBy(entry => entry.Region.ToString(), StringComparer.Ordinal)
             .ThenBy(entry => entry.Type.Name, StringComparer.Ordinal)
             .ToList();
         LibraryPreviewContent.Content = null;
@@ -626,7 +630,7 @@ public partial class MainWindow : Window
         }
 
         LoadPageDraftPages();
-        TryLoadPageDraft();
+        Dispatcher.BeginInvoke(new Action(TryLoadPageDraft), System.Windows.Threading.DispatcherPriority.Background);
     }
 
     /// <summary>Pagina gewijzigd (gekozen uit de lijst, of getypt en de focus kwijt) - probeert het concept voor de huidige App+Pagina te laden.</summary>
@@ -637,10 +641,25 @@ public partial class MainWindow : Window
             return;
         }
 
-        TryLoadPageDraft();
+        // Dispatcher.BeginInvoke (ipv rechtstreeks aanroepen): bij een klik
+        // op een item in de vervolgkeuzelijst van een IsEditable ComboBox
+        // is .Text op het moment van SelectionChanged nog niet altijd
+        // bijgewerkt - TryLoadPageDraft zou dan een lege App/Pagina lezen
+        // en meteen (ten onrechte) stoppen. Background-prioriteit wacht tot
+        // de ComboBox zijn Text heeft bijgewerkt voordat we die uitlezen.
+        Dispatcher.BeginInvoke(new Action(TryLoadPageDraft), System.Windows.Threading.DispatcherPriority.Background);
     }
 
-    /// <summary>Laadt het concept voor de huidige App+Pagina-tekst terug in de vijf keuzelijsten, als dat bestand bestaat - anders gebeurt er niets (zo kun je een NIEUWE naam intypen zonder de huidige keuzes kwijt te raken).</summary>
+    /// <summary>
+    /// Laadt het concept voor de huidige App+Pagina-tekst terug in de vijf
+    /// keuzelijsten, als dat bestand bestaat. Bestaat er geen concept, maar
+    /// is App+Pagina wel een al gebouwde ECHTE pagina (Stylebook.Components/
+    /// Apps/&lt;App&gt;/&lt;Pagina&gt;.xaml, zie DiscoverAppPages) - die complete
+    /// pagina dan rechtstreeks tonen (ze bestaat niet als vijf losse
+    /// regio-keuzes, dus kan niet in de pickers geladen worden). Is het
+    /// allebei niet, dan gebeurt er niets (zo kun je een NIEUWE naam
+    /// intypen zonder de huidige keuzes kwijt te raken).
+    /// </summary>
     private void TryLoadPageDraft()
     {
         var app = PageDraftAppBox.Text.Trim();
@@ -653,6 +672,12 @@ public partial class MainWindow : Window
         var path = Path.Combine(PageDraftsDirectory, app, $"{page}.json");
         if (!File.Exists(path))
         {
+            var realPage = DiscoverAppPages().FirstOrDefault(entry => entry.App == app && entry.Page == page);
+            if (realPage is not null)
+            {
+                ShowRealAppPage(realPage);
+            }
+
             return;
         }
 
@@ -662,11 +687,32 @@ public partial class MainWindow : Window
             return;
         }
 
+        LibraryPagePreviewHost.Content = LibraryPageBasis;
         SelectPageDraftOption(LibraryPageHeaderPicker, draft.Header);
         SelectPageDraftOption(LibraryPageMenuPicker, draft.Menu);
         SelectPageDraftOption(LibraryPageInhoudPicker, draft.Inhoud);
         SelectPageDraftOption(LibraryPageActiePicker, draft.Actie);
         SelectPageDraftOption(LibraryPageFooterPicker, draft.Footer);
+    }
+
+    /// <summary>
+    /// Toont een echte, complete Apps-pagina rechtstreeks in de preview
+    /// (in plaats van via de vijf regio-slots van LibraryPageBasis, want
+    /// zo'n pagina IS al één samengestelde UserControl). De vijf pickers
+    /// gaan terug naar "(leeg)" - ze zijn niet van toepassing op wat nu
+    /// getoond wordt.
+    /// </summary>
+    private void ShowRealAppPage(AppPageEntry realPage)
+    {
+        SelectPageDraftOption(LibraryPageHeaderPicker, null);
+        SelectPageDraftOption(LibraryPageMenuPicker, null);
+        SelectPageDraftOption(LibraryPageInhoudPicker, null);
+        SelectPageDraftOption(LibraryPageActiePicker, null);
+        SelectPageDraftOption(LibraryPageFooterPicker, null);
+
+        var assembly = typeof(Stylebook.Components.Controls.Basis).Assembly;
+        var type = assembly.GetTypes().First(t => t.Namespace?.EndsWith($"Apps.{realPage.App}", StringComparison.Ordinal) == true && t.Name == realPage.Page);
+        LibraryPagePreviewHost.Content = Activator.CreateInstance(type);
     }
 
     /// <summary>
@@ -757,6 +803,11 @@ public partial class MainWindow : Window
     /// </summary>
     private void LibraryPagePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        // Handmatig een regio kiezen betekent altijd terug naar de
+        // vijf-regio-samenstelling, ook als LibraryPagePreviewHost net nog
+        // een complete, echte Apps-pagina toonde (zie TryLoadPageDraft).
+        LibraryPagePreviewHost.Content = LibraryPageBasis;
+
         var picker = (ComboBox)sender;
         var region = Enum.Parse<ComponentRegion>((string)picker.Tag);
         var option = picker.SelectedItem as LibraryPageOption;
