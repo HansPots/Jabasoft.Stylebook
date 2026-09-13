@@ -4,7 +4,20 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignWidth="280" d:DesignHeight="140">
+             d:DesignWidth="280" d:DesignHeight="140"
+             d:Title="Card titel"
+             d:Body="Card inhoud">
+
+    <!--
+        d:Title/d:Body hierboven: als je DIT bestand zelf in de Designer
+        opent (de definitie van Card bewerkt), roept die geen "new Card()"
+        aan - de constructor's Title/Body-standaardwaarden (Card.xaml.cs)
+        gelden dus niet hier, alleen wanneer iemand ANDERS <controls:Card/>
+        gebruikt (bv. Bibliotheek's Activator.CreateInstance, of een
+        andere pagina). d:Title/d:Body zijn design-time-only tegenhangers
+        die WEL gelden terwijl je dit bestand bewerkt - mc:Ignorable="d"
+        laat ze bij het echt compileren/draaien gewoon wegvallen.
+    -->
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
