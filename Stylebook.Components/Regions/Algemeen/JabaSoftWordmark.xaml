@@ -5,6 +5,19 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d">
 
+    <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
+         thema-context (kleuren, lettertype) - deze class library heeft
+         zelf geen App.xaml die dat normaal doet. mc:Ignorable="d" zorgt
+         dat dit bij het echt compileren/draaien volledig wegvalt. -->
+    <d:UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </d:UserControl.Resources>
+
     <!-- Algemeen: het "JabaSoft the Application"-beeldmerk. -->
     <Grid>
         <Grid.ColumnDefinitions>
@@ -23,13 +36,13 @@
                    Foreground="{DynamicResource AccentBrush}"
                    VerticalAlignment="Bottom"/>
 
-        <TextBlock Grid.Row="0" Grid.Column="1"
+        <TextBlock Grid.Row="0"
                    Text="Soft"
                    FontWeight="Bold"
                    FontSize="36"
                    Foreground="{DynamicResource Text01Brush}"
-                   VerticalAlignment="Bottom"
-                   Margin="0,0,0,-8"/>
+                   VerticalAlignment="Top"
+                   Margin="101,4,1,0" Grid.RowSpan="2" Grid.ColumnSpan="2"/>
 
         <TextBlock Grid.Row="1" Grid.Column="1"
                    Text="the Application"
