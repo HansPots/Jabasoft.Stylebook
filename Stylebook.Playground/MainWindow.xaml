@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:Stylebook.Components.Controls;assembly=Stylebook.Components"
         mc:Ignorable="d"
-        Title="Stylebook Playground - tijdelijk, voor componentontwikkeling"
+        Title="Stylebook"
         Height="1140" Width="2560"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource BackgroundBrush}">

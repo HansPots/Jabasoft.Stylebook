@@ -4,7 +4,8 @@
              xmlns:theming="clr-namespace:Stylebook.Components.Theming"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" MinHeight="400"
+             d:DesignWidth="256" d:DesignHeight="805">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -20,8 +21,8 @@
     </d:UserControl.Resources>
 
     <!--
-        Menu-regio component: decoratief LCARS-navigatiemenu met drie
-        vaste knoppen (Dashboard/Componenten/Instellingen) - GEEN
+        Menu-regio component: decoratief LCARS-navigatiemenu met vier
+        vaste knoppen (Home/Dashboard/Componenten/Instellingen) - GEEN
         Click-afhandeling, puur een visuele vormgeving. Jabasoft.App's
         echte, functionele app-launcherlijst (MainWindow.xaml.cs,
         BuildAppList) blijft losstaand in code-behind opgebouwd - dit
@@ -32,14 +33,54 @@
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="0">
         <Grid>
-            <Border Background="{DynamicResource TextMutedBrush}"
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.RowSpan="2"
+                    Background="{DynamicResource TextMutedBrush}"
                     theming:CornerRadiusParts.TopLeft="48"
                     theming:CornerRadiusParts.BottomLeft="48"/>
 
-            <StackPanel theming:MarginParts.Left="{DynamicResource SpaceMedium}"
+            <StackPanel Grid.Row="0"
+                        theming:MarginParts.Left="{DynamicResource SpaceMedium}"
                         theming:MarginParts.Top="{DynamicResource SpaceLarge}"
                         theming:MarginParts.Right="{DynamicResource SpaceMedium}"
                         theming:MarginParts.Bottom="{DynamicResource SpaceLarge}">
+
+                <!-- Home: gaat altijd terug naar Jabasoft.App's hoofdscherm.
+                     Nog puur visueel, zoals de drie knoppen hieronder - geen
+                     Click-logica (zie het architectuurnotitie hierboven). -->
+                <Button Content="Home" Foreground="{DynamicResource AccentForegroundBrush}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" HorizontalContentAlignment="Left"
+                        theming:MarginParts.Bottom="{DynamicResource SpaceSmall}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{DynamicResource AccentBrush}"
+                                    theming:CornerRadiusParts.TopLeft="{DynamicResource RadiusXLarge}"
+                                    theming:CornerRadiusParts.TopRight="{DynamicResource RadiusXLarge}"
+                                    theming:CornerRadiusParts.BottomRight="{DynamicResource RadiusXLarge}"
+                                    theming:PaddingParts.Left="{DynamicResource SpaceMedium}"
+                                    theming:PaddingParts.Top="{DynamicResource SpaceSmall}"
+                                    theming:PaddingParts.Right="{DynamicResource SpaceMedium}"
+                                    theming:PaddingParts.Bottom="{DynamicResource SpaceSmall}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z" Fill="{DynamicResource Text01Brush}" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"
+                                          theming:MarginParts.Right="{DynamicResource SpaceSmall}" />
+                                    <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrushDark}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrushDark}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
                 <Button Content="Dashboard" Foreground="{DynamicResource AccentForegroundBrush}" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold" HorizontalContentAlignment="Left"
                         theming:MarginParts.Bottom="{DynamicResource SpaceSmall}">
@@ -131,6 +172,39 @@
                     </Button.Template>
                 </Button>
 
+            </StackPanel>
+
+            <!-- Onderkant van het menu: blijft altijd onderaan staan, ook als
+                 de hoogte van het menu verandert (Grid.Row="1", Auto-hoog,
+                 na de *-rij met de knoppen hierboven - geen vaste pixel-
+                 marges meer die alleen bij één specifieke hoogte kloppen). -->
+            <StackPanel Grid.Row="1">
+                <!-- Dun accentstrookje boven de versiebalk - bewust géén
+                     LCARS-hoekafronding, daarvoor is 8px te dun. -->
+                <Border Background="{DynamicResource BackgroundBrush}"
+                        Width="256"
+                        Height="8" />
+
+                <!-- Versie-indicator: wordt bij iedere wijziging aan deze app
+                     handmatig opgehoogd (laatste cijfer +1). -->
+                <Border x:Name="VersionBar"
+                        theming:CornerRadiusParts.TopLeft="0"
+                        theming:CornerRadiusParts.TopRight="0"
+                        theming:CornerRadiusParts.BottomRight="0"
+                        theming:CornerRadiusParts.BottomLeft="48"
+                        Background="{DynamicResource AccentBrush}"
+                        Width="256"
+                        Height="40">
+                    <TextBlock x:Name="VersionText"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Left"
+                               Width="216"
+                               Height="20"
+                               Margin="30,0,0,0"
+                               VerticalAlignment="Center"
+                               TextAlignment="Right"
+                               Text="V 0.1.0.6" />
+                </Border>
             </StackPanel>
         </Grid>
     </Border>
