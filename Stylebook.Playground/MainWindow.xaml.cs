@@ -549,29 +549,72 @@ public partial class MainWindow : Window
     /// <summary>Welk component (Type.FullName, of null = "(leeg)") er per regio gekozen was toen een Pagina-concept werd opgeslagen.</summary>
     private sealed record PageDraft(string? Header, string? Menu, string? Inhoud, string? Actie, string? Footer);
 
-    /// <summary>Vult PageDraftAppBox met de mappen (app-namen) die al minstens één opgeslagen concept hebben, en ververst de Pagina-lijst voor de huidige App-tekst.</summary>
+    /// <summary>Eén echte, al gebouwde pagina in Stylebook.Components/Apps/&lt;App&gt;/&lt;Pagina&gt;.xaml.</summary>
+    private sealed record AppPageEntry(string App, string Page);
+
+    /// <summary>
+    /// Vindt elke publieke, niet-abstracte UserControl-subklasse waarvan
+    /// de namespace op "Apps.&lt;AppNaam&gt;" eindigt (bv.
+    /// Stylebook.Components.Apps.Jabasoft.Hoofdscherm -> App "Jabasoft",
+    /// Pagina "Hoofdscherm") - zelfde reflectie-aanpak als
+    /// DiscoverLibraryControls, nu op de Apps-laag in plaats van Regions.
+    /// </summary>
+    private static IEnumerable<AppPageEntry> DiscoverAppPages()
+    {
+        var assembly = typeof(Stylebook.Components.Controls.Basis).Assembly;
+        foreach (var type in assembly.GetTypes())
+        {
+            if (!type.IsPublic || type.IsAbstract || !typeof(UserControl).IsAssignableFrom(type))
+            {
+                continue;
+            }
+
+            var segments = type.Namespace?.Split('.');
+            if (segments is { Length: >= 2 } && segments[^2] == "Apps")
+            {
+                yield return new AppPageEntry(segments[^1], type.Name);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Vult PageDraftAppBox met elke App die al een echte pagina heeft
+    /// (Stylebook.Components/Apps/&lt;App&gt;/) EN elke App die alleen nog
+    /// maar een opgeslagen concept heeft (Scratch/PageDrafts/&lt;App&gt;/) -
+    /// dus ook "Jabasoft" staat er al meteen in, ook zonder concept.
+    /// </summary>
     private void LoadPageDraftApps()
     {
-        PageDraftAppBox.ItemsSource = Directory.Exists(PageDraftsDirectory)
-            ? Directory.GetDirectories(PageDraftsDirectory)
-                .Select(Path.GetFileName)
-                .OrderBy(name => name, StringComparer.Ordinal)
-                .ToList()
-            : Array.Empty<string>();
+        var draftApps = Directory.Exists(PageDraftsDirectory)
+            ? Directory.GetDirectories(PageDraftsDirectory).Select(Path.GetFileName)
+            : [];
+        var realApps = DiscoverAppPages().Select(entry => entry.App);
+
+        PageDraftAppBox.ItemsSource = draftApps.Concat(realApps)
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
 
         LoadPageDraftPages();
     }
 
-    /// <summary>Vult PageDraftPageBox met de opgeslagen conceptnamen voor de App die nu in PageDraftAppBox staat (getypt of gekozen).</summary>
+    /// <summary>Zelfde combinatie als LoadPageDraftApps, maar dan voor de pagina's van de App die nu in PageDraftAppBox staat (getypt of gekozen).</summary>
     private void LoadPageDraftPages()
     {
-        var appDirectory = Path.Combine(PageDraftsDirectory, PageDraftAppBox.Text.Trim());
-        PageDraftPageBox.ItemsSource = PageDraftAppBox.Text.Trim().Length > 0 && Directory.Exists(appDirectory)
-            ? Directory.GetFiles(appDirectory, "*.json")
-                .Select(Path.GetFileNameWithoutExtension)
-                .OrderBy(name => name, StringComparer.Ordinal)
-                .ToList()
-            : Array.Empty<string>();
+        var app = PageDraftAppBox.Text.Trim();
+
+        var appDirectory = Path.Combine(PageDraftsDirectory, app);
+        var draftPages = app.Length > 0 && Directory.Exists(appDirectory)
+            ? Directory.GetFiles(appDirectory, "*.json").Select(Path.GetFileNameWithoutExtension)
+            : [];
+        var realPages = DiscoverAppPages().Where(entry => entry.App == app).Select(entry => entry.Page);
+
+        PageDraftPageBox.ItemsSource = draftPages.Concat(realPages)
+            .Where(name => !string.IsNullOrEmpty(name))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(name => name, StringComparer.Ordinal)
+            .ToList();
     }
 
     /// <summary>App gewijzigd (gekozen uit de lijst, of getypt en de focus kwijt) - ververst welke pagina's er voor die app bestaan en probeert meteen te laden.</summary>
