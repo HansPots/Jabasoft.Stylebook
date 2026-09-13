@@ -38,31 +38,31 @@ public partial class Basis : UserControl
     public static readonly DependencyProperty FooterContentProperty = DependencyProperty.Register(
         nameof(FooterContent), typeof(object), typeof(Basis), new PropertyMetadata(null));
 
-    public object HeaderContent
+    public object? HeaderContent
     {
         get => GetValue(HeaderContentProperty);
         set => SetValue(HeaderContentProperty, value);
     }
 
-    public object MenuContent
+    public object? MenuContent
     {
         get => GetValue(MenuContentProperty);
         set => SetValue(MenuContentProperty, value);
     }
 
-    public object MainContent
+    public object? MainContent
     {
         get => GetValue(MainContentProperty);
         set => SetValue(MainContentProperty, value);
     }
 
-    public object ActionContent
+    public object? ActionContent
     {
         get => GetValue(ActionContentProperty);
         set => SetValue(ActionContentProperty, value);
     }
 
-    public object FooterContent
+    public object? FooterContent
     {
         get => GetValue(FooterContentProperty);
         set => SetValue(FooterContentProperty, value);

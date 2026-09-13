@@ -866,51 +866,121 @@
                  (Regions/<Regio>/*), gevonden via reflectie (zie
                  DiscoverLibraryControls in code-behind). Dit is de
                  live-previewhost voor componenten die naar bestanden zijn
-                 gemigreerd - zie idempotent-sauteeing-valley.md. -->
+                 gemigreerd - zie idempotent-sauteeing-valley.md. Twee
+                 standen: Onderdeel (1 component isoleren) en Pagina (per
+                 regio een component kiezen, samen in een echte Basis). -->
             <Border x:Name="LibraryCanvasArea" Visibility="Collapsed" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource SurfaceBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="0,0,1,0">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ListBox x:Name="LibraryComponents"
-                                     Margin="{StaticResource SpaceMedium}"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     SelectionChanged="LibraryComponents_SelectionChanged" />
-                        </ScrollViewer>
-                    </Border>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="{StaticResource SpaceMedium}">
+                        <RadioButton x:Name="LibraryComponentSubModeButton"
+                                     GroupName="LibrarySubMode"
+                                     Content="Onderdeel"
+                                     Checked="LibraryComponentSubMode_Checked"
+                                     Margin="0,0,16,0" />
+                        <RadioButton x:Name="LibraryPageSubModeButton"
+                                     GroupName="LibrarySubMode"
+                                     Content="Pagina"
+                                     Checked="LibraryPageSubMode_Checked" />
+                    </StackPanel>
 
-                    <Grid Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <Grid Grid.Row="1">
+                        <!-- Onderdeel: precies zoals eerder - 1 component isoleren. -->
+                        <Grid x:Name="LibraryComponentPanel">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
 
-                        <Border Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border x:Name="LibraryTestContainerBorder"
+                            <Border Grid.Column="0"
+                                    Background="{DynamicResource SurfaceBrush}"
                                     BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    ClipToBounds="True">
-                                <ContentControl x:Name="LibraryPreviewContent" />
+                                    BorderThickness="0,0,1,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ListBox x:Name="LibraryComponents"
+                                             Margin="{StaticResource SpaceMedium}"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             SelectionChanged="LibraryComponents_SelectionChanged" />
+                                </ScrollViewer>
                             </Border>
-                        </Border>
 
-                        <TextBox x:Name="LibraryContainerSizeLabel"
-                                 Grid.Row="1"
-                                 Text="Containerformaat: -"
-                                 Style="{StaticResource SelectableTextStyle}"
-                                 Foreground="{DynamicResource TextMutedBrush}"
-                                 FontFamily="{StaticResource AppFontFamily}"
-                                 FontSize="{StaticResource FontSizeSmall}"
-                                 HorizontalAlignment="Center"
-                                 Margin="0,8,0,16" />
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Border Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Border x:Name="LibraryTestContainerBorder"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1"
+                                            ClipToBounds="True">
+                                        <ContentControl x:Name="LibraryPreviewContent" />
+                                    </Border>
+                                </Border>
+
+                                <TextBox x:Name="LibraryContainerSizeLabel"
+                                         Grid.Row="1"
+                                         Text="Containerformaat: -"
+                                         Style="{StaticResource SelectableTextStyle}"
+                                         Foreground="{DynamicResource TextMutedBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="{StaticResource FontSizeSmall}"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,8,0,16" />
+                            </Grid>
+                        </Grid>
+
+                        <!-- Pagina: per regio een echte component kiezen (of
+                             "(leeg)"), samen getoond in een echte Basis op
+                             het echte 1920x1080-formaat - zo beoordeel je
+                             een complete pagina los van welke applicatie
+                             'm straks echt gebruikt. -->
+                        <Grid x:Name="LibraryPagePanel" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="{StaticResource SpaceMedium}">
+                                        <TextBox Text="HEADER" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="LibraryPageHeaderPicker" Tag="Header" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <TextBox Text="MENU" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="LibraryPageMenuPicker" Tag="Menu" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <TextBox Text="INHOUD" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="LibraryPageInhoudPicker" Tag="Inhoud" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <TextBox Text="ACTIE" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="LibraryPageActiePicker" Tag="Actie" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <TextBox Text="FOOTER" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="LibraryPageFooterPicker" Tag="Footer" SelectionChanged="LibraryPagePicker_SelectionChanged" Margin="0,0,0,16" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Border>
+
+                            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Margin="{StaticResource SpaceMedium}"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        ClipToBounds="True">
+                                    <controls:Basis x:Name="LibraryPageBasis" Width="1920" Height="1080" />
+                                </Border>
+                            </ScrollViewer>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

@@ -137,6 +137,7 @@ public partial class MainWindow : Window
         ResizeCompositionCanvasToRegion(GetSelectedCompositionRegion());
 
         PageBuilderModeButton.IsChecked = true;
+        LibraryComponentSubModeButton.IsChecked = true;
 
         _ = InitializeMonacoDiffEditor();
     }
@@ -2112,15 +2113,97 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Vult LibraryComponents met de op dit moment gevonden echte UserControls - zie DiscoverLibraryControls.</summary>
+    /// <summary>Vult LibraryComponents en de vijf Pagina-keuzelijsten met de op dit moment gevonden echte UserControls - zie DiscoverLibraryControls.</summary>
     private void LoadLibraryControls()
     {
-        LibraryComponents.ItemsSource = DiscoverLibraryControls()
+        var discovered = DiscoverLibraryControls().ToList();
+
+        LibraryComponents.ItemsSource = discovered
             .OrderBy(entry => (int)entry.Region)
             .ThenBy(entry => entry.Type.Name, StringComparer.Ordinal)
             .ToList();
         LibraryPreviewContent.Content = null;
         LibraryContainerSizeLabel.Text = "Containerformaat: -";
+
+        LoadLibraryPagePicker(LibraryPageHeaderPicker, ComponentRegion.Header, discovered);
+        LoadLibraryPagePicker(LibraryPageMenuPicker, ComponentRegion.Menu, discovered);
+        LoadLibraryPagePicker(LibraryPageInhoudPicker, ComponentRegion.Inhoud, discovered);
+        LoadLibraryPagePicker(LibraryPageActiePicker, ComponentRegion.Actie, discovered);
+        LoadLibraryPagePicker(LibraryPageFooterPicker, ComponentRegion.Footer, discovered);
+    }
+
+    /// <summary>One choice in a Pagina-region ComboBox - "(leeg)" (Type null) or a discovered real UserControl.</summary>
+    private sealed record LibraryPageOption(string Label, Type? Type)
+    {
+        public override string ToString() => Label;
+    }
+
+    /// <summary>
+    /// Vult één regio-keuzelijst van de Pagina-stand, met "(leeg)" als
+    /// eerste optie. Onthoudt de vorige keuze (op Type, niet op
+    /// object-identiteit - de lijst wordt bij elke LoadLibraryControls
+    /// vers opgebouwd) zodat een net toegevoegde klasse wel meteen
+    /// verschijnt, maar een pagina waar je middenin zit niet steeds
+    /// terugspringt naar "(leeg)".
+    /// </summary>
+    private static void LoadLibraryPagePicker(ComboBox picker, ComponentRegion region, IReadOnlyList<LibraryEntry> discovered)
+    {
+        var previousType = (picker.SelectedItem as LibraryPageOption)?.Type;
+
+        var options = new List<LibraryPageOption> { new("(leeg)", null) };
+        options.AddRange(discovered
+            .Where(entry => entry.Region == region)
+            .OrderBy(entry => entry.Type.Name, StringComparer.Ordinal)
+            .Select(entry => new LibraryPageOption(entry.Type.Name, entry.Type)));
+
+        picker.ItemsSource = options;
+        picker.SelectedItem = options.FirstOrDefault(option => option.Type == previousType) ?? options[0];
+    }
+
+    /// <summary>Toggle tussen de twee Bibliotheek-standen - zie de RadioButtons in MainWindow.xaml.</summary>
+    private void LibraryComponentSubMode_Checked(object sender, RoutedEventArgs e) => SetLibrarySubMode(showPage: false);
+
+    private void LibraryPageSubMode_Checked(object sender, RoutedEventArgs e) => SetLibrarySubMode(showPage: true);
+
+    private void SetLibrarySubMode(bool showPage)
+    {
+        LibraryComponentPanel.Visibility = showPage ? Visibility.Collapsed : Visibility.Visible;
+        LibraryPagePanel.Visibility = showPage ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Eén regio-keuzelijst in de Pagina-stand is gewijzigd - instantieert
+    /// de gekozen echte UserControl (of null bij "(leeg)") en zet 'm
+    /// rechtstreeks op de bijbehorende content-slot van LibraryPageBasis.
+    /// Basis staat op het echte 1920x1080-formaat, dus elke regio krijgt
+    /// automatisch zijn eigen echte Basis-afmeting (210/256/*/48/65) -
+    /// geen aparte containerlogica nodig, dat doet Basis.xaml zelf al.
+    /// </summary>
+    private void LibraryPagePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var picker = (ComboBox)sender;
+        var region = Enum.Parse<ComponentRegion>((string)picker.Tag);
+        var option = picker.SelectedItem as LibraryPageOption;
+        var content = option?.Type is { } type ? Activator.CreateInstance(type) : null;
+
+        switch (region)
+        {
+            case ComponentRegion.Header:
+                LibraryPageBasis.HeaderContent = content;
+                break;
+            case ComponentRegion.Menu:
+                LibraryPageBasis.MenuContent = content;
+                break;
+            case ComponentRegion.Inhoud:
+                LibraryPageBasis.MainContent = content;
+                break;
+            case ComponentRegion.Actie:
+                LibraryPageBasis.ActionContent = content;
+                break;
+            case ComponentRegion.Footer:
+                LibraryPageBasis.FooterContent = content;
+                break;
+        }
     }
 
     /// <summary>
