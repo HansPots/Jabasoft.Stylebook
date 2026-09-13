@@ -4,22 +4,20 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignWidth="280" d:DesignHeight="140"
-             d:Title="Card titel">
+             d:DesignWidth="280" d:DesignHeight="140">
 
     <!--
-        d:Title hierboven: als je DIT bestand zelf in de Designer opent
-        (de definitie van Card bewerkt), roept die geen "new Card()" aan -
-        de constructor's Title/Body-standaardwaarden (Card.xaml.cs) gelden
-        dus niet hier, alleen wanneer iemand ANDERS <controls:Card/>
-        gebruikt (bv. Bibliotheek's Activator.CreateInstance, of een
-        andere pagina). d:Title is de design-time-only tegenhanger die WEL
-        geldt terwijl je dit bestand bewerkt - mc:Ignorable="d" laat 'm
-        bij het echt compileren/draaien gewoon wegvallen. Geen d:Body:
-        Body is object-typed (voor willekeurige inhoud), en de Designer
-        accepteert dat niet als platte tekst-attribuutwaarde zoals bij
-        Title (string) - de Body-kant van de preview blijft dus leeg
-        totdat je 'm hier zelf invult.
+        Geprobeerd en weer teruggedraaid: d:Title/d:Body als design-time-
+        only standaardwaarden voor het bewerken van DIT bestand (de
+        definitie van Card zelf, waar de constructor's eigen Title/Body-
+        standaardwaarden niet gelden - zie Card.xaml.cs). Gaf in de VS-
+        Designer een "invalid markup"-fout, ook met alleen d:Title (een
+        gewone string-property) - vermoedelijk problematisch omdat het
+        een property van de klasse die je op dat moment aan het compileren
+        bent zelf betreft. Titel/body blijven in dit bestand's eigen
+        Designer-weergave dus leeg; ze zijn wel gewoon zichtbaar zodra
+        Card ergens ANDERS gebruikt wordt (Bibliotheek, een pagina) dankzij
+        de constructor-standaardwaarde.
     -->
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
