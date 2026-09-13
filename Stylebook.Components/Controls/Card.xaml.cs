@@ -41,5 +41,8 @@ public partial class Card : UserControl
     public Card()
     {
         InitializeComponent();
+
+        Title = "Card Title";
+        Body = new TextBlock { Text = "Card Body" };
     }
 }
