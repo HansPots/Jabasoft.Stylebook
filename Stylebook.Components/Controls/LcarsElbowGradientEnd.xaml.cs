@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 
-namespace Stylebook.Components.Regions.Algemeen;
+namespace Stylebook.Components.Controls;
 
 /// <summary>Interaction logic for LcarsElbowGradientEnd.xaml - see that file for what it looks like.</summary>
 public partial class LcarsElbowGradientEnd : UserControl

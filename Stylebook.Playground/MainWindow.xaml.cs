@@ -26,10 +26,10 @@ public partial class MainWindow : Window
         Library,
     }
 
-    /// <summary>One region-tagged UserControl type found by DiscoverLibraryControls - ToString() drives LibraryComponents' display.</summary>
-    private sealed record LibraryEntry(ComponentRegion Region, Type Type)
+    /// <summary>One UserControl type found by DiscoverLibraryControls - ToString() drives LibraryComponents' display. Region is null for a generic Stylebook.Components/Controls building block, set for a region-specific one.</summary>
+    private sealed record LibraryEntry(ComponentRegion? Region, Type Type)
     {
-        public override string ToString() => $"{Region} - {Type.Name}";
+        public override string ToString() => Region is null ? $"Controls - {Type.Name}" : $"{Region} - {Type.Name}";
     }
 
     private sealed record ThemePresetOption(ComponentsTheme Value, string Label);
@@ -440,15 +440,15 @@ public partial class MainWindow : Window
         return false;
     }
 
-    /// <summary>Regio-afhankelijke containerafmeting, afgeleid van de ECHTE afmeting in Basis.xaml (Header=210 hoog, Footer=65 hoog, Menu=256 breed, Actie=48 breed, Inhoud volledig flexibel). Algemeen heeft geen Basis-slot en gebruikt een generieke standaard.</summary>
-    private static (ContainerSizeMode WidthMode, double Width, ContainerSizeMode HeightMode, double Height) RegionDefaultContainerSize(ComponentRegion region) => region switch
+    /// <summary>Regio-afhankelijke containerafmeting, afgeleid van de ECHTE afmeting in Basis.xaml (Header=210 hoog, Footer=65 hoog, Menu=256 breed, Actie=48 breed, Inhoud volledig flexibel). Een Control (region null) heeft geen Basis-slot en gebruikt een generieke standaard.</summary>
+    private static (ContainerSizeMode WidthMode, double Width, ContainerSizeMode HeightMode, double Height) RegionDefaultContainerSize(ComponentRegion? region) => region switch
     {
         ComponentRegion.Header => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 210),
         ComponentRegion.Menu => (ContainerSizeMode.Fixed, 256, ContainerSizeMode.Variable, 700),
         ComponentRegion.Inhoud => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Variable, 700),
         ComponentRegion.Actie => (ContainerSizeMode.Fixed, 48, ContainerSizeMode.Variable, 700),
         ComponentRegion.Footer => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 65),
-        ComponentRegion.Algemeen => (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260),
+        null => (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260),
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
 
@@ -486,11 +486,13 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Vindt elke publieke, niet-abstracte UserControl-subklasse in
-    /// Stylebook.Components waarvan de namespace eindigt op een
-    /// ComponentRegion-naam (bv. Stylebook.Components.Regions.Header ->
-    /// regio Header) - dat is meteen de regio-tagging, zonder aparte
-    /// attributen nodig. Puur reflectie over de al geladen assembly, geen
-    /// database erbij betrokken.
+    /// Stylebook.Components waarvan de namespace eindigt op "Controls"
+    /// (bv. Stylebook.Components.Controls.Card -> een generieke
+    /// bouwsteen, Region null) of op een ComponentRegion-naam (bv.
+    /// Stylebook.Components.Regions.Header -> regio Header) - dat is
+    /// meteen de Controls/Regio-tagging, zonder aparte attributen nodig.
+    /// Puur reflectie over de al geladen assembly, geen database erbij
+    /// betrokken.
     /// Slaat "...Base"-klassen over (bv. HeaderBase) - dat zijn lege
     /// kopieer-startpunten voor een nieuw component (zie Regions/Header/
     /// HeaderBase.xaml), geen afgerond component om te bekijken.
@@ -507,7 +509,11 @@ public partial class MainWindow : Window
             }
 
             var lastNamespaceSegment = type.Namespace?.Split('.').LastOrDefault();
-            if (lastNamespaceSegment is not null && Enum.TryParse<ComponentRegion>(lastNamespaceSegment, out var region))
+            if (lastNamespaceSegment == "Controls")
+            {
+                yield return new LibraryEntry(null, type);
+            }
+            else if (lastNamespaceSegment is not null && Enum.TryParse<ComponentRegion>(lastNamespaceSegment, out var region))
             {
                 yield return new LibraryEntry(region, type);
             }
@@ -519,12 +525,13 @@ public partial class MainWindow : Window
     {
         var discovered = DiscoverLibraryControls().ToList();
 
-        // Alfabetisch op regionaam, dan op componentnaam - zelfde volgorde
-        // als Visual Studio's Solution Explorer laat zien (mappen en
-        // bestanden allebei alfabetisch), niet de declaratievolgorde van
-        // het ComponentRegion-enum.
+        // Controls eerst (Region null sorteert als "" vóór elke regionaam),
+        // dan alfabetisch op regionaam, dan op componentnaam - zelfde
+        // volgorde als Visual Studio's Solution Explorer laat zien (mappen
+        // en bestanden allebei alfabetisch), niet de declaratievolgorde
+        // van het ComponentRegion-enum.
         LibraryComponents.ItemsSource = discovered
-            .OrderBy(entry => entry.Region.ToString(), StringComparer.Ordinal)
+            .OrderBy(entry => entry.Region?.ToString() ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(entry => entry.Type.Name, StringComparer.Ordinal)
             .ToList();
         LibraryPreviewContent.Content = null;
@@ -853,7 +860,7 @@ public partial class MainWindow : Window
         var (widthMode, width, heightMode, height) = RegionDefaultContainerSize(entry.Region);
         LibraryTestContainerBorder.Width = width;
         LibraryTestContainerBorder.Height = height;
-        LibraryContainerSizeLabel.Text = $"Containerformaat ({entry.Region}): {width:0} × {height:0} px";
+        LibraryContainerSizeLabel.Text = $"Containerformaat ({entry.Region?.ToString() ?? "Controls"}): {width:0} × {height:0} px";
 
         var element = (FrameworkElement)Activator.CreateInstance(entry.Type)!;
         ApplySizeConstraints(element, widthMode, null, heightMode, null);
