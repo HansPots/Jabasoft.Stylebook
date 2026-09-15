@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using Stylebook.Components.Theming;
 using Stylebook.Data.Entities;
@@ -22,14 +23,20 @@ public partial class MainWindow : Window
         /// <summary>The hand-editable palette (colors/radii/typography) - see Theming/DbThemeBuilder.cs.</summary>
         Stylebook,
 
-        /// <summary>Read-only live preview of the REAL, compiled UserControls migrated to Stylebook.Components (Controls/Regions/&lt;Region&gt;/*) - no database, see DiscoverLibraryControls.</summary>
-        Library,
+        /// <summary>Alleen de losse bouwstenen uit Stylebook.Components/Controls, één tegelijk geïsoleerd - zie LibraryComponents_SelectionChanged.</summary>
+        Controls,
+
+        /// <summary>Meerdere Controls samen op de echte afmeting van één regio, slepend te positioneren - zie RebuildRegionCanvas. Alleen voorbeeld, schrijft niets weg.</summary>
+        Regions,
+
+        /// <summary>Per regio een component kiezen en de complete pagina in een echte Basis bekijken - zie LibraryPagePicker_SelectionChanged.</summary>
+        Apps,
     }
 
-    /// <summary>One UserControl type found by DiscoverLibraryControls - ToString() drives LibraryComponents' display. Region is null for a generic Stylebook.Components/Controls building block, set for a region-specific one.</summary>
+    /// <summary>One UserControl type found by DiscoverLibraryControls - ToString() drives LibraryComponents' display (dat menu toont alleen Controls, dus daar is de regionaam overbodig). Region is null for a generic Stylebook.Components/Controls building block, set for a region-specific one.</summary>
     private sealed record LibraryEntry(ComponentRegion? Region, Type Type)
     {
-        public override string ToString() => Region is null ? $"Controls - {Type.Name}" : $"{Region} - {Type.Name}";
+        public override string ToString() => Type.Name;
     }
 
     private sealed record ThemePresetOption(ComponentsTheme Value, string Label);
@@ -40,8 +47,22 @@ public partial class MainWindow : Window
         new ThemePresetOption(ComponentsTheme.VisualStudio, "Visual Studio"),
     ];
 
-    private BuilderMode _builderMode = BuilderMode.Library;
+    private BuilderMode _builderMode = BuilderMode.Controls;
     private bool _initializing = true;
+
+    /// <summary>
+    /// Welke Controls in de Regions-stand aangevinkt staan en waar ze op
+    /// het canvas gesleept zijn - blijft bewaard zolang de app draait, zodat
+    /// wisselen van regio of menu je sleepwerk niet wist. Bewust NIET op
+    /// schijf: een samenstelling die bevalt wordt echte XAML, geen bestand
+    /// hier.
+    /// </summary>
+    private readonly HashSet<Type> _regionComposerSelected = [];
+    private readonly Dictionary<Type, Point> _regionComposerPositions = [];
+
+    private FrameworkElement? _regionDragElement;
+    private Point _regionDragStart;
+    private Point _regionDragOrigin;
 
     public MainWindow()
     {
@@ -53,8 +74,7 @@ public partial class MainWindow : Window
             ThemePresetOptions, o => string.Equals(o.Value.ToString(), App.CurrentTheme.ToString(), StringComparison.Ordinal));
         _initializing = false;
 
-        LibraryComponentSubModeButton.IsChecked = true;
-        LibraryModeButton.IsChecked = true;
+        ControlsModeButton.IsChecked = true;
     }
 
     /// <summary>
@@ -111,14 +131,21 @@ public partial class MainWindow : Window
 
     private void StylebookMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Stylebook);
 
-    private void LibraryMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Library);
+    private void ControlsMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Controls);
+
+    private void RegionsMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Regions);
+
+    private void AppsMode_Checked(object sender, RoutedEventArgs e) => SetBuilderMode(BuilderMode.Apps);
 
     private void SetBuilderMode(BuilderMode mode)
     {
         _builderMode = mode;
 
         StylebookContent.Visibility = mode == BuilderMode.Stylebook ? Visibility.Visible : Visibility.Collapsed;
-        LibraryCanvasArea.Visibility = mode == BuilderMode.Library ? Visibility.Visible : Visibility.Collapsed;
+        LibraryCanvasArea.Visibility = mode == BuilderMode.Stylebook ? Visibility.Collapsed : Visibility.Visible;
+        LibraryComponentPanel.Visibility = mode == BuilderMode.Controls ? Visibility.Visible : Visibility.Collapsed;
+        LibraryRegionPanel.Visibility = mode == BuilderMode.Regions ? Visibility.Visible : Visibility.Collapsed;
+        LibraryPagePanel.Visibility = mode == BuilderMode.Apps ? Visibility.Visible : Visibility.Collapsed;
 
         if (mode == BuilderMode.Stylebook)
         {
@@ -520,22 +547,24 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Vult LibraryComponents en de vijf Pagina-keuzelijsten met de op dit moment gevonden echte UserControls - zie DiscoverLibraryControls.</summary>
+    /// <summary>Vult de drie menus met de op dit moment gevonden echte UserControls - zie DiscoverLibraryControls.</summary>
     private void LoadLibraryControls()
     {
         var discovered = DiscoverLibraryControls().ToList();
 
-        // Controls eerst (Region null sorteert als "" vóór elke regionaam),
-        // dan alfabetisch op regionaam, dan op componentnaam - zelfde
-        // volgorde als Visual Studio's Solution Explorer laat zien (mappen
-        // en bestanden allebei alfabetisch), niet de declaratievolgorde
-        // van het ComponentRegion-enum.
-        LibraryComponents.ItemsSource = discovered
-            .OrderBy(entry => entry.Region?.ToString() ?? string.Empty, StringComparer.Ordinal)
-            .ThenBy(entry => entry.Type.Name, StringComparer.Ordinal)
+        // Het Controls-menu toont bewust alleen de losse bouwstenen
+        // (Region null): regiospecifieke componenten horen in Regions/Apps
+        // thuis, niet in deze lijst. Alfabetisch, zoals Solution Explorer.
+        var controls = discovered
+            .Where(entry => entry.Region is null)
+            .OrderBy(entry => entry.Type.Name, StringComparer.Ordinal)
             .ToList();
+
+        LibraryComponents.ItemsSource = controls;
         LibraryPreviewContent.Content = null;
         LibraryContainerSizeLabel.Text = "Containerformaat: -";
+
+        LoadRegionComposer(controls);
 
         LoadLibraryPagePicker(LibraryPageHeaderPicker, ComponentRegion.Header, discovered);
         LoadLibraryPagePicker(LibraryPageMenuPicker, ComponentRegion.Menu, discovered);
@@ -789,15 +818,166 @@ public partial class MainWindow : Window
         picker.SelectedItem = options.FirstOrDefault(option => option.Type == previousType) ?? options[0];
     }
 
-    /// <summary>Toggle tussen de twee Bibliotheek-standen - zie de RadioButtons in MainWindow.xaml.</summary>
-    private void LibraryComponentSubMode_Checked(object sender, RoutedEventArgs e) => SetLibrarySubMode(showPage: false);
-
-    private void LibraryPageSubMode_Checked(object sender, RoutedEventArgs e) => SetLibrarySubMode(showPage: true);
-
-    private void SetLibrarySubMode(bool showPage)
+    /// <summary>
+    /// Vult de Regions-stand: de regiokeuze (eenmalig, zodat wisselen van
+    /// menu je gekozen regio niet terugzet) en een aanvinkvakje per Control.
+    /// De aanvinkstatus komt uit _regionComposerSelected, zodat een
+    /// herbouwde lijst (nieuwe klasse toegevoegd) je selectie niet wist.
+    /// </summary>
+    private void LoadRegionComposer(IReadOnlyList<LibraryEntry> controls)
     {
-        LibraryComponentPanel.Visibility = showPage ? Visibility.Collapsed : Visibility.Visible;
-        LibraryPagePanel.Visibility = showPage ? Visibility.Visible : Visibility.Collapsed;
+        if (RegionComposerRegionPicker.ItemsSource is null)
+        {
+            RegionComposerRegionPicker.ItemsSource = Enum.GetValues<ComponentRegion>();
+            RegionComposerRegionPicker.SelectedIndex = 0;
+        }
+
+        // Een control die sindsdien hernoemd/verwijderd is mag niet als
+        // spook op het canvas blijven staan.
+        _regionComposerSelected.RemoveWhere(type => !controls.Any(entry => entry.Type == type));
+
+        RegionComposerControlList.Children.Clear();
+        foreach (var entry in controls)
+        {
+            var checkBox = new CheckBox
+            {
+                Content = entry.Type.Name,
+                Tag = entry.Type,
+                IsChecked = _regionComposerSelected.Contains(entry.Type),
+                Margin = new Thickness(0, 0, 0, 4),
+            };
+            checkBox.SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
+            checkBox.Checked += RegionComposerControl_Toggled;
+            checkBox.Unchecked += RegionComposerControl_Toggled;
+            RegionComposerControlList.Children.Add(checkBox);
+        }
+
+        RebuildRegionCanvas();
+    }
+
+    private void RegionComposerControl_Toggled(object sender, RoutedEventArgs e)
+    {
+        var checkBox = (CheckBox)sender;
+        var type = (Type)checkBox.Tag;
+
+        if (checkBox.IsChecked == true)
+        {
+            _regionComposerSelected.Add(type);
+        }
+        else
+        {
+            _regionComposerSelected.Remove(type);
+        }
+
+        RebuildRegionCanvas();
+    }
+
+    private void RegionComposerRegion_SelectionChanged(object sender, SelectionChangedEventArgs e) => RebuildRegionCanvas();
+
+    /// <summary>Zet de gesleepte posities terug op de linkerbovenhoek - de aanvinkstatus blijft staan.</summary>
+    private void RegionComposerReset_Click(object sender, RoutedEventArgs e)
+    {
+        _regionComposerPositions.Clear();
+        RebuildRegionCanvas();
+    }
+
+    /// <summary>
+    /// Bouwt het regio-canvas opnieuw op: het canvas krijgt de ECHTE
+    /// afmeting van de gekozen regio (zelfde bron als de Controls-stand,
+    /// RegionDefaultContainerSize), met daarop elke aangevinkte Control op
+    /// zijn laatst gesleepte plek. Elk component zit in een doorzichtige
+    /// Border: die vangt de muis op (een Background van null zou helemaal
+    /// geen kliks krijgen) en het component zelf staat op
+    /// IsHitTestVisible=false, zodat een knop erin het slepen niet opeet.
+    /// </summary>
+    private void RebuildRegionCanvas()
+    {
+        if (RegionComposerRegionPicker.SelectedItem is not ComponentRegion region)
+        {
+            return;
+        }
+
+        var (_, width, _, height) = RegionDefaultContainerSize(region);
+        RegionComposerCanvas.Width = width;
+        RegionComposerCanvas.Height = height;
+
+        RegionComposerCanvas.Children.Clear();
+        foreach (var type in _regionComposerSelected.OrderBy(type => type.Name, StringComparer.Ordinal))
+        {
+            var element = (FrameworkElement)Activator.CreateInstance(type)!;
+            element.IsHitTestVisible = false;
+
+            var host = new Border { Background = Brushes.Transparent, Child = element, Tag = type };
+            var position = _regionComposerPositions.TryGetValue(type, out var saved) ? saved : new Point(0, 0);
+            Canvas.SetLeft(host, position.X);
+            Canvas.SetTop(host, position.Y);
+            RegionComposerCanvas.Children.Add(host);
+        }
+
+        RegionComposerStatusLabel.Text = _regionComposerSelected.Count == 0
+            ? $"Regio {region}: {width:0} × {height:0} px - vink links Controls aan om ze hier neer te zetten."
+            : $"Regio {region}: {width:0} × {height:0} px - sleep een control om 'm te verplaatsen.";
+    }
+
+    private void RegionCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is not DependencyObject source || FindRegionCanvasHost(source) is not { } host)
+        {
+            return;
+        }
+
+        _regionDragElement = host;
+        _regionDragStart = e.GetPosition(RegionComposerCanvas);
+        _regionDragOrigin = new Point(Canvas.GetLeft(host), Canvas.GetTop(host));
+        RegionComposerCanvas.CaptureMouse();
+    }
+
+    private void RegionCanvas_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_regionDragElement is null || e.LeftButton != MouseButtonState.Pressed)
+        {
+            return;
+        }
+
+        var pointer = e.GetPosition(RegionComposerCanvas);
+        var x = Math.Round(_regionDragOrigin.X + (pointer.X - _regionDragStart.X));
+        var y = Math.Round(_regionDragOrigin.Y + (pointer.Y - _regionDragStart.Y));
+
+        Canvas.SetLeft(_regionDragElement, x);
+        Canvas.SetTop(_regionDragElement, y);
+
+        var type = (Type)_regionDragElement.Tag;
+        _regionComposerPositions[type] = new Point(x, y);
+        RegionComposerStatusLabel.Text = $"{type.Name}: X {x:0}, Y {y:0}";
+    }
+
+    private void RegionCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_regionDragElement is null)
+        {
+            return;
+        }
+
+        _regionDragElement = null;
+        RegionComposerCanvas.ReleaseMouseCapture();
+    }
+
+    /// <summary>Klimt vanaf het aangeklikte element omhoog tot het element dat rechtstreeks op het canvas staat - dat is wat versleept wordt.</summary>
+    private FrameworkElement? FindRegionCanvasHost(DependencyObject source)
+    {
+        var current = source;
+        while (current is not null && current != RegionComposerCanvas)
+        {
+            var parent = VisualTreeHelper.GetParent(current);
+            if (parent == RegionComposerCanvas)
+            {
+                return current as FrameworkElement;
+            }
+
+            current = parent;
+        }
+
+        return null;
     }
 
     /// <summary>

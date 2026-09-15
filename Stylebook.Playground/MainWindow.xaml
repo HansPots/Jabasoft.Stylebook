@@ -133,18 +133,28 @@
                             Margin="0,0,0,16"
                             AutomationProperties.Name="Herstel naar standaard" />
 
-                    <!-- Stylebook: het palet met de hand aanpassen - zie
-                         StylebookMode_Checked/BuildStylebookPanel.
-                         Bibliotheek: de echte, gecompileerde componenten
-                         uit Stylebook.Components bekijken/samenstellen -
-                         zie LibraryMode_Checked. -->
+                    <!-- Vier gelijkwaardige menus, in de volgorde waarin je
+                         van onder naar boven bouwt:
+                         Stylebook - het palet met de hand aanpassen (zie
+                           StylebookMode_Checked/BuildStylebookPanel);
+                         Controls  - alleen de losse, regio-onafhankelijke
+                           bouwstenen uit Stylebook.Components/Controls;
+                         Regions   - die Controls samen op één regio zetten
+                           en slepend positioneren (alleen voorbeeld, geen
+                           bestand - zie RebuildRegionCanvas);
+                         Apps      - per regio een component kiezen en de
+                           complete pagina bekijken. -->
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <RadioButton x:Name="StylebookModeButton"
-                                     Grid.Column="0"
+                                     Grid.Column="0" Grid.Row="0"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
                                      Checked="StylebookMode_Checked"
@@ -154,15 +164,37 @@
                                 <TextBlock Text="Stylebook" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
-                        <RadioButton x:Name="LibraryModeButton"
-                                     Grid.Column="1"
+                        <RadioButton x:Name="ControlsModeButton"
+                                     Grid.Column="1" Grid.Row="0"
                                      GroupName="BuilderMode"
                                      Style="{StaticResource BuilderModeTabStyle}"
-                                     Checked="LibraryMode_Checked"
-                                     AutomationProperties.Name="Bibliotheek">
+                                     Checked="ControlsMode_Checked"
+                                     AutomationProperties.Name="Controls">
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="{StaticResource IconDashboard}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
-                                <TextBlock Text="Bibliotheek" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                                <TextBlock Text="Controls" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="RegionsModeButton"
+                                     Grid.Column="0" Grid.Row="1"
+                                     GroupName="BuilderMode"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="RegionsMode_Checked"
+                                     AutomationProperties.Name="Regions">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconDashboard}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Regions" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
+                            </StackPanel>
+                        </RadioButton>
+                        <RadioButton x:Name="AppsModeButton"
+                                     Grid.Column="1" Grid.Row="1"
+                                     GroupName="BuilderMode"
+                                     Style="{StaticResource BuilderModeTabStyle}"
+                                     Checked="AppsMode_Checked"
+                                     AutomationProperties.Name="Apps">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{StaticResource IconDashboard}" FontFamily="{StaticResource IconFontFamily}" FontSize="16" HorizontalAlignment="Center" />
+                                <TextBlock Text="Apps" FontSize="10" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" />
                             </StackPanel>
                         </RadioButton>
                     </Grid>
@@ -178,33 +210,16 @@
         <Grid x:Name="StylePreviewArea" Grid.Column="1">
             <ContentControl x:Name="StylebookContent" Visibility="Collapsed" />
 
-            <!-- Bibliotheek: puur bekijken, geen database - toont de
-                 ECHTE, gecompileerde UserControls uit Stylebook.Components
-                 (Regions/<Regio>/*), gevonden via reflectie (zie
-                 DiscoverLibraryControls in code-behind). Twee standen:
-                 Onderdeel (1 component isoleren) en Pagina (per regio een
-                 component kiezen, samen in een echte Basis). -->
+            <!-- Puur bekijken/samenstellen, geen database en geen
+                 gegenereerde bestanden - toont de ECHTE, gecompileerde
+                 UserControls uit Stylebook.Components, gevonden via
+                 reflectie (zie DiscoverLibraryControls in code-behind).
+                 Drie panelen, één zichtbaar per menu (zie SetBuilderMode):
+                 Controls, Regions en Apps. -->
             <Border x:Name="LibraryCanvasArea" Background="{DynamicResource BackgroundBrush}">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="{StaticResource SpaceMedium}">
-                        <RadioButton x:Name="LibraryComponentSubModeButton"
-                                     GroupName="LibrarySubMode"
-                                     Content="Onderdeel"
-                                     Checked="LibraryComponentSubMode_Checked"
-                                     Margin="0,0,16,0" />
-                        <RadioButton x:Name="LibraryPageSubModeButton"
-                                     GroupName="LibrarySubMode"
-                                     Content="Pagina"
-                                     Checked="LibraryPageSubMode_Checked" />
-                    </StackPanel>
-
-                    <Grid Grid.Row="1">
-                        <!-- Onderdeel: 1 component isoleren. -->
+                    <Grid>
+                        <!-- Controls: 1 losse bouwsteen isoleren. -->
                         <Grid x:Name="LibraryComponentPanel">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="220" />
@@ -251,7 +266,80 @@
                             </Grid>
                         </Grid>
 
-                        <!-- Pagina: per regio een echte component kiezen (of
+                        <!-- Regions: meerdere Controls samen op één regio
+                             zetten, op de ECHTE afmeting van die regio, en
+                             ze slepend positioneren. Bewust alleen een
+                             voorbeeld: er wordt niets weggeschreven - als de
+                             samenstelling bevalt, zeg je het tegen Claude en
+                             wordt het echte Regions/<Regio>/<Naam>.xaml
+                             gebouwd. -->
+                        <Grid x:Name="LibraryRegionPanel" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0"
+                                    Background="{DynamicResource SurfaceBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel Margin="{StaticResource SpaceMedium}">
+                                        <TextBox Text="REGIO" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="RegionComposerRegionPicker" SelectionChanged="RegionComposerRegion_SelectionChanged" Margin="0,0,0,16" />
+
+                                        <TextBox Text="CONTROLS" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <!-- Aanvinken zet 'm op het canvas; de plek die je
+                                             'm daar sleept wordt onthouden zolang de app
+                                             draait (zie _regionComposerPositions). -->
+                                        <StackPanel x:Name="RegionComposerControlList" />
+
+                                        <Button Content="Posities terugzetten"
+                                                Click="RegionComposerReset_Click"
+                                                Style="{StaticResource DeleteComponentButtonStyle}"
+                                                HorizontalAlignment="Left"
+                                                Margin="0,16,0,0"
+                                                AutomationProperties.Name="Posities terugzetten" />
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Border>
+
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                    <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Margin="{StaticResource SpaceMedium}"
+                                            BorderBrush="{DynamicResource BorderBrush}"
+                                            BorderThickness="1"
+                                            ClipToBounds="True">
+                                        <!-- Canvas (geen StackPanel): elk element krijgt een
+                                             eigen Canvas.Left/Top die met de muis versleept
+                                             wordt - zie RegionCanvas_MouseLeftButtonDown. -->
+                                        <Canvas x:Name="RegionComposerCanvas"
+                                                Background="{DynamicResource SurfaceBrush}"
+                                                MouseLeftButtonDown="RegionCanvas_MouseLeftButtonDown"
+                                                MouseMove="RegionCanvas_MouseMove"
+                                                MouseLeftButtonUp="RegionCanvas_MouseLeftButtonUp" />
+                                    </Border>
+                                </ScrollViewer>
+
+                                <TextBox x:Name="RegionComposerStatusLabel"
+                                         Grid.Row="1"
+                                         Text="Regio: -"
+                                         Style="{StaticResource SelectableTextStyle}"
+                                         Foreground="{DynamicResource TextMutedBrush}"
+                                         FontFamily="{StaticResource AppFontFamily}"
+                                         FontSize="{StaticResource FontSizeSmall}"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,8,0,16" />
+                            </Grid>
+                        </Grid>
+
+                        <!-- Apps: per regio een echte component kiezen (of
                              "(leeg)"), samen getoond in een echte Basis op
                              het echte 1920x1080-formaat - zo beoordeel je
                              een complete pagina los van welke applicatie
