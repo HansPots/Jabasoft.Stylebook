@@ -1,16 +1,6 @@
 {
   "Items": [
     {
-      "Type": "Stylebook.Components.Controls.HeaderGradientBar04",
-      "X": 0,
-      "Y": 0,
-      "Z": 1,
-      "TrimLeft": 0,
-      "TrimTop": 0,
-      "TrimRight": 0,
-      "TrimBottom": 0
-    },
-    {
       "Type": "Stylebook.Components.Controls.LcarsElbowGradientEnd",
       "X": -5,
       "Y": 11,
@@ -22,8 +12,8 @@
     },
     {
       "Type": "Stylebook.Components.Controls.WindowControlButtons",
-      "X": 1097,
-      "Y": 5,
+      "X": 1819,
+      "Y": 4,
       "Z": 3,
       "TrimLeft": 0,
       "TrimTop": 0,
@@ -32,11 +22,31 @@
     },
     {
       "Type": "Stylebook.Components.Controls.LcarsElbowGradientEnd01",
-      "X": 1153,
-      "Y": 11,
+      "X": 1872,
+      "Y": 10,
       "Z": 4,
       "TrimLeft": 0,
       "TrimTop": 30,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.HeaderGradientBar04",
+      "X": 0,
+      "Y": 0,
+      "Z": 5,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok2",
+      "X": 1415,
+      "Y": 41,
+      "Z": 6,
+      "TrimLeft": 0,
+      "TrimTop": 0,
       "TrimRight": 0,
       "TrimBottom": 0
     }

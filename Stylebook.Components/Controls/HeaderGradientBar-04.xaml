@@ -31,13 +31,16 @@
          wel gebeurt. -->
     <Grid Width="Auto" Height="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
         <Viewbox>
-            <Canvas Width="960" Height="36">
+            <!-- Breedte 1819: loopt precies tot het frame van WindowControlButtons,
+                 dat in het regioconcept Header/Main op X 1819 staat (deze balk
+                 op X 0). Verschuif je die in dat concept, dan klopt dit niet meer. -->
+            <Canvas Width="1819" Height="36">
 
                 <Border theming:CornerRadiusParts.TopLeft="36"
                         theming:CornerRadiusParts.TopRight="0"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
-                        Width="960" Height="36">
+                        Width="1819" Height="36">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                             <LinearGradientBrush.GradientStops>

@@ -8,6 +8,7 @@
         Title="Stylebook"
         Height="1140" Width="2560"
         WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="Window_PreviewKeyDown"
         Background="{DynamicResource BackgroundBrush}">
 
     <Window.Resources>
@@ -292,8 +293,9 @@
                                         <ComboBox x:Name="RegionComposerRegionPicker" SelectionChanged="RegionComposerRegion_SelectionChanged" Margin="0,0,0,16" />
 
                                         <TextBox Text="CONTROLS" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
-                                        <!-- Aanvinken zet 'm op het canvas (bovenop de rest);
-                                             zie _regionComposerPlaced. -->
+                                        <!-- "+" zet er een exemplaar bij (bovenop de rest);
+                                             dezelfde control mag er meerdere keren op.
+                                             Zie _regionComposerPlaced. -->
                                         <StackPanel x:Name="RegionComposerControlList" />
 
                                         <Button Content="Posities terugzetten"
@@ -310,6 +312,12 @@
                                         <TextBox x:Name="RegionComposerSelectedLabel" Text="(klik een control aan)" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextPrimaryBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,8" />
 
                                         <StackPanel x:Name="RegionComposerSelectionPanel" IsEnabled="False">
+                                            <Button Content="Verwijderen"
+                                                    Click="RegionComposerRemove_Click"
+                                                    Style="{StaticResource DeleteComponentButtonStyle}"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="0,0,0,12"
+                                                    AutomationProperties.Name="Geselecteerde control verwijderen" />
                                             <TextBox Text="Stapelvolgorde" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                                 <Button Content="Naar voren" Click="RegionComposerBringForward_Click" Style="{StaticResource AddComponentButtonStyle}" Margin="0,0,4,0" AutomationProperties.Name="Naar voren" />

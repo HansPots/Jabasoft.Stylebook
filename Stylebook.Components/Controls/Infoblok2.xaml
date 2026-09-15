@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d" Height="166">
+             mc:Ignorable="d" Height="166" Width="450">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -26,9 +26,9 @@
     -->
     <Border Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
-            BorderThickness="1"
+            BorderThickness="2"
             CornerRadius="6"
-            Width="280">
+            Width="450">
         <StackPanel>
             <!-- Hoekstraal 5, niet 6: de buitenrand heeft straal 6 met een
                  rand van 1px, dus de BINNENkant van die rand loopt op 6-1=5.
@@ -39,8 +39,8 @@
                  centreert zichzelf verticaal. Padding links 8 = dezelfde
                  inspringing als de bodytekst hieronder (StackPanel Margin links 8),
                  zodat "InfoBlok" en de bodytekst exact onder elkaar beginnen. -->
-            <Border Background="{DynamicResource BorderBrush}" CornerRadius="5,5,0,0" Height="24" Padding="8,0">
-                <TextBlock Text="InfoBlok" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Text01Brush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <Border Background="{DynamicResource BorderBrush}" CornerRadius="4,4,0,0" Height="24" Padding="8,0">
+                <TextBlock Text="InfoBlok" FontSize="18" Foreground="{DynamicResource Text01Brush}" VerticalAlignment="Center" TextWrapping="Wrap" Height="24" HorizontalAlignment="Left" TextAlignment="Center" />
             </Border>
             <StackPanel Margin="8">
                 <TextBlock Text="Dit is een informatieblok voor de header." Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Height="116" RenderTransformOrigin="0.5,0.5" >

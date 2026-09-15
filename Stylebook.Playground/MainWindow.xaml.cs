@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -64,13 +65,15 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// De samenstelling waar je in de Regions-stand aan werkt: welke Controls
-    /// erop staan (één per soort - de aanvinkvakjes) en hoe ze geplaatst
-    /// zijn. Blijft staan als je van regio of menu wisselt; bewaren op schijf
-    /// gebeurt alleen via "Opslaan" onder Concepten.
+    /// De samenstelling waar je in de Regions-stand aan werkt: elk exemplaar
+    /// dat op het canvas staat, en hoe het geplaatst is. Dezelfde control mag
+    /// er meerdere keren in staan (de "+"-knoppen) - een exemplaar wordt dus
+    /// herkend aan het object zelf, niet aan zijn Type. Blijft staan als je
+    /// van regio of menu wisselt; bewaren op schijf gebeurt alleen via
+    /// "Opslaan" onder Concepten.
     /// </summary>
-    private readonly Dictionary<Type, PlacedControl> _regionComposerPlaced = [];
-    private Type? _regionComposerSelectedType;
+    private readonly List<PlacedControl> _regionComposerPlaced = [];
+    private PlacedControl? _regionComposerSelected;
     private IReadOnlyList<LibraryEntry> _regionComposerControls = [];
     private bool _fillingRegionTrimFields;
 
@@ -481,15 +484,25 @@ public partial class MainWindow : Window
         return false;
     }
 
-    /// <summary>Regio-afhankelijke containerafmeting, afgeleid van de ECHTE afmeting in Basis.xaml (Header=210 hoog, Footer=65 hoog, Menu=256 breed, Actie=48 breed, Inhoud volledig flexibel). Een Control (region null) heeft geen Basis-slot en gebruikt een generieke standaard.</summary>
-    private static (ContainerSizeMode WidthMode, double Width, ContainerSizeMode HeightMode, double Height) RegionDefaultContainerSize(ComponentRegion? region) => region switch
+    /// <summary>Testkader van het Controls-menu: een losse bouwsteen heeft geen Basis-slot, dus een generieke maat waarin hij op zijn eigen (XAML-)afmeting gecentreerd staat.</summary>
+    private static readonly (ContainerSizeMode WidthMode, double Width, ContainerSizeMode HeightMode, double Height) ControlsPreviewSize =
+        (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260);
+
+    /// <summary>
+    /// De ECHTE afmeting van elke regio in Basis.xaml (1920x1080): rijen
+    /// 210 / rest / 65 en kolommen 256 / rest / 48 - dezelfde maten als de
+    /// Regions/&lt;Regio&gt;/&lt;Regio&gt;Base.xaml-startpunten. Het Regions-canvas
+    /// staat hierop, zodat een samenstelling in Apps precies even groot is
+    /// als waar je 'm maakte (eerder stond Header hier op 1200 breed, waardoor
+    /// hij in de echte 1920-brede header ineens veel te kort leek).
+    /// </summary>
+    private static (double Width, double Height) RegionBasisSize(ComponentRegion region) => region switch
     {
-        ComponentRegion.Header => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 210),
-        ComponentRegion.Menu => (ContainerSizeMode.Fixed, 256, ContainerSizeMode.Variable, 700),
-        ComponentRegion.Inhoud => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Variable, 700),
-        ComponentRegion.Actie => (ContainerSizeMode.Fixed, 48, ContainerSizeMode.Variable, 700),
-        ComponentRegion.Footer => (ContainerSizeMode.Variable, 1200, ContainerSizeMode.Fixed, 65),
-        null => (ContainerSizeMode.Fixed, 400, ContainerSizeMode.Fixed, 260),
+        ComponentRegion.Header => (1920, 210),
+        ComponentRegion.Menu => (256, 805),
+        ComponentRegion.Inhoud => (1616, 805),
+        ComponentRegion.Actie => (48, 805),
+        ComponentRegion.Footer => (1920, 65),
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
 
@@ -864,9 +877,10 @@ public partial class MainWindow : Window
 
         // Een control die sindsdien hernoemd/verwijderd is mag niet als
         // spook op het canvas blijven staan.
-        foreach (var gone in _regionComposerPlaced.Keys.Where(type => !controls.Any(entry => entry.Type == type)).ToList())
+        _regionComposerPlaced.RemoveAll(placed => !controls.Any(entry => entry.Type == placed.Type));
+        if (_regionComposerSelected is not null && !_regionComposerPlaced.Contains(_regionComposerSelected))
         {
-            _regionComposerPlaced.Remove(gone);
+            _regionComposerSelected = null;
         }
 
         BuildRegionControlChecklist();
@@ -874,47 +888,97 @@ public partial class MainWindow : Window
         RebuildRegionCanvas();
     }
 
-    /// <summary>Eén aanvinkvakje per Control, aangevinkt als hij nu op het canvas staat.</summary>
+    /// <summary>Eén regel per Control: een "+"-knop die er een exemplaar bij zet, en de naam met hoeveel exemplaren er nu op het canvas staan.</summary>
     private void BuildRegionControlChecklist()
     {
         RegionComposerControlList.Children.Clear();
         foreach (var entry in _regionComposerControls)
         {
-            var checkBox = new CheckBox
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+
+            var addButton = new Button
             {
-                Content = entry.Type.Name,
+                Content = "+",
                 Tag = entry.Type,
-                IsChecked = _regionComposerPlaced.ContainsKey(entry.Type),
-                Margin = new Thickness(0, 0, 0, 4),
+                Width = 22,
+                Style = (Style)FindResource("AddComponentButtonStyle"),
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 6, 0),
             };
-            checkBox.SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
-            checkBox.Checked += RegionComposerControl_Toggled;
-            checkBox.Unchecked += RegionComposerControl_Toggled;
-            RegionComposerControlList.Children.Add(checkBox);
+            AutomationProperties.SetName(addButton, $"{entry.Type.Name} toevoegen");
+            addButton.Click += RegionComposerAdd_Click;
+            row.Children.Add(addButton);
+
+            var count = _regionComposerPlaced.Count(placed => placed.Type == entry.Type);
+            var label = new TextBlock
+            {
+                Text = count == 0 ? entry.Type.Name : $"{entry.Type.Name} ×{count}",
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, count == 0 ? "TextMutedBrush" : "TextPrimaryBrush");
+            row.Children.Add(label);
+
+            RegionComposerControlList.Children.Add(row);
         }
     }
 
-    private void RegionComposerControl_Toggled(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// "+" bij een Control: zet er een nieuw exemplaar bij, bovenop de rest, en
+    /// selecteert het. Staat dezelfde control er al, dan komt het nieuwe
+    /// exemplaar een stukje verschoven te liggen - anders ligt het precies op
+    /// het vorige en zie je niet dat er iets bij gekomen is.
+    /// </summary>
+    private void RegionComposerAdd_Click(object sender, RoutedEventArgs e)
     {
-        var checkBox = (CheckBox)sender;
-        var type = (Type)checkBox.Tag;
-
-        if (checkBox.IsChecked == true)
+        var type = (Type)((Button)sender).Tag;
+        var sameType = _regionComposerPlaced.Count(placed => placed.Type == type);
+        var placed = new PlacedControl
         {
-            // Een net aangevinkte control komt bovenop wat er al ligt.
-            var top = _regionComposerPlaced.Count == 0 ? 0 : _regionComposerPlaced.Values.Max(placed => placed.Z) + 1;
-            _regionComposerPlaced[type] = new PlacedControl { Type = type, Z = top };
-            _regionComposerSelectedType = type;
-        }
-        else
+            Type = type,
+            X = sameType * 16,
+            Y = sameType * 16,
+            Z = _regionComposerPlaced.Count == 0 ? 0 : _regionComposerPlaced.Max(other => other.Z) + 1,
+        };
+
+        _regionComposerPlaced.Add(placed);
+        _regionComposerSelected = placed;
+        BuildRegionControlChecklist();
+        RebuildRegionCanvas();
+    }
+
+    /// <summary>Haalt het geselecteerde exemplaar van het canvas - andere exemplaren van dezelfde control blijven staan.</summary>
+    private void RegionComposerRemove_Click(object sender, RoutedEventArgs e) => RemoveSelectedRegionControl();
+
+    /// <summary>
+    /// Delete-toets in de Regions-stand: verwijdert het geselecteerde
+    /// exemplaar. Bewust NIET als de focus in een tekstveld staat (afsnijden,
+    /// naam van een concept) - daar hoort Delete gewoon een teken weg te
+    /// halen in plaats van ongemerkt je object te wissen.
+    /// </summary>
+    private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Delete
+            || _builderMode != BuilderMode.Regions
+            || _regionComposerSelected is null
+            || Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase)
         {
-            _regionComposerPlaced.Remove(type);
-            if (_regionComposerSelectedType == type)
-            {
-                _regionComposerSelectedType = null;
-            }
+            return;
         }
 
+        RemoveSelectedRegionControl();
+        e.Handled = true;
+    }
+
+    private void RemoveSelectedRegionControl()
+    {
+        if (_regionComposerSelected is null)
+        {
+            return;
+        }
+
+        _regionComposerPlaced.Remove(_regionComposerSelected);
+        _regionComposerSelected = null;
+        BuildRegionControlChecklist();
         RebuildRegionCanvas();
     }
 
@@ -927,7 +991,7 @@ public partial class MainWindow : Window
     /// <summary>Zet alle controls terug op de linkerbovenhoek - stapelvolgorde en uitsnedes blijven staan.</summary>
     private void RegionComposerReset_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var placed in _regionComposerPlaced.Values)
+        foreach (var placed in _regionComposerPlaced)
         {
             placed.X = 0;
             placed.Y = 0;
@@ -943,12 +1007,12 @@ public partial class MainWindow : Window
     /// <summary>Legt de geselecteerde control helemaal bovenop of helemaal onderop de stapel.</summary>
     private void MoveSelectedInStack(bool toFront)
     {
-        if (_regionComposerSelectedType is not { } type || !_regionComposerPlaced.TryGetValue(type, out var selected))
+        if (_regionComposerSelected is not { } selected)
         {
             return;
         }
 
-        var others = _regionComposerPlaced.Values.Where(placed => placed != selected).ToList();
+        var others = _regionComposerPlaced.Where(placed => placed != selected).ToList();
         if (others.Count > 0)
         {
             selected.Z = toFront ? others.Max(placed => placed.Z) + 1 : others.Min(placed => placed.Z) - 1;
@@ -965,7 +1029,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void RegionTrim_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_fillingRegionTrimFields || _regionComposerSelectedType is not { } type || !_regionComposerPlaced.TryGetValue(type, out var selected))
+        if (_fillingRegionTrimFields || _regionComposerSelected is not { } selected)
         {
             return;
         }
@@ -975,7 +1039,7 @@ public partial class MainWindow : Window
         selected.TrimRight = ParseTrim(RegionTrimRightBox.Text);
         selected.TrimBottom = ParseTrim(RegionTrimBottomBox.Text);
 
-        if (FindRegionHost(type) is { } host)
+        if (FindRegionHost(selected) is { } host)
         {
             ApplyTrim(host, selected);
         }
@@ -988,8 +1052,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Bouwt het regio-canvas opnieuw op: het canvas krijgt de ECHTE
-    /// afmeting van de gekozen regio (zelfde bron als de Controls-stand,
-    /// RegionDefaultContainerSize), met daarop elke geplaatste control
+    /// afmeting van de gekozen regio in Basis (RegionBasisSize), met daarop
+    /// elke geplaatste control
     /// volgens zijn positie, stapelvolgorde en uitsnede (CreatePlacedHost).
     /// Daarbovenop een stippelkader om de geselecteerde control.
     /// </summary>
@@ -1000,12 +1064,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        var (_, width, _, height) = RegionDefaultContainerSize(region);
+        var (width, height) = RegionBasisSize(region);
         RegionComposerCanvas.Width = width;
         RegionComposerCanvas.Height = height;
 
         RegionComposerCanvas.Children.Clear();
-        foreach (var placed in _regionComposerPlaced.Values)
+        foreach (var placed in _regionComposerPlaced)
         {
             var host = CreatePlacedHost(placed);
             host.SizeChanged += (_, _) => UpdateRegionSelectionOutline();
@@ -1019,8 +1083,8 @@ public partial class MainWindow : Window
         UpdateRegionSelectionOutline();
 
         RegionComposerStatusLabel.Text = _regionComposerPlaced.Count == 0
-            ? $"Regio {region}: {width:0} × {height:0} px - vink links Controls aan om ze hier neer te zetten."
-            : $"Regio {region}: {width:0} × {height:0} px - sleep een control om 'm te verplaatsen, klik 'm aan voor stapelvolgorde en afsnijden.";
+            ? $"Regio {region}: {width:0} × {height:0} px - klik links op + bij een control om 'm hier neer te zetten."
+            : $"Regio {region}: {width:0} × {height:0} px - sleep een control om 'm te verplaatsen, klik 'm aan voor stapelvolgorde en afsnijden, Delete om 'm te verwijderen.";
     }
 
     /// <summary>
@@ -1037,7 +1101,7 @@ public partial class MainWindow : Window
         var element = (FrameworkElement)Activator.CreateInstance(placed.Type)!;
         element.IsHitTestVisible = false;
 
-        var host = new Border { Background = Brushes.Transparent, Child = element, Tag = placed.Type };
+        var host = new Border { Background = Brushes.Transparent, Child = element, Tag = placed };
         Canvas.SetLeft(host, placed.X);
         Canvas.SetTop(host, placed.Y);
         Panel.SetZIndex(host, placed.Z);
@@ -1080,9 +1144,8 @@ public partial class MainWindow : Window
     /// <summary>Legt het stippelkader precies over het ZICHTBARE deel (na afsnijden) van de geselecteerde control.</summary>
     private void UpdateRegionSelectionOutline()
     {
-        if (_regionComposerSelectedType is not { } type
-            || !_regionComposerPlaced.TryGetValue(type, out var placed)
-            || FindRegionHost(type) is not { } host
+        if (_regionComposerSelected is not { } placed
+            || FindRegionHost(placed) is not { } host
             || host.ActualWidth == 0)
         {
             _regionSelectionOutline.Visibility = Visibility.Collapsed;
@@ -1103,9 +1166,9 @@ public partial class MainWindow : Window
         _fillingRegionTrimFields = true;
         try
         {
-            if (_regionComposerSelectedType is { } type && _regionComposerPlaced.TryGetValue(type, out var placed))
+            if (_regionComposerSelected is { } placed)
             {
-                RegionComposerSelectedLabel.Text = type.Name;
+                RegionComposerSelectedLabel.Text = placed.Type.Name;
                 RegionComposerSelectionPanel.IsEnabled = true;
                 RegionTrimLeftBox.Text = placed.TrimLeft.ToString(CultureInfo.InvariantCulture);
                 RegionTrimTopBox.Text = placed.TrimTop.ToString(CultureInfo.InvariantCulture);
@@ -1125,21 +1188,26 @@ public partial class MainWindow : Window
         }
     }
 
-    private FrameworkElement? FindRegionHost(Type type) =>
-        RegionComposerCanvas.Children.OfType<Border>().FirstOrDefault(host => host.Tag as Type == type);
+    private FrameworkElement? FindRegionHost(PlacedControl placed) =>
+        RegionComposerCanvas.Children.OfType<Border>().FirstOrDefault(host => ReferenceEquals(host.Tag, placed));
 
     private void RegionCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Een klik op het canvas haalt de toetsenbordfocus uit een eventueel
+        // tekstveld (bv. afsnijden) - anders blijft die daar staan en doet de
+        // Delete-toets daarna niets met het aangeklikte object.
+        Keyboard.ClearFocus();
+
         // Klik op een leeg stuk canvas = niets meer geselecteerd.
-        if (e.OriginalSource is not DependencyObject source || FindRegionCanvasHost(source) is not { } host || host.Tag is not Type type)
+        if (e.OriginalSource is not DependencyObject source || FindRegionCanvasHost(source) is not { } host || host.Tag is not PlacedControl clicked)
         {
-            _regionComposerSelectedType = null;
+            _regionComposerSelected = null;
             FillRegionSelectionPanel();
             UpdateRegionSelectionOutline();
             return;
         }
 
-        _regionComposerSelectedType = type;
+        _regionComposerSelected = clicked;
         FillRegionSelectionPanel();
         UpdateRegionSelectionOutline();
 
@@ -1163,12 +1231,11 @@ public partial class MainWindow : Window
         Canvas.SetLeft(_regionDragElement, x);
         Canvas.SetTop(_regionDragElement, y);
 
-        var type = (Type)_regionDragElement.Tag;
-        var placed = _regionComposerPlaced[type];
+        var placed = (PlacedControl)_regionDragElement.Tag;
         placed.X = x;
         placed.Y = y;
         UpdateRegionSelectionOutline();
-        RegionComposerStatusLabel.Text = $"{type.Name}: X {x:0}, Y {y:0}";
+        RegionComposerStatusLabel.Text = $"{placed.Type.Name}: X {x:0}, Y {y:0}";
     }
 
     /// <summary>
@@ -1258,12 +1325,9 @@ public partial class MainWindow : Window
         }
 
         _regionComposerPlaced.Clear();
-        foreach (var item in items)
-        {
-            _regionComposerPlaced[item.Type] = item;
-        }
+        _regionComposerPlaced.AddRange(items);
 
-        _regionComposerSelectedType = null;
+        _regionComposerSelected = null;
         BuildRegionControlChecklist();
         RebuildRegionCanvas();
         RegionComposerStatusLabel.Text = $"Concept '{name}' geladen ({items.Count} controls).";
@@ -1285,7 +1349,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var draft = new RegionDraft(_regionComposerPlaced.Values
+        var draft = new RegionDraft(_regionComposerPlaced
             .OrderBy(placed => placed.Z)
             .Select(placed => new RegionDraftItem(placed.Type.FullName!, placed.X, placed.Y, placed.Z, placed.TrimLeft, placed.TrimTop, placed.TrimRight, placed.TrimBottom))
             .ToList());
@@ -1413,10 +1477,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var (widthMode, width, heightMode, height) = RegionDefaultContainerSize(entry.Region);
+        var (widthMode, width, heightMode, height) = ControlsPreviewSize;
         LibraryTestContainerBorder.Width = width;
         LibraryTestContainerBorder.Height = height;
-        LibraryContainerSizeLabel.Text = $"Containerformaat ({entry.Region?.ToString() ?? "Controls"}): {width:0} × {height:0} px";
+        LibraryContainerSizeLabel.Text = $"Testkader: {width:0} × {height:0} px";
 
         var element = (FrameworkElement)Activator.CreateInstance(entry.Type)!;
         ApplySizeConstraints(element, widthMode, null, heightMode, null);
