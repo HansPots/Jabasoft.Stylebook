@@ -61,7 +61,7 @@
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
                         Canvas.Left="96"
-                        Width="600" Height="48" HorizontalAlignment="Center" VerticalAlignment="Top">
+                        Width="600" Height="48" HorizontalAlignment="Center" VerticalAlignment="Top" CornerRadius="0,0,0,0">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                             <LinearGradientBrush.GradientStops>
