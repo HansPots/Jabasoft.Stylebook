@@ -50,15 +50,29 @@ public partial class MainWindow : Window
     private BuilderMode _builderMode = BuilderMode.Controls;
     private bool _initializing = true;
 
+    /// <summary>Eén control op het Regions-canvas: waar hij staat, hoe hoog hij in de stapel ligt (hoger = bovenop), en hoeveel pixels er van elke kant afgesneden zijn.</summary>
+    private sealed class PlacedControl
+    {
+        public required Type Type { get; init; }
+        public double X { get; set; }
+        public double Y { get; set; }
+        public int Z { get; set; }
+        public double TrimLeft { get; set; }
+        public double TrimTop { get; set; }
+        public double TrimRight { get; set; }
+        public double TrimBottom { get; set; }
+    }
+
     /// <summary>
-    /// Welke Controls in de Regions-stand aangevinkt staan en waar ze op
-    /// het canvas gesleept zijn - blijft bewaard zolang de app draait, zodat
-    /// wisselen van regio of menu je sleepwerk niet wist. Bewust NIET op
-    /// schijf: een samenstelling die bevalt wordt echte XAML, geen bestand
-    /// hier.
+    /// De samenstelling waar je in de Regions-stand aan werkt: welke Controls
+    /// erop staan (één per soort - de aanvinkvakjes) en hoe ze geplaatst
+    /// zijn. Blijft staan als je van regio of menu wisselt; bewaren op schijf
+    /// gebeurt alleen via "Opslaan" onder Concepten.
     /// </summary>
-    private readonly HashSet<Type> _regionComposerSelected = [];
-    private readonly Dictionary<Type, Point> _regionComposerPositions = [];
+    private readonly Dictionary<Type, PlacedControl> _regionComposerPlaced = [];
+    private Type? _regionComposerSelectedType;
+    private IReadOnlyList<LibraryEntry> _regionComposerControls = [];
+    private bool _fillingRegionTrimFields;
 
     private FrameworkElement? _regionDragElement;
     private Point _regionDragStart;
@@ -586,7 +600,7 @@ public partial class MainWindow : Window
     private static readonly string PageDraftsDirectory = Path.GetFullPath(
         Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Scratch", "PageDrafts"));
 
-    /// <summary>Welk component (Type.FullName, of null = "(leeg)") er per regio gekozen was toen een Pagina-concept werd opgeslagen.</summary>
+    /// <summary>Wat er per regio gekozen was toen een Pagina-concept werd opgeslagen: de Key van een LibraryPageOption (Type.FullName, "regioconcept:&lt;naam&gt;", of null = "(leeg)").</summary>
     private sealed record PageDraft(string? Header, string? Menu, string? Inhoud, string? Actie, string? Footer);
 
     /// <summary>Eén echte, al gebouwde pagina in Stylebook.Components/Apps/&lt;App&gt;/&lt;Pagina&gt;.xaml.</summary>
@@ -752,15 +766,15 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Zoekt de LibraryPageOption in een regio-keuzelijst die bij het
-    /// bewaarde Type.FullName hoort - een component dat sindsdien
-    /// hernoemd/verwijderd is valt terug op "(leeg)" (eerste optie) in
-    /// plaats van een fout te geven.
+    /// Zoekt de LibraryPageOption in een regio-keuzelijst die bij de
+    /// bewaarde Key hoort (Type.FullName of regioconcept) - een component of
+    /// concept dat sindsdien hernoemd/verwijderd is valt terug op "(leeg)"
+    /// (eerste optie) in plaats van een fout te geven.
     /// </summary>
-    private static void SelectPageDraftOption(ComboBox picker, string? typeFullName)
+    private static void SelectPageDraftOption(ComboBox picker, string? key)
     {
         var options = (IReadOnlyList<LibraryPageOption>)picker.ItemsSource;
-        picker.SelectedItem = options.FirstOrDefault(option => option.Type?.FullName == typeFullName) ?? options[0];
+        picker.SelectedItem = options.FirstOrDefault(option => option.Key == key) ?? options[0];
     }
 
     /// <summary>Bewaart de huidige vijf regio-keuzes onder de App+Pagina die nu in de twee velden staat - overschrijft stilzwijgend een concept met dezelfde App+Pagina.</summary>
@@ -774,11 +788,11 @@ public partial class MainWindow : Window
         }
 
         var draft = new PageDraft(
-            (LibraryPageHeaderPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
-            (LibraryPageMenuPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
-            (LibraryPageInhoudPicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
-            (LibraryPageActiePicker.SelectedItem as LibraryPageOption)?.Type?.FullName,
-            (LibraryPageFooterPicker.SelectedItem as LibraryPageOption)?.Type?.FullName);
+            (LibraryPageHeaderPicker.SelectedItem as LibraryPageOption)?.Key,
+            (LibraryPageMenuPicker.SelectedItem as LibraryPageOption)?.Key,
+            (LibraryPageInhoudPicker.SelectedItem as LibraryPageOption)?.Key,
+            (LibraryPageActiePicker.SelectedItem as LibraryPageOption)?.Key,
+            (LibraryPageFooterPicker.SelectedItem as LibraryPageOption)?.Key);
 
         var appDirectory = Path.Combine(PageDraftsDirectory, app);
         Directory.CreateDirectory(appDirectory);
@@ -790,42 +804,58 @@ public partial class MainWindow : Window
         PageDraftPageBox.Text = page;
     }
 
-    /// <summary>One choice in a Pagina-region ComboBox - "(leeg)" (Type null) or a discovered real UserControl.</summary>
-    private sealed record LibraryPageOption(string Label, Type? Type)
+    /// <summary>Voorvoegsel waarmee een gekozen regioconcept in een Pagina-concept wordt bewaard, zodat het niet te verwarren is met een Type.FullName.</summary>
+    private const string RegionDraftKeyPrefix = "regioconcept:";
+
+    /// <summary>
+    /// One choice in a Pagina-region ComboBox - "(leeg)" (Type en RegionDraft
+    /// allebei null), a discovered real UserControl (Type), or a saved
+    /// region composition from the Regions menu (RegionDraft = its name).
+    /// Key is what a Pagina-concept stores: the Type.FullName for a real
+    /// component (same as before, so older concepts still load) or
+    /// "regioconcept:&lt;naam&gt;" for a region composition.
+    /// </summary>
+    private sealed record LibraryPageOption(string Label, Type? Type, string? RegionDraft = null)
     {
+        public string? Key => Type?.FullName ?? (RegionDraft is null ? null : RegionDraftKeyPrefix + RegionDraft);
+
         public override string ToString() => Label;
     }
 
     /// <summary>
     /// Vult één regio-keuzelijst van de Pagina-stand, met "(leeg)" als
-    /// eerste optie. Onthoudt de vorige keuze (op Type, niet op
-    /// object-identiteit - de lijst wordt bij elke LoadLibraryControls
-    /// vers opgebouwd) zodat een net toegevoegde klasse wel meteen
-    /// verschijnt, maar een pagina waar je middenin zit niet steeds
-    /// terugspringt naar "(leeg)".
+    /// eerste optie, dan de echte componenten van die regio, dan de in het
+    /// Regions-menu bewaarde concepten voor die regio. Onthoudt de vorige
+    /// keuze (op Key, niet op object-identiteit - de lijst wordt bij elke
+    /// LoadLibraryControls vers opgebouwd) zodat een net toegevoegde klasse
+    /// of concept wel meteen verschijnt, maar een pagina waar je middenin zit
+    /// niet steeds terugspringt naar "(leeg)".
     /// </summary>
     private static void LoadLibraryPagePicker(ComboBox picker, ComponentRegion region, IReadOnlyList<LibraryEntry> discovered)
     {
-        var previousType = (picker.SelectedItem as LibraryPageOption)?.Type;
+        var previousKey = (picker.SelectedItem as LibraryPageOption)?.Key;
 
         var options = new List<LibraryPageOption> { new("(leeg)", null) };
         options.AddRange(discovered
             .Where(entry => entry.Region == region)
             .OrderBy(entry => entry.Type.Name, StringComparer.Ordinal)
             .Select(entry => new LibraryPageOption(entry.Type.Name, entry.Type)));
+        options.AddRange(RegionDraftNames(region)
+            .Select(name => new LibraryPageOption($"Concept: {name}", null, name)));
 
         picker.ItemsSource = options;
-        picker.SelectedItem = options.FirstOrDefault(option => option.Type == previousType) ?? options[0];
+        picker.SelectedItem = options.FirstOrDefault(option => option.Key == previousKey) ?? options[0];
     }
 
     /// <summary>
     /// Vult de Regions-stand: de regiokeuze (eenmalig, zodat wisselen van
-    /// menu je gekozen regio niet terugzet) en een aanvinkvakje per Control.
-    /// De aanvinkstatus komt uit _regionComposerSelected, zodat een
-    /// herbouwde lijst (nieuwe klasse toegevoegd) je selectie niet wist.
+    /// menu je gekozen regio niet terugzet), een aanvinkvakje per Control en
+    /// de lijst met bewaarde concepten voor de gekozen regio.
     /// </summary>
     private void LoadRegionComposer(IReadOnlyList<LibraryEntry> controls)
     {
+        _regionComposerControls = controls;
+
         if (RegionComposerRegionPicker.ItemsSource is null)
         {
             RegionComposerRegionPicker.ItemsSource = Enum.GetValues<ComponentRegion>();
@@ -834,16 +864,27 @@ public partial class MainWindow : Window
 
         // Een control die sindsdien hernoemd/verwijderd is mag niet als
         // spook op het canvas blijven staan.
-        _regionComposerSelected.RemoveWhere(type => !controls.Any(entry => entry.Type == type));
+        foreach (var gone in _regionComposerPlaced.Keys.Where(type => !controls.Any(entry => entry.Type == type)).ToList())
+        {
+            _regionComposerPlaced.Remove(gone);
+        }
 
+        BuildRegionControlChecklist();
+        LoadRegionDraftNames();
+        RebuildRegionCanvas();
+    }
+
+    /// <summary>Eén aanvinkvakje per Control, aangevinkt als hij nu op het canvas staat.</summary>
+    private void BuildRegionControlChecklist()
+    {
         RegionComposerControlList.Children.Clear();
-        foreach (var entry in controls)
+        foreach (var entry in _regionComposerControls)
         {
             var checkBox = new CheckBox
             {
                 Content = entry.Type.Name,
                 Tag = entry.Type,
-                IsChecked = _regionComposerSelected.Contains(entry.Type),
+                IsChecked = _regionComposerPlaced.ContainsKey(entry.Type),
                 Margin = new Thickness(0, 0, 0, 4),
             };
             checkBox.SetResourceReference(ForegroundProperty, "TextPrimaryBrush");
@@ -851,8 +892,6 @@ public partial class MainWindow : Window
             checkBox.Unchecked += RegionComposerControl_Toggled;
             RegionComposerControlList.Children.Add(checkBox);
         }
-
-        RebuildRegionCanvas();
     }
 
     private void RegionComposerControl_Toggled(object sender, RoutedEventArgs e)
@@ -862,33 +901,97 @@ public partial class MainWindow : Window
 
         if (checkBox.IsChecked == true)
         {
-            _regionComposerSelected.Add(type);
+            // Een net aangevinkte control komt bovenop wat er al ligt.
+            var top = _regionComposerPlaced.Count == 0 ? 0 : _regionComposerPlaced.Values.Max(placed => placed.Z) + 1;
+            _regionComposerPlaced[type] = new PlacedControl { Type = type, Z = top };
+            _regionComposerSelectedType = type;
         }
         else
         {
-            _regionComposerSelected.Remove(type);
+            _regionComposerPlaced.Remove(type);
+            if (_regionComposerSelectedType == type)
+            {
+                _regionComposerSelectedType = null;
+            }
         }
 
         RebuildRegionCanvas();
     }
 
-    private void RegionComposerRegion_SelectionChanged(object sender, SelectionChangedEventArgs e) => RebuildRegionCanvas();
+    private void RegionComposerRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        LoadRegionDraftNames();
+        RebuildRegionCanvas();
+    }
 
-    /// <summary>Zet de gesleepte posities terug op de linkerbovenhoek - de aanvinkstatus blijft staan.</summary>
+    /// <summary>Zet alle controls terug op de linkerbovenhoek - stapelvolgorde en uitsnedes blijven staan.</summary>
     private void RegionComposerReset_Click(object sender, RoutedEventArgs e)
     {
-        _regionComposerPositions.Clear();
+        foreach (var placed in _regionComposerPlaced.Values)
+        {
+            placed.X = 0;
+            placed.Y = 0;
+        }
+
+        RebuildRegionCanvas();
+    }
+
+    private void RegionComposerBringForward_Click(object sender, RoutedEventArgs e) => MoveSelectedInStack(toFront: true);
+
+    private void RegionComposerSendBackward_Click(object sender, RoutedEventArgs e) => MoveSelectedInStack(toFront: false);
+
+    /// <summary>Legt de geselecteerde control helemaal bovenop of helemaal onderop de stapel.</summary>
+    private void MoveSelectedInStack(bool toFront)
+    {
+        if (_regionComposerSelectedType is not { } type || !_regionComposerPlaced.TryGetValue(type, out var selected))
+        {
+            return;
+        }
+
+        var others = _regionComposerPlaced.Values.Where(placed => placed != selected).ToList();
+        if (others.Count > 0)
+        {
+            selected.Z = toFront ? others.Max(placed => placed.Z) + 1 : others.Min(placed => placed.Z) - 1;
+        }
+
         RebuildRegionCanvas();
     }
 
     /// <summary>
+    /// Een van de vier afsnijvelden is gewijzigd - past de uitsnede van de
+    /// geselecteerde control meteen toe. Een ongeldige of halve invoer
+    /// (bv. een leeg veld tijdens het typen) telt als 0. Negeert
+    /// wijzigingen die we zelf veroorzaken bij het vullen van de velden.
+    /// </summary>
+    private void RegionTrim_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_fillingRegionTrimFields || _regionComposerSelectedType is not { } type || !_regionComposerPlaced.TryGetValue(type, out var selected))
+        {
+            return;
+        }
+
+        selected.TrimLeft = ParseTrim(RegionTrimLeftBox.Text);
+        selected.TrimTop = ParseTrim(RegionTrimTopBox.Text);
+        selected.TrimRight = ParseTrim(RegionTrimRightBox.Text);
+        selected.TrimBottom = ParseTrim(RegionTrimBottomBox.Text);
+
+        if (FindRegionHost(type) is { } host)
+        {
+            ApplyTrim(host, selected);
+        }
+
+        UpdateRegionSelectionOutline();
+    }
+
+    private static double ParseTrim(string text) =>
+        double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && value > 0 ? value : 0;
+
+    /// <summary>
     /// Bouwt het regio-canvas opnieuw op: het canvas krijgt de ECHTE
     /// afmeting van de gekozen regio (zelfde bron als de Controls-stand,
-    /// RegionDefaultContainerSize), met daarop elke aangevinkte Control op
-    /// zijn laatst gesleepte plek. Elk component zit in een doorzichtige
-    /// Border: die vangt de muis op (een Background van null zou helemaal
-    /// geen kliks krijgen) en het component zelf staat op
-    /// IsHitTestVisible=false, zodat een knop erin het slepen niet opeet.
+    /// RegionDefaultContainerSize), met daarop elke geplaatste control
+    /// volgens zijn positie, stapelvolgorde en uitsnede (CreatePlacedHost).
+    /// Daarbovenop een stippelkader om de geselecteerde control.
     /// </summary>
     private void RebuildRegionCanvas()
     {
@@ -902,29 +1005,143 @@ public partial class MainWindow : Window
         RegionComposerCanvas.Height = height;
 
         RegionComposerCanvas.Children.Clear();
-        foreach (var type in _regionComposerSelected.OrderBy(type => type.Name, StringComparer.Ordinal))
+        foreach (var placed in _regionComposerPlaced.Values)
         {
-            var element = (FrameworkElement)Activator.CreateInstance(type)!;
-            element.IsHitTestVisible = false;
-
-            var host = new Border { Background = Brushes.Transparent, Child = element, Tag = type };
-            var position = _regionComposerPositions.TryGetValue(type, out var saved) ? saved : new Point(0, 0);
-            Canvas.SetLeft(host, position.X);
-            Canvas.SetTop(host, position.Y);
+            var host = CreatePlacedHost(placed);
+            host.SizeChanged += (_, _) => UpdateRegionSelectionOutline();
             RegionComposerCanvas.Children.Add(host);
         }
 
-        RegionComposerStatusLabel.Text = _regionComposerSelected.Count == 0
+        RegionComposerCanvas.Children.Add(_regionSelectionOutline);
+        Panel.SetZIndex(_regionSelectionOutline, int.MaxValue);
+
+        FillRegionSelectionPanel();
+        UpdateRegionSelectionOutline();
+
+        RegionComposerStatusLabel.Text = _regionComposerPlaced.Count == 0
             ? $"Regio {region}: {width:0} × {height:0} px - vink links Controls aan om ze hier neer te zetten."
-            : $"Regio {region}: {width:0} × {height:0} px - sleep een control om 'm te verplaatsen.";
+            : $"Regio {region}: {width:0} × {height:0} px - sleep een control om 'm te verplaatsen, klik 'm aan voor stapelvolgorde en afsnijden.";
     }
+
+    /// <summary>
+    /// Maakt de weergave van één geplaatste control: de echte UserControl in
+    /// een doorzichtige Border op zijn positie en stapelhoogte. Die Border
+    /// vangt de muis op (een Background van null zou helemaal geen kliks
+    /// krijgen) en het component zelf staat op IsHitTestVisible=false, zodat
+    /// een knop erin het slepen niet opeet. Gedeeld met de Apps-stand
+    /// (BuildRegionDraftCanvas), zodat een bewaard concept daar exact zo
+    /// verschijnt als je 'm hier gemaakt hebt.
+    /// </summary>
+    private static Border CreatePlacedHost(PlacedControl placed)
+    {
+        var element = (FrameworkElement)Activator.CreateInstance(placed.Type)!;
+        element.IsHitTestVisible = false;
+
+        var host = new Border { Background = Brushes.Transparent, Child = element, Tag = placed.Type };
+        Canvas.SetLeft(host, placed.X);
+        Canvas.SetTop(host, placed.Y);
+        Panel.SetZIndex(host, placed.Z);
+
+        // De uitsnede hangt af van de werkelijke afmeting van de control,
+        // en die is pas bekend na de eerste layout - vandaar SizeChanged.
+        host.SizeChanged += (_, _) => ApplyTrim(host, placed);
+        return host;
+    }
+
+    /// <summary>
+    /// Snijdt de control bij met een Clip-rechthoek. Clip bepaalt in WPF
+    /// zowel wat er getekend wordt als waar er geklikt kan worden, dus een
+    /// weggesneden stuk is ook niet meer te verslepen.
+    /// </summary>
+    private static void ApplyTrim(FrameworkElement host, PlacedControl placed)
+    {
+        if (placed.TrimLeft == 0 && placed.TrimTop == 0 && placed.TrimRight == 0 && placed.TrimBottom == 0)
+        {
+            host.Clip = null;
+            return;
+        }
+
+        host.Clip = new RectangleGeometry(new Rect(
+            placed.TrimLeft,
+            placed.TrimTop,
+            Math.Max(0, host.ActualWidth - placed.TrimLeft - placed.TrimRight),
+            Math.Max(0, host.ActualHeight - placed.TrimTop - placed.TrimBottom)));
+    }
+
+    /// <summary>Stippelkader om de geselecteerde control - zelf niet aanklikbaar, dus het zit het slepen niet in de weg.</summary>
+    private readonly System.Windows.Shapes.Rectangle _regionSelectionOutline = new()
+    {
+        StrokeThickness = 1,
+        StrokeDashArray = [4, 3],
+        IsHitTestVisible = false,
+        Visibility = Visibility.Collapsed,
+    };
+
+    /// <summary>Legt het stippelkader precies over het ZICHTBARE deel (na afsnijden) van de geselecteerde control.</summary>
+    private void UpdateRegionSelectionOutline()
+    {
+        if (_regionComposerSelectedType is not { } type
+            || !_regionComposerPlaced.TryGetValue(type, out var placed)
+            || FindRegionHost(type) is not { } host
+            || host.ActualWidth == 0)
+        {
+            _regionSelectionOutline.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _regionSelectionOutline.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "AccentBrush");
+        _regionSelectionOutline.Width = Math.Max(1, host.ActualWidth - placed.TrimLeft - placed.TrimRight);
+        _regionSelectionOutline.Height = Math.Max(1, host.ActualHeight - placed.TrimTop - placed.TrimBottom);
+        Canvas.SetLeft(_regionSelectionOutline, Canvas.GetLeft(host) + placed.TrimLeft);
+        Canvas.SetTop(_regionSelectionOutline, Canvas.GetTop(host) + placed.TrimTop);
+        _regionSelectionOutline.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Vult het "Geselecteerd"-blok met de waarden van de geselecteerde control, of zet het uit als er niets geselecteerd is.</summary>
+    private void FillRegionSelectionPanel()
+    {
+        _fillingRegionTrimFields = true;
+        try
+        {
+            if (_regionComposerSelectedType is { } type && _regionComposerPlaced.TryGetValue(type, out var placed))
+            {
+                RegionComposerSelectedLabel.Text = type.Name;
+                RegionComposerSelectionPanel.IsEnabled = true;
+                RegionTrimLeftBox.Text = placed.TrimLeft.ToString(CultureInfo.InvariantCulture);
+                RegionTrimTopBox.Text = placed.TrimTop.ToString(CultureInfo.InvariantCulture);
+                RegionTrimRightBox.Text = placed.TrimRight.ToString(CultureInfo.InvariantCulture);
+                RegionTrimBottomBox.Text = placed.TrimBottom.ToString(CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                RegionComposerSelectedLabel.Text = "(klik een control aan)";
+                RegionComposerSelectionPanel.IsEnabled = false;
+                RegionTrimLeftBox.Text = RegionTrimTopBox.Text = RegionTrimRightBox.Text = RegionTrimBottomBox.Text = string.Empty;
+            }
+        }
+        finally
+        {
+            _fillingRegionTrimFields = false;
+        }
+    }
+
+    private FrameworkElement? FindRegionHost(Type type) =>
+        RegionComposerCanvas.Children.OfType<Border>().FirstOrDefault(host => host.Tag as Type == type);
 
     private void RegionCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.OriginalSource is not DependencyObject source || FindRegionCanvasHost(source) is not { } host)
+        // Klik op een leeg stuk canvas = niets meer geselecteerd.
+        if (e.OriginalSource is not DependencyObject source || FindRegionCanvasHost(source) is not { } host || host.Tag is not Type type)
         {
+            _regionComposerSelectedType = null;
+            FillRegionSelectionPanel();
+            UpdateRegionSelectionOutline();
             return;
         }
+
+        _regionComposerSelectedType = type;
+        FillRegionSelectionPanel();
+        UpdateRegionSelectionOutline();
 
         _regionDragElement = host;
         _regionDragStart = e.GetPosition(RegionComposerCanvas);
@@ -947,8 +1164,161 @@ public partial class MainWindow : Window
         Canvas.SetTop(_regionDragElement, y);
 
         var type = (Type)_regionDragElement.Tag;
-        _regionComposerPositions[type] = new Point(x, y);
+        var placed = _regionComposerPlaced[type];
+        placed.X = x;
+        placed.Y = y;
+        UpdateRegionSelectionOutline();
         RegionComposerStatusLabel.Text = $"{type.Name}: X {x:0}, Y {y:0}";
+    }
+
+    /// <summary>
+    /// Map waar regioconcepten als los JSON-bestand bewaard worden, genest
+    /// als Regio/Naam.json. Zelfde plek en reden als PageDraftsDirectory: in
+    /// de brontree, zodat concepten meegaan in git.
+    /// </summary>
+    private static readonly string RegionDraftsDirectory = Path.GetFullPath(
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Scratch", "RegionDrafts"));
+
+    /// <summary>Eén geplaatste control zoals hij in een regioconcept op schijf staat - Type als FullName, zodat een hernoemde klasse bij het laden gewoon wordt overgeslagen.</summary>
+    private sealed record RegionDraftItem(string Type, double X, double Y, int Z, double TrimLeft, double TrimTop, double TrimRight, double TrimBottom);
+
+    private sealed record RegionDraft(List<RegionDraftItem> Items);
+
+    /// <summary>De namen van alle bewaarde concepten voor één regio, alfabetisch.</summary>
+    private static IEnumerable<string> RegionDraftNames(ComponentRegion region)
+    {
+        var directory = Path.Combine(RegionDraftsDirectory, region.ToString());
+        return Directory.Exists(directory)
+            ? Directory.GetFiles(directory, "*.json").Select(Path.GetFileNameWithoutExtension).OfType<string>().OrderBy(name => name, StringComparer.Ordinal)
+            : [];
+    }
+
+    /// <summary>
+    /// Leest een bewaard regioconcept terug als lijst geplaatste controls.
+    /// Een control die sindsdien hernoemd of verwijderd is, wordt
+    /// overgeslagen in plaats van een fout te geven.
+    /// </summary>
+    private static List<PlacedControl>? LoadRegionDraft(ComponentRegion region, string name)
+    {
+        var path = Path.Combine(RegionDraftsDirectory, region.ToString(), $"{name}.json");
+        if (!File.Exists(path) || JsonSerializer.Deserialize<RegionDraft>(File.ReadAllText(path)) is not { } draft)
+        {
+            return null;
+        }
+
+        var assembly = typeof(Stylebook.Components.Controls.Basis).Assembly;
+        return draft.Items
+            .Select(item => (item, type: assembly.GetType(item.Type)))
+            .Where(pair => pair.type is not null)
+            .Select(pair => new PlacedControl
+            {
+                Type = pair.type!,
+                X = pair.item.X,
+                Y = pair.item.Y,
+                Z = pair.item.Z,
+                TrimLeft = pair.item.TrimLeft,
+                TrimTop = pair.item.TrimTop,
+                TrimRight = pair.item.TrimRight,
+                TrimBottom = pair.item.TrimBottom,
+            })
+            .ToList();
+    }
+
+    /// <summary>Vult de Naam-keuzelijst met de bewaarde concepten van de regio die nu gekozen is.</summary>
+    private void LoadRegionDraftNames()
+    {
+        if (RegionComposerRegionPicker.SelectedItem is ComponentRegion region)
+        {
+            RegionDraftNameBox.ItemsSource = RegionDraftNames(region).ToList();
+        }
+    }
+
+    /// <summary>
+    /// Een concept gekozen uit de lijst - laadt 'm. Via Dispatcher.BeginInvoke,
+    /// om dezelfde reden als PageDraftPage_Changed: bij een klik in de lijst
+    /// van een IsEditable ComboBox is .Text op dit moment nog niet bijgewerkt.
+    /// </summary>
+    private void RegionDraftName_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_initializing)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(new Action(TryLoadRegionDraft), System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    /// <summary>Vervangt de huidige samenstelling door het concept met de naam die nu in het veld staat - als dat concept bestaat. Een nieuwe naam intypen verandert dus niets aan wat er op het canvas staat.</summary>
+    private void TryLoadRegionDraft()
+    {
+        var name = RegionDraftNameBox.Text.Trim();
+        if (name.Length == 0 || RegionComposerRegionPicker.SelectedItem is not ComponentRegion region || LoadRegionDraft(region, name) is not { } items)
+        {
+            return;
+        }
+
+        _regionComposerPlaced.Clear();
+        foreach (var item in items)
+        {
+            _regionComposerPlaced[item.Type] = item;
+        }
+
+        _regionComposerSelectedType = null;
+        BuildRegionControlChecklist();
+        RebuildRegionCanvas();
+        RegionComposerStatusLabel.Text = $"Concept '{name}' geladen ({items.Count} controls).";
+    }
+
+    /// <summary>Bewaart de huidige samenstelling onder de gekozen regio + de naam in het veld - overschrijft stilzwijgend een concept met dezelfde naam.</summary>
+    private void SaveRegionDraft_Click(object sender, RoutedEventArgs e)
+    {
+        var name = RegionDraftNameBox.Text.Trim();
+        if (name.Length == 0 || RegionComposerRegionPicker.SelectedItem is not ComponentRegion region)
+        {
+            RegionComposerStatusLabel.Text = "Vul eerst een naam in om het concept onder te bewaren.";
+            return;
+        }
+
+        if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            RegionComposerStatusLabel.Text = $"'{name}' bevat tekens die niet in een bestandsnaam mogen.";
+            return;
+        }
+
+        var draft = new RegionDraft(_regionComposerPlaced.Values
+            .OrderBy(placed => placed.Z)
+            .Select(placed => new RegionDraftItem(placed.Type.FullName!, placed.X, placed.Y, placed.Z, placed.TrimLeft, placed.TrimTop, placed.TrimRight, placed.TrimBottom))
+            .ToList());
+
+        var directory = Path.Combine(RegionDraftsDirectory, region.ToString());
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, $"{name}.json"), JsonSerializer.Serialize(draft, new JsonSerializerOptions { WriteIndented = true }));
+
+        LoadRegionDraftNames();
+        RegionDraftNameBox.Text = name;
+        RegionComposerStatusLabel.Text = $"Concept '{name}' bewaard voor {region} - staat nu ook als keuze in Apps.";
+    }
+
+    /// <summary>
+    /// Bouwt een bewaard regioconcept als niet-bewerkbare samenstelling voor
+    /// de Apps-stand: dezelfde weergave per control als het Regions-canvas
+    /// (CreatePlacedHost), zonder slepen of selecteren. Het canvas vult het
+    /// regio-vak van Basis en snijdt af wat erbuiten valt.
+    /// </summary>
+    private static Canvas? BuildRegionDraftCanvas(ComponentRegion region, string name)
+    {
+        if (LoadRegionDraft(region, name) is not { } items)
+        {
+            return null;
+        }
+
+        var canvas = new Canvas { ClipToBounds = true };
+        foreach (var placed in items)
+        {
+            canvas.Children.Add(CreatePlacedHost(placed));
+        }
+
+        return canvas;
     }
 
     private void RegionCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -981,12 +1351,13 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Eén regio-keuzelijst in de Pagina-stand is gewijzigd - instantieert
-    /// de gekozen echte UserControl (of null bij "(leeg)") en zet 'm
-    /// rechtstreeks op de bijbehorende content-slot van LibraryPageBasis.
-    /// Basis staat op het echte 1920x1080-formaat, dus elke regio krijgt
-    /// automatisch zijn eigen echte Basis-afmeting (210/256/*/48/65) -
-    /// geen aparte containerlogica nodig, dat doet Basis.xaml zelf al.
+    /// Eén regio-keuzelijst in de Pagina-stand is gewijzigd - maakt de
+    /// gekozen echte UserControl of het gekozen regioconcept (of null bij
+    /// "(leeg)") en zet 'm rechtstreeks op de bijbehorende content-slot van
+    /// LibraryPageBasis. Basis staat op het echte 1920x1080-formaat, dus
+    /// elke regio krijgt automatisch zijn eigen echte Basis-afmeting
+    /// (210/256/*/48/65) - geen aparte containerlogica nodig, dat doet
+    /// Basis.xaml zelf al.
     /// </summary>
     private void LibraryPagePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -998,7 +1369,12 @@ public partial class MainWindow : Window
         var picker = (ComboBox)sender;
         var region = Enum.Parse<ComponentRegion>((string)picker.Tag);
         var option = picker.SelectedItem as LibraryPageOption;
-        var content = option?.Type is { } type ? Activator.CreateInstance(type) : null;
+        object? content = option switch
+        {
+            { Type: { } type } => Activator.CreateInstance(type),
+            { RegionDraft: { } draftName } => BuildRegionDraftCanvas(region, draftName),
+            _ => null,
+        };
 
         switch (region)
         {

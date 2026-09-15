@@ -1,0 +1,44 @@
+{
+  "Items": [
+    {
+      "Type": "Stylebook.Components.Controls.HeaderGradientBar04",
+      "X": 0,
+      "Y": 0,
+      "Z": 1,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.LcarsElbowGradientEnd",
+      "X": -5,
+      "Y": 11,
+      "Z": 2,
+      "TrimLeft": 0,
+      "TrimTop": 30,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.WindowControlButtons",
+      "X": 1097,
+      "Y": 5,
+      "Z": 3,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.LcarsElbowGradientEnd01",
+      "X": 1153,
+      "Y": 11,
+      "Z": 4,
+      "TrimLeft": 0,
+      "TrimTop": 30,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    }
+  ]
+}

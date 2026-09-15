@@ -118,6 +118,33 @@
                                           Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="Left"
                                           VerticalAlignment="Center" />
+                        <!-- Typvak voor een ComboBox met IsEditable="True". WPF
+                             zoekt dit deel op naam (PART_EditableTextBox) en koppelt
+                             er zelf de Text-eigenschap aan; zonder dit deel doet
+                             IsEditable niets en is er nergens om te typen. Standaard
+                             verborgen, zie de trigger hieronder. Eigen kolom zonder
+                             de pijl-kolom, zodat klikken op de pijl de lijst nog
+                             steeds openklapt. -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Grid.Column="0"
+                                     Style="{x:Null}"
+                                     Visibility="Collapsed"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     CaretBrush="{TemplateBinding Foreground}"
+                                     FontFamily="{TemplateBinding FontFamily}"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     Margin="{TemplateBinding Padding}"
+                                     Padding="0"
+                                     VerticalAlignment="Center"
+                                     IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" />
+                        </Grid>
                         <Popup x:Name="Popup"
                                Placement="Bottom"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
@@ -135,6 +162,15 @@
                             </Border>
                         </Popup>
                     </Grid>
+                    <ControlTemplate.Triggers>
+                        <!-- Bij IsEditable het typvak tonen en de gewone weergave
+                             van het gekozen item verbergen (anders staan ze over
+                             elkaar heen). -->
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

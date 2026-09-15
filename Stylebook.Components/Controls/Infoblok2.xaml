@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" Height="166">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -30,11 +30,29 @@
             CornerRadius="6"
             Width="280">
         <StackPanel>
-            <Border Background="{DynamicResource BorderBrush}" CornerRadius="6,6,0,0" Padding="16,10">
-                <TextBlock Text="InfoBlok" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Text01Brush}" TextWrapping="Wrap" />
+            <!-- Hoekstraal 5, niet 6: de buitenrand heeft straal 6 met een
+                 rand van 1px, dus de BINNENkant van die rand loopt op 6-1=5.
+                 Met 6 loopt de bocht van deze balk niet mee met de bocht van
+                 de rand en zie je in beide bovenhoeken een kiertje
+                 SurfaceBrush tussen de rand en het blok. -->
+            <!-- Vaste hoogte, daarom alleen horizontale padding; de TextBlock
+                 centreert zichzelf verticaal. Padding links 8 = dezelfde
+                 inspringing als de bodytekst hieronder (StackPanel Margin links 8),
+                 zodat "InfoBlok" en de bodytekst exact onder elkaar beginnen. -->
+            <Border Background="{DynamicResource BorderBrush}" CornerRadius="5,5,0,0" Height="24" Padding="8,0">
+                <TextBlock Text="InfoBlok" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Text01Brush}" VerticalAlignment="Center" TextWrapping="Wrap" />
             </Border>
-            <StackPanel Margin="16">
-                <TextBlock Text="Dit is een informatieblok voor de header." Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
+            <StackPanel Margin="8">
+                <TextBlock Text="Dit is een informatieblok voor de header." Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Height="116" RenderTransformOrigin="0.5,0.5" >
+                    <TextBlock.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform AngleX="-0.611"/>
+                            <RotateTransform/>
+                            <TranslateTransform X="-0.219"/>
+                        </TransformGroup>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
             </StackPanel>
         </StackPanel>
     </Border>

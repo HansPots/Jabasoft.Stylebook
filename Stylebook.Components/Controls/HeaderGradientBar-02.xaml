@@ -1,0 +1,56 @@
+<UserControl x:Class="Stylebook.Components.Controls.HeaderGradientBar02"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:theming="clr-namespace:Stylebook.Components.Theming"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d">
+
+    <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
+         thema-context (kleuren, lettertype) - deze class library heeft
+         zelf geen App.xaml die dat normaal doet. mc:Ignorable="d" zorgt
+         dat dit bij het echt compileren/draaien volledig wegvalt. -->
+    <d:UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </d:UserControl.Resources>
+
+    <!-- Algemeen: de LCARS-gradiëntbalk (ook los van HpoHeader bruikbaar).
+         Links loopt de balk door in een elleboog naar beneden (48px breed).
+         De bocht linksboven is een echte, dikke ring-vorm (geen scherpe
+         binnenhoek): een groot kwartrond (buitenstraal 96) met daarin een
+         kleiner kwartrond (binnenstraal 48) uitgesneden via een Path met
+         FillRule="EvenOdd" - het verschil (96-48=48) is precies de breedte
+         van de balk/elleboog, dus de "band" heeft overal dezelfde dikte,
+         en zowel de buiten- als de binnenbocht ogen rond in plaats van
+         scherp. De onderkant van de elleboog gebruikt nog wel de simpele
+         hoek-truc (CornerRadius = breedte) omdat dat daar een rond
+         uiteinde geeft, geen binnenhoek. -->
+    <Grid Width="Auto" Height="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Viewbox>
+            <Canvas Width="696" Height="200">
+
+                <Border theming:CornerRadiusParts.TopLeft="0"
+                        theming:CornerRadiusParts.TopRight="48"
+                        theming:CornerRadiusParts.BottomRight="0"
+                        theming:CornerRadiusParts.BottomLeft="0"
+                        Width="696" Height="48" HorizontalAlignment="Left" VerticalAlignment="Center" CornerRadius="0,0,0,0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                            <LinearGradientBrush.GradientStops>
+                                <GradientStop Color="{DynamicResource HeaderGradientStartColor}" Offset="0" />
+                                <GradientStop Color="{DynamicResource HeaderGradientMidColor}" Offset="0.45" />
+                                <GradientStop Color="{DynamicResource HeaderGradientEndColor}" Offset="1" />
+                            </LinearGradientBrush.GradientStops>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+
+</UserControl>

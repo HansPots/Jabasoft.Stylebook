@@ -267,11 +267,14 @@
                         </Grid>
 
                         <!-- Regions: meerdere Controls samen op één regio
-                             zetten, op de ECHTE afmeting van die regio, en
-                             ze slepend positioneren. Bewust alleen een
-                             voorbeeld: er wordt niets weggeschreven - als de
-                             samenstelling bevalt, zeg je het tegen Claude en
-                             wordt het echte Regions/<Regio>/<Naam>.xaml
+                             zetten, op de ECHTE afmeting van die regio: ze
+                             slepend positioneren, per control de
+                             stapelvolgorde en een uitsnede instellen, en het
+                             geheel onder een naam bewaren als concept
+                             (Scratch/RegionDrafts/<Regio>/<Naam>.json). Zo'n
+                             concept is daarna in Apps te kiezen voor die
+                             regio. Het blijft een voorbeeld: als de
+                             samenstelling bevalt, wordt er echte XAML van
                              gebouwd. -->
                         <Grid x:Name="LibraryRegionPanel" Visibility="Collapsed">
                             <Grid.ColumnDefinitions>
@@ -289,9 +292,8 @@
                                         <ComboBox x:Name="RegionComposerRegionPicker" SelectionChanged="RegionComposerRegion_SelectionChanged" Margin="0,0,0,16" />
 
                                         <TextBox Text="CONTROLS" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
-                                        <!-- Aanvinken zet 'm op het canvas; de plek die je
-                                             'm daar sleept wordt onthouden zolang de app
-                                             draait (zie _regionComposerPositions). -->
+                                        <!-- Aanvinken zet 'm op het canvas (bovenop de rest);
+                                             zie _regionComposerPlaced. -->
                                         <StackPanel x:Name="RegionComposerControlList" />
 
                                         <Button Content="Posities terugzetten"
@@ -300,6 +302,61 @@
                                                 HorizontalAlignment="Left"
                                                 Margin="0,16,0,0"
                                                 AutomationProperties.Name="Posities terugzetten" />
+
+                                        <!-- Instellingen van de control die je op het canvas
+                                             hebt aangeklikt. Leeg/uitgeschakeld zolang er
+                                             niets geselecteerd is. -->
+                                        <TextBox Text="GESELECTEERD" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,24,0,4" />
+                                        <TextBox x:Name="RegionComposerSelectedLabel" Text="(klik een control aan)" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextPrimaryBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,8" />
+
+                                        <StackPanel x:Name="RegionComposerSelectionPanel" IsEnabled="False">
+                                            <TextBox Text="Stapelvolgorde" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                                <Button Content="Naar voren" Click="RegionComposerBringForward_Click" Style="{StaticResource AddComponentButtonStyle}" Margin="0,0,4,0" AutomationProperties.Name="Naar voren" />
+                                                <Button Content="Naar achteren" Click="RegionComposerSendBackward_Click" Style="{StaticResource AddComponentButtonStyle}" Margin="0" AutomationProperties.Name="Naar achteren" />
+                                            </StackPanel>
+
+                                            <!-- Afsnijden: hoeveel pixels er van elke kant van
+                                                 de control af gaan. De control zelf blijft op
+                                                 zijn plek staan - alleen dat stuk wordt
+                                                 onzichtbaar (en niet meer aanklikbaar). -->
+                                            <TextBox Text="Afsnijden (px)" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Links" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,4,4" />
+                                                <TextBox Grid.Row="0" Grid.Column="1" x:Name="RegionTrimLeftBox" Style="{StaticResource NameEntryStyle}" TextChanged="RegionTrim_TextChanged" Margin="0,0,8,4" AutomationProperties.Name="Links afsnijden" />
+                                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Rechts" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,4,4" />
+                                                <TextBox Grid.Row="0" Grid.Column="3" x:Name="RegionTrimRightBox" Style="{StaticResource NameEntryStyle}" TextChanged="RegionTrim_TextChanged" Margin="0,0,0,4" AutomationProperties.Name="Rechts afsnijden" />
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Boven" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="RegionTrimTopBox" Style="{StaticResource NameEntryStyle}" TextChanged="RegionTrim_TextChanged" Margin="0,0,8,0" AutomationProperties.Name="Boven afsnijden" />
+                                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Onder" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" VerticalAlignment="Center" Margin="0,0,4,0" />
+                                                <TextBox Grid.Row="1" Grid.Column="3" x:Name="RegionTrimBottomBox" Style="{StaticResource NameEntryStyle}" TextChanged="RegionTrim_TextChanged" AutomationProperties.Name="Onder afsnijden" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <!-- Concepten: de hele samenstelling onder een naam
+                                             bewaren, per regio. Een bestaande naam kiezen laadt
+                                             'm; een nieuwe naam intypen + Opslaan maakt een
+                                             nieuw concept. Bewaarde concepten verschijnen in
+                                             Apps als keuze voor deze regio. -->
+                                        <TextBox Text="CONCEPTEN" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,24,0,4" />
+                                        <TextBox Text="Naam" Style="{StaticResource SelectableTextStyle}" Foreground="{DynamicResource TextMutedBrush}" FontFamily="{StaticResource AppFontFamily}" FontSize="{StaticResource FontSizeSmall}" Margin="0,0,0,4" />
+                                        <ComboBox x:Name="RegionDraftNameBox" IsEditable="True" SelectionChanged="RegionDraftName_Changed" Margin="0,0,0,8" />
+                                        <Button Click="SaveRegionDraft_Click" Style="{StaticResource AddComponentButtonStyle}" HorizontalAlignment="Left" Margin="0" AutomationProperties.Name="Regioconcept opslaan">
+                                            <TextBlock>
+                                                <Run Text="{StaticResource IconSave}" FontFamily="{StaticResource IconFontFamily}" />
+                                                <Run Text=" Opslaan" />
+                                            </TextBlock>
+                                        </Button>
                                     </StackPanel>
                                 </ScrollViewer>
                             </Border>
