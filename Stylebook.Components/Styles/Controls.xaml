@@ -176,4 +176,92 @@
         </Setter>
     </Style>
 
+    <!--
+        Schuifbalk in accentkleur - met een x:Key, niet impliciet: de
+        Stylebook-tool zelf heeft ook Sliders en die moeten hun eigen
+        Visual Studio-look houden. Een component vraagt hem expliciet aan
+        met Style="{DynamicResource SliderAccentStyle}".
+
+        WPF's standaard Slider is niet met losse setters om te bouwen naar
+        een dun spoor met een rond knopje; de Track moet je zelf plaatsen.
+        De DecreaseRepeatButton IS de gevulde linkerhelft (die loopt van
+        het begin tot het knopje), de IncreaseRepeatButton blijft leeg
+        zodat het spoor eronder zichtbaar blijft.
+    -->
+    <Style x:Key="SliderAccentStyle" TargetType="Slider">
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                                Background="{DynamicResource BorderBrush}" />
+                        <Track x:Name="PART_Track">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                                                    Background="{DynamicResource AccentBrush}" />
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Command="Slider.IncreaseLarge" Focusable="False">
+                                    <RepeatButton.Template>
+                                        <ControlTemplate TargetType="RepeatButton">
+                                            <!-- Transparant, niet leeg: een lege template vangt
+                                                 geen muisklikken en dan werkt klikken rechts van
+                                                 het knopje niet meer. -->
+                                            <Border Background="Transparent" />
+                                        </ControlTemplate>
+                                    </RepeatButton.Template>
+                                </RepeatButton>
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Width="14" Height="14" Focusable="False">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse Fill="{DynamicResource AccentBrush}" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Knop in accentkleur met zwarte tekst - de "Reset to default"-knoppen
+        op het instellingenscherm. Ook met een x:Key, om dezelfde reden als de
+        slider hierboven: de tool zelf houdt zijn eigen knoppen.
+    -->
+    <Style x:Key="AccentButtonStyle" TargetType="Button">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" CornerRadius="6" Padding="14,0"
+                            Background="{DynamicResource AccentBrush}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBrushDark}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>

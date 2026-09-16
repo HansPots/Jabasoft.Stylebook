@@ -203,7 +203,7 @@
                                Margin="30,0,0,0"
                                VerticalAlignment="Center"
                                TextAlignment="Right"
-                               Text="V 0.1.0.20" />
+                               Text="V 0.1.0.29" />
                 </Border>
             </StackPanel>
         </Grid>

@@ -22,6 +22,18 @@
     <sys:Double x:Key="FontSizeBody">14</sys:Double>
     <sys:Double x:Key="FontSizeTitle">18</sys:Double>
 
+    <!-- Het lettertype van het BEELDMERK (Controls/JabaSoftWordmark), niet
+         van de interface. Staat hier los van AppFontFamily en moet dat ook
+         blijven: een logo is een vaste vorm, die hoort niet mee te wisselen
+         met de lettertype-instelling van de gebruiker (zie de FONT-kaart in
+         Instellingen). Wie het app-lettertype omzet, laat deze dus staan.
+
+         Dezelfde naam als AppFontFamily nu toevallig heeft - dat is geen
+         reden om ze samen te voegen; ze veranderen om verschillende
+         redenen. De maatvoering van het beeldmerk (48/36/12 px en de
+         uitgemeten marges in dat bestand) is op Segoe UI uitgelijnd. -->
+    <FontFamily x:Key="LogoFontFamily">Segoe UI</FontFamily>
+
     <!-- Google Material Symbols (Outlined), Apache 2.0 - embedded als WPF
          pack-resource (zie Fonts/MaterialSymbolsOutlined.ttf en
          Stylebook.Components.csproj), niet van een CDN: dit is een

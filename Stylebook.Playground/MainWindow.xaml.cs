@@ -982,9 +982,31 @@ public partial class MainWindow : Window
         RebuildRegionCanvas();
     }
 
+    /// <summary>
+    /// Een andere regio gekozen - dat begint altijd met een leeg canvas.
+    /// Wat er stond hoorde bij de vorige regio (en lag daar op posities die
+    /// binnen een andere afmeting waren uitgezocht), dus dat blijft niet
+    /// staan. Alleen een BEWAARD concept vult het canvas, en dat gebeurt
+    /// alleen via TryLoadRegionDraft als je hieronder een naam kiest.
+    ///
+    /// Het naamveld gaat daarom ook leeg: bleef de naam van het vorige
+    /// concept staan, dan zou Opslaan dat concept overschrijven met een
+    /// lege samenstelling onder de nieuwe regio.
+    /// </summary>
     private void RegionComposerRegion_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        _regionComposerPlaced.Clear();
+        _regionComposerSelected = null;
+
         LoadRegionDraftNames();
+        // Volgorde telt: het legen van Text moet NA LoadRegionDraftNames,
+        // want het zetten van ItemsSource maakt de selectie ongedaan en dat
+        // vuurt RegionDraftName_Changed - die leest straks (via
+        // BeginInvoke) .Text, en vindt dan dus niets meer om te laden.
+        RegionDraftNameBox.SelectedItem = null;
+        RegionDraftNameBox.Text = string.Empty;
+
+        BuildRegionControlChecklist();
         RebuildRegionCanvas();
     }
 

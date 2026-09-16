@@ -49,6 +49,46 @@
       "TrimTop": 0,
       "TrimRight": 0,
       "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.JabaSoftWordmark",
+      "X": 82,
+      "Y": -2,
+      "Z": 7,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok3",
+      "X": 50,
+      "Y": 42,
+      "Z": 8,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok2",
+      "X": 506,
+      "Y": 43,
+      "Z": 9,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok3",
+      "X": 960,
+      "Y": 42,
+      "Z": 10,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
     }
   ]
 }
