@@ -13,7 +13,11 @@
     <Color x:Key="AccentColor">#FF9900</Color>
     <Color x:Key="AccentColorDark">#CC7A00</Color>
     <Color x:Key="BackgroundColor">#000000</Color>
-    <Color x:Key="SurfaceColor">#1A1A1A</Color>
+    <!-- Zwart, gelijk aan BackgroundColor: in LCARS is het hele vlak zwart.
+         De blokken van Basis (header, menu, inhoud, actie, footer) lopen
+         daardoor naadloos in elkaar over - de scheiding komt van de
+         SPACING-instelling, niet van een kleurverschil of een randlijn. -->
+    <Color x:Key="SurfaceColor">#000000</Color>
     <Color x:Key="BorderColor">#9999CC</Color>
     <Color x:Key="TextPrimaryColor">#FF9900</Color>
     <Color x:Key="TextMutedColor">#CC6666</Color>

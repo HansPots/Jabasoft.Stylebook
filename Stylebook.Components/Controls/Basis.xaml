@@ -41,6 +41,11 @@
         vak en krimpen binnen dat vak, zodat de pagina 1920x1080 blijft.
         Tussen twee blokken raken twee randen elkaar, daar zie je dus het
         dubbele van de ingestelde waarde.
+
+        De blokken hebben GEEN randlijn meer. Die 1px BorderBrush-lijnen
+        tussen header/menu/inhoud/actie/footer waren de lichte strepen die
+        je over het hele scherm zag lopen. De scheiding tussen de blokken
+        komt nu van SPACING: zet je die op 0, dan is het scherm één vlak.
     -->
 
     <Grid Background="{DynamicResource BackgroundBrush}">
@@ -53,9 +58,7 @@
         <!-- Header: volle breedte, vaste hoogte -->
         <Border Grid.Row="0"
                 Margin="{DynamicResource RegionGapThickness}"
-                Background="{DynamicResource SurfaceBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,0,0,1">
+                Background="{DynamicResource SurfaceBrush}">
             <ContentPresenter Content="{Binding HeaderContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Stretch" />
@@ -71,9 +74,7 @@
 
             <Border Grid.Column="0"
                     Margin="{DynamicResource RegionGapThickness}"
-                    Background="{DynamicResource SurfaceBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    BorderThickness="0,0,1,0">
+                    Background="{DynamicResource SurfaceBrush}">
                 <ContentPresenter Content="{Binding MenuContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch" />
@@ -89,9 +90,7 @@
 
             <Border Grid.Column="2"
                     Margin="{DynamicResource RegionGapThickness}"
-                    Background="{DynamicResource SurfaceBrush}"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    BorderThickness="1,0,0,0">
+                    Background="{DynamicResource SurfaceBrush}">
                 <ContentPresenter Content="{Binding ActionContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    HorizontalAlignment="Stretch"
                                    VerticalAlignment="Stretch" />
@@ -101,9 +100,7 @@
         <!-- Footer: volle breedte, vaste hoogte -->
         <Border Grid.Row="2"
                 Margin="{DynamicResource RegionGapThickness}"
-                Background="{DynamicResource SurfaceBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,1,0,0">
+                Background="{DynamicResource SurfaceBrush}">
             <ContentPresenter Content="{Binding FooterContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                HorizontalAlignment="Stretch"
                                VerticalAlignment="Stretch" />
