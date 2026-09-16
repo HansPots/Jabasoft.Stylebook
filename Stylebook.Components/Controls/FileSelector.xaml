@@ -40,7 +40,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="6" Padding="18,0"
+                        <Border x:Name="Bd" CornerRadius="{DynamicResource RadiusMedium}" Padding="18,0"
                                 Background="{DynamicResource BorderBrush}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -92,7 +92,7 @@
                  TextBox: WPF's standaard TextBox-sjabloon kent geen
                  CornerRadius, dus een ronde hoek vraagt een omhullende
                  Border met daarin een TextBox zonder eigen rand. -->
-            <Border Grid.Column="1" Margin="10,0" CornerRadius="6" BorderThickness="1"
+            <Border Grid.Column="1" Margin="10,0" CornerRadius="{DynamicResource RadiusMedium}" BorderThickness="1"
                     Background="{DynamicResource BackgroundBrush}"
                     BorderBrush="{DynamicResource BorderBrush}">
                 <TextBox x:Name="PathBox"

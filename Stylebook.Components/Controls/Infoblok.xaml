@@ -27,7 +27,7 @@
     <Border Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
-            CornerRadius="6"
+            CornerRadius="{DynamicResource RadiusMedium}"
             Padding="16"
             Width="450">
         <StackPanel>

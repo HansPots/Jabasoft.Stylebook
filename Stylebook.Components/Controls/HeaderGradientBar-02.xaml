@@ -35,7 +35,7 @@
             <Canvas Width="696" Height="200">
 
                 <Border theming:CornerRadiusParts.TopLeft="0"
-                        theming:CornerRadiusParts.TopRight="48"
+                        theming:CornerRadiusParts.TopRight="{DynamicResource RadiusElbow}"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
                         Width="696" Height="48" HorizontalAlignment="Left" VerticalAlignment="Center" CornerRadius="0,0,0,0">

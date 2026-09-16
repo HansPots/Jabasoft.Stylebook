@@ -27,7 +27,7 @@
     <Border Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="2"
-            CornerRadius="6"
+            CornerRadius="{DynamicResource RadiusMedium}"
             HorizontalAlignment="Stretch">
         <StackPanel>
             <!-- Hoekstraal 5, niet 6: de buitenrand heeft straal 6 met een

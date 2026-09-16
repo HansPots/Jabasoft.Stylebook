@@ -52,8 +52,8 @@
 
             <Border Grid.RowSpan="2"
                     Background="{DynamicResource TextMutedBrush}"
-                    theming:CornerRadiusParts.TopLeft="48"
-                    theming:CornerRadiusParts.BottomLeft="48"/>
+                    theming:CornerRadiusParts.TopLeft="{DynamicResource RadiusElbow}"
+                    theming:CornerRadiusParts.BottomLeft="{DynamicResource RadiusElbow}"/>
 
             <StackPanel Grid.Row="0"
                         theming:MarginParts.Left="{DynamicResource SpaceMedium}"
@@ -179,7 +179,7 @@
                         theming:CornerRadiusParts.TopLeft="0"
                         theming:CornerRadiusParts.TopRight="0"
                         theming:CornerRadiusParts.BottomRight="0"
-                        theming:CornerRadiusParts.BottomLeft="48"
+                        theming:CornerRadiusParts.BottomLeft="{DynamicResource RadiusElbow}"
                         Background="{DynamicResource AccentBrush}"
                         HorizontalAlignment="Stretch"
                         Height="40">

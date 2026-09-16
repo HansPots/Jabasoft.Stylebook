@@ -42,8 +42,8 @@
             <ControlTemplate TargetType="Button">
                 <Border x:Name="Bd"
                         theming:CornerRadiusParts.TopLeft="0"
-                        theming:CornerRadiusParts.TopRight="24"
-                        theming:CornerRadiusParts.BottomRight="24"
+                        theming:CornerRadiusParts.TopRight="{DynamicResource RadiusXXLarge}"
+                        theming:CornerRadiusParts.BottomRight="{DynamicResource RadiusXXLarge}"
                         theming:CornerRadiusParts.BottomLeft="0"
                         Background="{DynamicResource BorderBrush}">
                     <TextBlock Text="{DynamicResource IconRefresh}"

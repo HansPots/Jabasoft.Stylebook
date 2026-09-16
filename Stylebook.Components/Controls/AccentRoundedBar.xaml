@@ -23,7 +23,7 @@
          gradiënt van AccentColor naar AccentColorDark - zodat dit met
          beide thema's (LCARS/Visual Studio) meekleurt in plaats van een
          vaste letterlijke kleur, zelfde patroon als HeaderGradientBar. -->
-    <Border CornerRadius="12" Width="256" Height="60">
+    <Border CornerRadius="{DynamicResource RadiusLarge}" Width="256" Height="60">
         <Border.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                 <LinearGradientBrush.GradientStops>

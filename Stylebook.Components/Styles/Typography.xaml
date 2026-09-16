@@ -31,7 +31,47 @@
         MergedDictionaries. Vandaar dat dit hier gewoon kan blijven staan,
         ook al wordt Typography.xaml zelf nooit omgewisseld.
     -->
-    <Thickness x:Key="RegionGapThickness">0</Thickness>
+    <Thickness x:Key="RegionGapThickness">6</Thickness>
+
+    <!--
+        Dezelfde SPACING-waarde, maar alleen boven en onder. Voor onderdelen
+        die tegen de buitenrand van hun blok aan liggen: daar zorgt het blok
+        zelf al voor de ruimte aan die kant, en zou een marge rondom die
+        ruimte verdubbelen. De LCARS-elleboogjes in de header zijn zo een
+        geval.
+    -->
+    <!--
+        Afgeleiden van dezelfde SPACING-waarde, met ruimte aan maar EEN of
+        TWEE kanten. Het principe: elk onderdeel geeft ruimte aan zijn
+        linker- en/of bovenkant, nooit aan de kant waar de buur al ruimte
+        geeft. Anders brengen twee buren allebei een marge mee en zie je het
+        dubbele van wat je instelt.
+
+        De onderste en rechterrand van de pagina heeft geen buur die het kan
+        doen; daarvoor is RegionGapEndThickness, als opvulling om het geheel.
+    -->
+    <Thickness x:Key="RegionGapLeftTopThickness">6,6,0,0</Thickness>
+    <Thickness x:Key="RegionGapTopThickness">0,6,0,0</Thickness>
+    <Thickness x:Key="RegionGapLeftThickness">6,0,0,0</Thickness>
+    <Thickness x:Key="RegionGapEndThickness">0,0,6,6</Thickness>
+
+    <!-- Dezelfde waarde als los getal, voor wie een hoogte of breedte moet
+         zetten in plaats van een marge. -->
+    <sys:Double x:Key="RegionGapSize">6</sys:Double>
+
+    <!--
+        De dikte van de kaderrand om de instellingenkaarten en de
+        infoblokken. Hier de STANDAARD (2); de BORDER-kaart op het
+        instellingenscherm zet er een andere waarde overheen met
+        LayoutManager.ApplyRegionBorder, op dezelfde manier als SPACING.
+
+        RegionBorderInnerRadius hoort erbij: de titelbalk binnen een
+        infoblok moet een hoekstraal hebben van de BUITENstraal min de
+        randdikte, anders zie je in de bovenhoeken een kiertje tussen de
+        rand en de balk. Die wordt dus meeberekend.
+    -->
+    <Thickness x:Key="RegionBorderThickness">3</Thickness>
+    <CornerRadius x:Key="RegionBorderInnerRadius">3,3,0,0</CornerRadius>
 
     <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
     <sys:Double x:Key="FontSizeSmall">12</sys:Double>
@@ -76,13 +116,12 @@
     <sys:String x:Key="IconLayers">&#xE53B;</sys:String>
     <sys:String x:Key="IconSettings">&#xE8B8;</sys:String>
 
-    <!-- Hoekronding-schaal, zelfde discipline als de spacing-schaal hierboven:
-         een genoemde maat kiezen i.p.v. CornerRadius="6" hardcoden op elk
-         component apart. -->
-    <CornerRadius x:Key="RadiusSmall">3</CornerRadius>
-    <CornerRadius x:Key="RadiusMedium">6</CornerRadius>
-    <CornerRadius x:Key="RadiusLarge">12</CornerRadius>
-    <CornerRadius x:Key="RadiusXLarge">18</CornerRadius>
-    <CornerRadius x:Key="RadiusXXLarge">24</CornerRadius>
+    <!-- De hoekronding-schaal staat NIET meer hier maar per thema, in
+         Styles/Themes/*.xaml: LCARS is rond, Visual Studio is overal recht
+         (alles 0). Een ronding is dus iets van het thema geworden, net als
+         een kleur - stond hij hier, dan zou hij voor beide thema's gelijk
+         zijn. Zelfde discipline als de spacing-schaal hierboven: een
+         genoemde maat kiezen i.p.v. CornerRadius="6" op elk component
+         apart hardcoden. -->
 
 </ResourceDictionary>

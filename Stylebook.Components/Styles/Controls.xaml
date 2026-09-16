@@ -195,14 +195,14 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
                     <Grid>
-                        <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                        <Border Height="4" CornerRadius="{DynamicResource RadiusSmall}" VerticalAlignment="Center"
                                 Background="{DynamicResource BorderBrush}" />
                         <Track x:Name="PART_Track">
                             <Track.DecreaseRepeatButton>
                                 <RepeatButton Command="Slider.DecreaseLarge" Focusable="False">
                                     <RepeatButton.Template>
                                         <ControlTemplate TargetType="RepeatButton">
-                                            <Border Height="4" CornerRadius="2" VerticalAlignment="Center"
+                                            <Border Height="4" CornerRadius="{DynamicResource RadiusSmall}" VerticalAlignment="Center"
                                                     Background="{DynamicResource AccentBrush}" />
                                         </ControlTemplate>
                                     </RepeatButton.Template>
@@ -250,7 +250,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" CornerRadius="6" Padding="14,0"
+                    <Border x:Name="Bd" CornerRadius="{DynamicResource RadiusMedium}" Padding="14,0"
                             Background="{DynamicResource AccentBrush}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>

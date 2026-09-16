@@ -63,7 +63,7 @@
                         Width="36" Height="104" />
 
                 <Border theming:CornerRadiusParts.TopLeft="0"
-                        theming:CornerRadiusParts.TopRight="36"
+                        theming:CornerRadiusParts.TopRight="{DynamicResource RadiusBar}"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
                         Canvas.Left="96"

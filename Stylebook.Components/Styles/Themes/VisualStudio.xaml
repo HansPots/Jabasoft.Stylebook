@@ -48,4 +48,20 @@
     <SolidColorBrush x:Key="HeaderSideGradientStartBrush" Color="{StaticResource HeaderSideGradientStartColor}" />
     <SolidColorBrush x:Key="HeaderSideGradientEndBrush" Color="{StaticResource HeaderSideGradientEndColor}" />
 
+    <!--
+        Hoekronding-schaal. Stond eerder in Typography.xaml en was daarmee
+        voor beide thema's gelijk; een ronding hoort bij de look, dus hij
+        staat nu per thema. LCARS is rond, Visual Studio overal recht.
+
+        RadiusBar en RadiusElbow zijn de grote LCARS-vormen: de ronde kop
+        van de kleurbalk in de header, en de elleboogjes en het menublok.
+    -->
+    <CornerRadius x:Key="RadiusSmall">0</CornerRadius>
+    <CornerRadius x:Key="RadiusMedium">0</CornerRadius>
+    <CornerRadius x:Key="RadiusLarge">0</CornerRadius>
+    <CornerRadius x:Key="RadiusXLarge">0</CornerRadius>
+    <CornerRadius x:Key="RadiusXXLarge">0</CornerRadius>
+    <CornerRadius x:Key="RadiusBar">0</CornerRadius>
+    <CornerRadius x:Key="RadiusElbow">0</CornerRadius>
+
 </ResourceDictionary>

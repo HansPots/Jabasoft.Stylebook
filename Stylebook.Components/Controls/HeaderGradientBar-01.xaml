@@ -57,7 +57,7 @@
                         Width="48" Height="104" HorizontalAlignment="Left" VerticalAlignment="Center" />
 
                 <Border theming:CornerRadiusParts.TopLeft="0"
-                        theming:CornerRadiusParts.TopRight="48"
+                        theming:CornerRadiusParts.TopRight="{DynamicResource RadiusElbow}"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
                         Canvas.Left="96"
