@@ -1,4 +1,4 @@
-<UserControl x:Class="Stylebook.Components.Controls.Setting03"
+<UserControl x:Class="Stylebook.Components.Controls.Setting04"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -19,16 +19,17 @@
     </d:UserControl.Resources>
 
     <!--
-        Instellingenkaart 3 van 3: REFRESH TIME. Hoe vaak de meterpillen in
-        de footer (Footer-02 CPU, Footer-03 RAM, Footer-04 MODEL VRAM) hun
-        waarde opnieuw ophalen.
+        Instellingenkaart: SPACING. De zwarte rand om elk van de vijf
+        blokken van een pagina - header, menu, inhoud, actie en footer.
+        0 tot 5 px, met hele pixels (TickFrequency/IsSnapToTickEnabled),
+        want een halve pixel zou alleen maar vaag randje geven.
 
-        Zelfde breedte (1568) en kaartopmaak als kaart 1 en 2, en dezelfde
-        gedeelde stijlen voor de schuifbalk en de knop.
+        Zelfde breedte (1568) en kaartopmaak als de andere kaarten, en
+        dezelfde gedeelde stijlen voor de schuifbalk en de knop.
 
-        Bereik 1-60 seconden met de standaard op 5. IntervalLabel en
-        IntervalSlider hebben een naam, zodat ze later vanuit code-behind
-        aan de echte instelling gekoppeld kunnen worden.
+        Werkt wel echt: schuiven zet RegionGapThickness om via
+        LayoutManager.ApplyRegionGap, en elke Basis die op dat moment op
+        het scherm staat verspringt mee. Zie Setting-04.xaml.cs.
     -->
     <!-- De breedte staat op het UserControl hierboven (1568) en niet meer
          op deze Border. Zo blijft de kaart op zichzelf even breed als
@@ -41,17 +42,20 @@
             BorderBrush="{DynamicResource BorderBrush}"
             HorizontalAlignment="Stretch" VerticalAlignment="Top">
         <StackPanel Margin="20,16">
-            <TextBlock Text="REFRESH TIME" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
+            <TextBlock Text="SPACING" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
                        Foreground="{DynamicResource Text01Brush}" />
 
-            <TextBlock x:Name="IntervalLabel" Text="Footer refresh time (CPU/RAM/Model VRAM) &#8212; 5 sec"
+            <TextBlock x:Name="GapLabel" Text="Space around each block (header, menu, content, action, footer) &#8212; 0 px"
                        Margin="0,14,0,6" FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource TextMutedBrush}" />
-            <Slider x:Name="IntervalSlider" Minimum="1" Maximum="60" Value="5"
+            <Slider x:Name="GapSlider" Minimum="0" Maximum="5" Value="0"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    ValueChanged="GapSlider_ValueChanged"
                     Style="{DynamicResource SliderAccentStyle}" />
 
-            <Button x:Name="ResetIntervalButton" Content="Reset to default (5 sec)"
-                    Margin="0,16,0,0" Style="{DynamicResource AccentButtonStyle}" />
+            <Button x:Name="ResetGapButton" Content="Reset to default (0 px)"
+                    Margin="0,16,0,0" Click="ResetGap_Click"
+                    Style="{DynamicResource AccentButtonStyle}" />
         </StackPanel>
     </Border>
 

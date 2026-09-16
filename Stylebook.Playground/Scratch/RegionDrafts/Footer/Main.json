@@ -1,0 +1,54 @@
+{
+  "Items": [
+    {
+      "Type": "Stylebook.Components.Controls.Footer01",
+      "X": 2,
+      "Y": 1,
+      "Z": 0,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Footer02",
+      "X": 319,
+      "Y": -1,
+      "Z": 1,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Footer03",
+      "X": 703,
+      "Y": 1,
+      "Z": 2,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Footer04",
+      "X": 1088,
+      "Y": 1,
+      "Z": 3,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Footer05",
+      "X": 1481,
+      "Y": 1,
+      "Z": 4,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    }
+  ]
+}

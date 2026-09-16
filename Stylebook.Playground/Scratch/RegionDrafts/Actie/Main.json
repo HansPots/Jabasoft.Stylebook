@@ -1,0 +1,14 @@
+{
+  "Items": [
+    {
+      "Type": "Stylebook.Components.Controls.RefreshButton",
+      "X": -1,
+      "Y": 757,
+      "Z": 0,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    }
+  ]
+}

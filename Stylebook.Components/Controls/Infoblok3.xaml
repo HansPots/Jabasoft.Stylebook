@@ -30,7 +30,7 @@
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="2"
             CornerRadius="6"
-            Width="450">
+            HorizontalAlignment="Stretch">
         <StackPanel>
             <!-- Hoekstraal 4, niet 6: de buitenrand heeft straal 6 met een
                  rand van 2px, dus de BINNENkant van die rand loopt op 6-2=4.

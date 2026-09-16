@@ -1,0 +1,102 @@
+<UserControl x:Class="Stylebook.Components.Regions.Header.Hoofdbalk"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Stylebook.Components.Controls"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" Height="210"
+             d:DesignWidth="1920">
+
+    <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
+         thema-context (kleuren, lettertype) - deze class library heeft
+         zelf geen App.xaml die dat normaal doet. mc:Ignorable="d" zorgt
+         dat dit bij het echt compileren/draaien volledig wegvalt. -->
+    <d:UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </d:UserControl.Resources>
+
+    <!--
+        Header van Jabasoft, gebouwd naar het regioconcept Header/Main uit
+        het Stylebook. Dat concept blijft van de gebruiker en wordt hier
+        niet door aangeraakt; dit is de vaste, meeschalende uitvoering
+        ervan voor de app.
+
+        Opbouw, van buiten naar binnen:
+        - Bovenrij (41 hoog): de kleurbalk met daarover het beeldmerk, en
+          rechts de vensterknopjes. De balk loopt over de volle breedte
+          tot aan die knopjes.
+        - Onderrij: links en rechts een LCARS-elleboog als zijkant, en
+          DAARTUSSEN de vier infoblokken. Die twee elleboogjes staan dus
+          niet bovenin - ze vormen de linker- en rechterrand van het
+          onderste deel, precies zoals in het concept (X -5 en X 1872,
+          over de hele resterende hoogte).
+
+        Wat meerekt: de kleurbalk en de vier infoblokken. Wat blijft: de
+        elleboogjes (48 breed), de vensterknopjes en het beeldmerk. De
+        HOOGTE verandert nooit - 210, gelijk aan de headerrij in Basis.
+        Daarom nergens een Viewbox: die schaalt uniform en zou de hoogte
+        meetrekken.
+    -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="41" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Bovenrij: balk + vensterknopjes. -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <controls:HeaderGradientBar04 Grid.Column="0" Width="Auto" VerticalAlignment="Top" />
+            <controls:WindowControlButtons Grid.Column="1" VerticalAlignment="Top" Margin="0,4,0,0" />
+            <!-- Kolom 2 blijft leeg maar even breed als de elleboog eronder,
+                 zodat de balk precies tot boven die elleboog doorloopt. -->
+            <Border Grid.Column="2" Width="48" />
+        </Grid>
+
+        <!-- Onderrij: elleboog | vier infoblokken | elleboog. -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="48" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="48" />
+            </Grid.ColumnDefinitions>
+
+            <!-- De elleboogjes zijn 200 hoog en deze rij is 169. Onderaan
+                 uitlijnen met ClipToBounds laat dus de ONDERkant zien, met
+                 de ronde hoek eraan - hetzelfde resultaat als het
+                 TrimTop=30 waarmee ze in het concept staan. -->
+            <Border Grid.Column="0" ClipToBounds="True">
+                <controls:LcarsElbowGradientEnd VerticalAlignment="Bottom" />
+            </Border>
+
+            <controls:Infoblok3 Grid.Column="1" Width="Auto" Margin="8,1,8,0" VerticalAlignment="Top" />
+            <controls:Infoblok2 Grid.Column="2" Width="Auto" Margin="8,1,8,0" VerticalAlignment="Top" />
+            <controls:Infoblok3 Grid.Column="3" Width="Auto" Margin="8,1,8,0" VerticalAlignment="Top" />
+            <controls:Infoblok2 Grid.Column="4" Width="Auto" Margin="8,1,8,0" VerticalAlignment="Top" />
+
+            <Border Grid.Column="5" ClipToBounds="True">
+                <controls:LcarsElbowGradientEnd01 VerticalAlignment="Bottom" />
+            </Border>
+        </Grid>
+
+        <!-- Het beeldmerk ligt over de kleurbalk heen, net als in het
+             concept (X 82, Y -2). Staat daarom buiten de rijen, in een
+             eigen laag bovenop. -->
+        <controls:JabaSoftWordmark HorizontalAlignment="Left" VerticalAlignment="Top"
+                                   Margin="82,-2,0,0" />
+    </Grid>
+
+</UserControl>

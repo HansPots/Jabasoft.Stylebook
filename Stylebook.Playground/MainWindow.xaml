@@ -218,6 +218,27 @@
                  Drie panelen, één zichtbaar per menu (zie SetBuilderMode):
                  Controls, Regions en Apps. -->
             <Border x:Name="LibraryCanvasArea" Background="{DynamicResource BackgroundBrush}">
+                <!--
+                    Het previewvlak heeft zijn EIGEN thema-dictionary, zoals
+                    de toelichting boven Styles/Theme.xaml voorschrijft: wat
+                    hier getoond wordt mag van thema wisselen, de tool
+                    eromheen (menustrook, keuzelijsten) niet. Dat is nodig
+                    sinds de THEMA-kaart echt werkt (Controls/Setting-01):
+                    die zoekt de dichtstbijzijnde dictionary met een thema
+                    erin en komt dus hier uit in plaats van bij
+                    Application.Resources.
+
+                    Hier staat bewust DEZELFDE VisualStudio.xaml als in
+                    App.xaml, zodat het previewvlak er precies zo uitziet
+                    als voorheen tot iemand die kaart daadwerkelijk gebruikt.
+                -->
+                <Border.Resources>
+                    <ResourceDictionary>
+                        <ResourceDictionary.MergedDictionaries>
+                            <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/VisualStudio.xaml" />
+                        </ResourceDictionary.MergedDictionaries>
+                    </ResourceDictionary>
+                </Border.Resources>
                 <Grid>
                     <Grid>
                         <!-- Controls: 1 losse bouwsteen isoleren. -->

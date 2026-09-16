@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" Width="1568">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -67,18 +67,24 @@
         de kaart groeit mee met zijn inhoud, zodat een extra thema erbij
         geen handmatige aanpassing vraagt.
     -->
-    <Border Width="1568" CornerRadius="6" BorderThickness="1"
+    <!-- De breedte staat op het UserControl hierboven (1568) en niet meer
+         op deze Border. Zo blijft de kaart op zichzelf even breed als
+         altijd - ook op het Regions-canvas in het Stylebook - maar kan wie
+         hem plaatst er Width="Auto" op zetten en hem laten meerekken. Dat
+         doet Regions/Inhoud/Instellingen, zodat het instellingenscherm in
+         de app geen horizontale schuifbalk nodig heeft. -->
+    <Border MinWidth="480" CornerRadius="6" BorderThickness="2"
             Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
-            HorizontalAlignment="Left" VerticalAlignment="Top">
+            HorizontalAlignment="Stretch" VerticalAlignment="Top">
         <StackPanel Margin="20,16">
             <TextBlock Text="THEMA" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
                        Foreground="{DynamicResource Text01Brush}" />
             <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                 <RadioButton x:Name="ThemeLcars" Content="LCARS" GroupName="Thema"
-                             IsChecked="True" Style="{DynamicResource ThemeChoiceStyle}" />
+                             IsChecked="True" Checked="Theme_Checked" Style="{DynamicResource ThemeChoiceStyle}" />
                 <RadioButton x:Name="ThemeVsCode" Content="VS Code" GroupName="Thema" Margin="8,0,0,0"
-                             Style="{DynamicResource ThemeChoiceStyle}" />
+                             Checked="Theme_Checked" Style="{DynamicResource ThemeChoiceStyle}" />
             </StackPanel>
         </StackPanel>
     </Border>

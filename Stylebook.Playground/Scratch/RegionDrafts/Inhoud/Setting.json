@@ -1,0 +1,34 @@
+{
+  "Items": [
+    {
+      "Type": "Stylebook.Components.Controls.Setting01",
+      "X": 0,
+      "Y": 0,
+      "Z": 0,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Setting02",
+      "X": 1,
+      "Y": 107,
+      "Z": 1,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Setting03",
+      "X": 2,
+      "Y": 391,
+      "Z": 2,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    }
+  ]
+}

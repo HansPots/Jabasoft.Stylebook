@@ -28,20 +28,31 @@
         "Content", want die inherited property is al intern in gebruik
         voor deze rij/kolom-Grid zelf.
 
-        Vaste maten: Header 210px, Footer 65px, Menu 256px, Action 48px -
+        Vaste maten: Header 210px, Footer 24px, Menu 256px, Action 48px -
         alleen de hoofdinhoud (kolom 2) en de ruimte tussen header/footer
         (rij 1) zijn variabel (*).
+
+        Elk van de vijf blokken heeft een Margin van RegionGapThickness: de
+        zwarte rand die met de SPACING-kaart op het instellingenscherm van
+        0 tot 5 px te zetten is (Controls/Setting-04, via
+        Theming/LayoutManager). De achtergrond van dit Grid is daarom
+        expliciet gezet - dat is wat je in die rand ziet. De rij- en
+        kolommaten hierboven veranderen NIET mee: de blokken houden hun
+        vak en krimpen binnen dat vak, zodat de pagina 1920x1080 blijft.
+        Tussen twee blokken raken twee randen elkaar, daar zie je dus het
+        dubbele van de ingestelde waarde.
     -->
 
-    <Grid>
+    <Grid Background="{DynamicResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="210" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="65" />
+            <RowDefinition Height="24" />
         </Grid.RowDefinitions>
 
         <!-- Header: volle breedte, vaste hoogte -->
         <Border Grid.Row="0"
+                Margin="{DynamicResource RegionGapThickness}"
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1">
@@ -59,6 +70,7 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0"
+                    Margin="{DynamicResource RegionGapThickness}"
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0">
@@ -68,6 +80,7 @@
             </Border>
 
             <Border Grid.Column="1"
+                    Margin="{DynamicResource RegionGapThickness}"
                     Background="{DynamicResource BackgroundBrush}">
                 <ContentPresenter Content="{Binding MainContent, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    HorizontalAlignment="Stretch"
@@ -75,6 +88,7 @@
             </Border>
 
             <Border Grid.Column="2"
+                    Margin="{DynamicResource RegionGapThickness}"
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1,0,0,0">
@@ -86,6 +100,7 @@
 
         <!-- Footer: volle breedte, vaste hoogte -->
         <Border Grid.Row="2"
+                Margin="{DynamicResource RegionGapThickness}"
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0">

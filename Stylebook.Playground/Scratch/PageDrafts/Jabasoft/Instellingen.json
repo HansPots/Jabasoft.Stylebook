@@ -1,7 +1,7 @@
 {
-  "Header": null,
-  "Menu": null,
-  "Inhoud": "Stylebook.Components.Regions.Inhoud.Instellingen",
+  "Header": "regioconcept:Main",
+  "Menu": "regioconcept:Main",
+  "Inhoud": "regioconcept:Setting",
   "Actie": null,
-  "Footer": null
+  "Footer": "regioconcept:Main"
 }

@@ -4,7 +4,7 @@
              xmlns:theming="clr-namespace:Stylebook.Components.Theming"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" Width="1819" Height="36">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -29,18 +29,26 @@
          zou na CornerRadiusParts.TopRight worden toegepast en de ronde
          rechterkant platdrukken - zie HeaderGradientBar-01/-02, waar dat
          wel gebeurt. -->
-    <Grid Width="Auto" Height="Auto" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Viewbox>
-            <!-- Breedte 1819: loopt precies tot het frame van WindowControlButtons,
-                 dat in het regioconcept Header/Main op X 1819 staat (deze balk
-                 op X 0). Verschuif je die in dat concept, dan klopt dit niet meer. -->
-            <Canvas Width="1819" Height="36">
+    <!-- Breedte 1819 staat op het UserControl hierboven en niet meer op een
+         Canvas hierbinnen: die maat loopt precies tot het frame van
+         WindowControlButtons, dat in het regioconcept Header/Main op X 1819
+         staat (deze balk op X 0). Als standaard blijft dat dus kloppen.
 
-                <Border theming:CornerRadiusParts.TopLeft="36"
+         Er zit ook geen Viewbox meer omheen. Een Viewbox schaalt UNIFORM,
+         dus breder maken zou de balk ook hoger maken - en de hoogte moet
+         juist 36 blijven. Nu rekt de Border alleen in de breedte, en kan
+         wie hem plaatst er Width="Auto" op zetten om hem de beschikbare
+         ruimte te laten vullen. Dat doet de header van Jabasoft
+         (Regions/Header/Hoofdbalk). -->
+    <Grid>
+
+                <Border HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        theming:CornerRadiusParts.TopLeft="36"
                         theming:CornerRadiusParts.TopRight="0"
                         theming:CornerRadiusParts.BottomRight="0"
                         theming:CornerRadiusParts.BottomLeft="0"
-                        Width="1819" Height="36">
+                        Height="36">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
                             <LinearGradientBrush.GradientStops>
@@ -51,8 +59,6 @@
                         </LinearGradientBrush>
                     </Border.Background>
                 </Border>
-            </Canvas>
-        </Viewbox>
     </Grid>
 
 </UserControl>

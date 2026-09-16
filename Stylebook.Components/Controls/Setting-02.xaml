@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" Width="1568">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -31,17 +31,23 @@
         SizeSlider hebben een naam, zodat ze later vanuit code-behind aan
         de echte instelling gekoppeld kunnen worden.
     -->
-    <Border Width="1568" CornerRadius="6" BorderThickness="1"
+    <!-- De breedte staat op het UserControl hierboven (1568) en niet meer
+         op deze Border. Zo blijft de kaart op zichzelf even breed als
+         altijd - ook op het Regions-canvas in het Stylebook - maar kan wie
+         hem plaatst er Width="Auto" op zetten en hem laten meerekken. Dat
+         doet Regions/Inhoud/Instellingen, zodat het instellingenscherm in
+         de app geen horizontale schuifbalk nodig heeft. -->
+    <Border MinWidth="480" CornerRadius="6" BorderThickness="2"
             Background="{DynamicResource SurfaceBrush}"
             BorderBrush="{DynamicResource BorderBrush}"
-            HorizontalAlignment="Left" VerticalAlignment="Top">
+            HorizontalAlignment="Stretch" VerticalAlignment="Top">
         <StackPanel Margin="20,16">
             <TextBlock Text="FONT" FontSize="{DynamicResource FontSizeTitle}" FontWeight="SemiBold"
                        Foreground="{DynamicResource Text01Brush}" />
 
             <TextBlock Text="Font" Margin="0,14,0,4" FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource TextMutedBrush}" />
-            <ComboBox x:Name="FontPicker" Height="34" SelectedIndex="0">
+            <ComboBox x:Name="FontPicker" Height="34" SelectedIndex="0" SelectionChanged="FontPicker_SelectionChanged">
                 <ComboBoxItem Content="Segoe UI" />
                 <ComboBoxItem Content="Inter" />
             </ComboBox>
@@ -49,7 +55,7 @@
             <TextBlock x:Name="SizeLabel" Text="Text size (16 px)" Margin="0,16,0,6"
                        FontSize="{DynamicResource FontSizeSmall}"
                        Foreground="{DynamicResource TextMutedBrush}" />
-            <Slider x:Name="SizeSlider" Minimum="10" Maximum="28" Value="16"
+            <Slider x:Name="SizeSlider" Minimum="10" Maximum="28" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="SizeSlider_ValueChanged"
                     Style="{DynamicResource SliderAccentStyle}" />
 
             <!-- Voorbeeldvak met stippellijn. Een Border kan in WPF geen
@@ -64,7 +70,7 @@
             </Grid>
 
             <Button x:Name="ResetFontButton" Content="Reset to default (Segoe UI, 16 px)"
-                    Margin="0,16,0,0" Style="{DynamicResource AccentButtonStyle}" />
+                    Margin="0,16,0,0" Click="ResetFont_Click" Style="{DynamicResource AccentButtonStyle}" />
         </StackPanel>
     </Border>
 

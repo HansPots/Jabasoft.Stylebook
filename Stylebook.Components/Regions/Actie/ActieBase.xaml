@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignWidth="48" d:DesignHeight="805">
+             d:DesignWidth="48" d:DesignHeight="846">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -23,11 +23,11 @@
         Startpunt voor een nieuwe Actie-regio component: al op de echte
         afmeting die Basis.xaml voor Actie gebruikt (48px vaste breedte,
         volle hoogte van het middenvak - 1080 minus Header 210 minus
-        Footer 65 = 805). Kopieer dit bestand, hernoem de klasse
+        Footer 24 = 846). Kopieer dit bestand, hernoem de klasse
         (x:Class hierboven en ActieBase.xaml.cs), en vul de Grid
         hieronder met je eigen inhoud.
     -->
-    <Grid Width="48" Height="805" Background="{DynamicResource SurfaceBrush}">
+    <Grid Width="48" Height="846" Background="{DynamicResource SurfaceBrush}">
 
     </Grid>
 

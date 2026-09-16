@@ -20,27 +20,37 @@
     </d:UserControl.Resources>
 
     <!--
-        Inhoud-regio component: Jabasoft.App's instellingenscherm (achter
-        de instellingen-knop in de Actie-rail, zie MainWindow.xaml.cs's
-        ToggleSettings). Vroeger via XamlReader.Parse live uit de database
-        gelezen door SettingsView, nu een echt, gecompileerd component dat
-        SettingsView rechtstreeks host.
+        Inhoud-regio component: Jabasoft.App's instellingenscherm - waar de
+        Settings-knop in het menu en de knop in de Actie-rail naartoe
+        schakelen (zie Jabasoft.App/MainWindow.xaml.cs). Vroeger via
+        XamlReader.Parse live uit de database gelezen door SettingsView, nu
+        een echt, gecompileerd component dat SettingsView rechtstreeks host.
 
         Dit component IS de instellingenpagina van Jabasoft: het stapelt de
-        drie losse kaarten uit Controls/ (Setting-01 THEMA, Setting-02 FONT,
-        Setting-03 REFRESH TIME) onder elkaar. Een kaart erbij of eraf is
-        dus één regel hier, de kaart zelf blijft op zichzelf te bekijken in
-        de Controls-modus van het Stylebook.
+        losse kaarten uit Controls/ onder elkaar, in deze volgorde:
+        Setting-01 THEMA, Setting-02 FONT, Setting-04 SPACING en
+        Setting-03 REFRESH TIME. De nummers lopen dus niet gelijk met de
+        volgorde op het scherm - SPACING kwam er later bij maar hoort op de
+        derde plek. Een kaart erbij of eraf is één regel hier; de kaart
+        zelf blijft op zichzelf te bekijken in de Controls-modus van het
+        Stylebook.
 
-        ScrollViewer eromheen omdat de kaarten een vaste breedte van 1568
-        hebben (de Inhoud-basis van 1616 met 24 marge): staat het venster
-        smaller, dan schuift het mee in plaats van weg te vallen.
+        Width="Auto" op elke kaart zet hun eigen standaardbreedte (1568)
+        uit, zodat ze hier meerekken met het inhoudsvak. Die standaard
+        blijft wel op de kaarten zelf staan - anders zouden ze op het
+        Regions-canvas in het Stylebook inklappen.
+
+        Omdat er niets meer opzij wegvalt staat de horizontale schuifbalk
+        UIT; met "Auto" zou hij bij een pixel afrondingsverschil alsnog
+        verschijnen. Verticaal blijft hij op Auto, want meer kaarten dan er
+        passen kan gewoon.
     -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="24">
-            <controls:Setting01 />
-            <controls:Setting02 Margin="0,16,0,0" />
-            <controls:Setting03 Margin="0,16,0,0" />
+            <controls:Setting01 Width="Auto" />
+            <controls:Setting02 Width="Auto" Margin="0,16,0,0" />
+            <controls:Setting04 Width="Auto" Margin="0,16,0,0" />
+            <controls:Setting03 Width="Auto" Margin="0,16,0,0" />
         </StackPanel>
     </ScrollViewer>
 

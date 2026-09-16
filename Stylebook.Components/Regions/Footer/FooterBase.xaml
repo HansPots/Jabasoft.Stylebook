@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignWidth="1920" d:DesignHeight="65">
+             d:DesignWidth="1920" d:DesignHeight="24">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -22,11 +22,12 @@
     <!--
         Startpunt voor een nieuwe Footer-regio component: al op de echte
         afmeting die Basis.xaml voor Footer gebruikt (volle breedte x
-        65px hoog). Kopieer dit bestand, hernoem de klasse (x:Class
+        24px hoog - precies de hoogte van de pillen die erin gaan).
+        Kopieer dit bestand, hernoem de klasse (x:Class
         hierboven en FooterBase.xaml.cs), en vul de Grid hieronder met
         je eigen inhoud.
     -->
-    <Grid Width="1920" Height="65" Background="{DynamicResource SurfaceBrush}">
+    <Grid Width="1920" Height="24" Background="{DynamicResource SurfaceBrush}">
 
     </Grid>
 

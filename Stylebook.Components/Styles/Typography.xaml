@@ -17,6 +17,22 @@
     <Thickness x:Key="SpaceMedium">16</Thickness>
     <Thickness x:Key="SpaceLarge">24</Thickness>
 
+    <!--
+        De zwarte rand die Basis.xaml om elk van de vijf blokken legt
+        (header, menu, inhoud, actie, footer). Hier staat alleen de
+        STANDAARD (0 = blokken tegen elkaar aan); de SPACING-kaart op het
+        instellingenscherm zet er een andere waarde overheen met
+        LayoutManager.ApplyRegionGap.
+
+        Dat overzetten gebeurt door de sleutel rechtstreeks in een
+        hogergelegen ResourceDictionary te zetten - die wint dan van deze
+        standaard, want een DynamicResource kijkt eerst naar de eigen
+        vermeldingen van een dictionary en pas daarna in zijn
+        MergedDictionaries. Vandaar dat dit hier gewoon kan blijven staan,
+        ook al wordt Typography.xaml zelf nooit omgewisseld.
+    -->
+    <Thickness x:Key="RegionGapThickness">0</Thickness>
+
     <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
     <sys:Double x:Key="FontSizeSmall">12</sys:Double>
     <sys:Double x:Key="FontSizeBody">14</sys:Double>

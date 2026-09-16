@@ -1,0 +1,113 @@
+<UserControl x:Class="Stylebook.Components.Controls.FileSelector"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="860">
+
+    <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
+         thema-context (kleuren, lettertype) - deze class library heeft
+         zelf geen App.xaml die dat normaal doet. mc:Ignorable="d" zorgt
+         dat dit bij het echt compileren/draaien volledig wegvalt. -->
+    <d:UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </d:UserControl.Resources>
+
+    <UserControl.Resources>
+        <!--
+            De linkerknop. Dezelfde vorm als de gedeelde AccentButtonStyle,
+            maar in de randkleur in plaats van het accent - zodat de twee
+            knoppen op deze balk uit elkaar te houden zijn: links kiezen,
+            rechts uitvoeren. Staat hier lokaal en niet in
+            Styles/Controls.xaml omdat alleen dit component hem gebruikt
+            (zelfde afweging als ThemeChoiceStyle in Setting-01).
+
+            Zweven verandert hier de doorzichtigheid en niet de kleur: voor
+            de randkleur bestaat geen donkere variant in het thema, zoals
+            AccentBrushDark die voor het accent wel heeft.
+        -->
+        <Style x:Key="SelectButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="FontSize" Value="{DynamicResource FontSizeSmall}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="6" Padding="18,0"
+                                Background="{DynamicResource BorderBrush}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!--
+        Bestandskiezer: een balk met links een knop om een bestand te
+        kiezen, in het midden het gekozen pad, en rechts de knop die er
+        iets mee doet.
+
+        GEEN vaste breedte: de balk vult wat hij krijgt en het middenvak
+        rekt mee (kolom "*"), terwijl de twee knoppen op hun eigen maat
+        blijven (kolom "Auto"). Daardoor is hij in een echte pagina zo
+        breed als het scherm toelaat. MinWidth staat er wel op, want een
+        control zonder vaste breedte zou in de Regions-modus - waar hij op
+        een canvas staat en zichzelf moet meten - anders inklappen tot
+        alleen de twee knoppen tegen elkaar.
+
+        De inhoud is nu vast. PathBox heeft een naam, zodat het gekozen
+        pad er later vanuit code-behind in gezet kan worden.
+    -->
+    <Border Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="2"
+            CornerRadius="8"
+            Padding="16,10"
+            MinWidth="480"
+            VerticalAlignment="Top">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" x:Name="SelectButton" Content="FILE SELECTION"
+                    Style="{DynamicResource SelectButtonStyle}" />
+
+            <!-- Het invoervak zit in een Border en niet rechtstreeks als
+                 TextBox: WPF's standaard TextBox-sjabloon kent geen
+                 CornerRadius, dus een ronde hoek vraagt een omhullende
+                 Border met daarin een TextBox zonder eigen rand. -->
+            <Border Grid.Column="1" Margin="10,0" CornerRadius="6" BorderThickness="1"
+                    Background="{DynamicResource BackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}">
+                <TextBox x:Name="PathBox"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="10,0"
+                         VerticalContentAlignment="Center"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         CaretBrush="{DynamicResource TextPrimaryBrush}"
+                         FontSize="{DynamicResource FontSizeSmall}" />
+            </Border>
+
+            <Button Grid.Column="2" x:Name="AnalyzeButton" Content="ANALYZE"
+                    Style="{DynamicResource AccentButtonStyle}" />
+        </Grid>
+    </Border>
+
+</UserControl>

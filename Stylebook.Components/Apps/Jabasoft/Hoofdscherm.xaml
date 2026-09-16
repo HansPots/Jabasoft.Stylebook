@@ -2,6 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Stylebook.Components.Controls"
+             xmlns:header="clr-namespace:Stylebook.Components.Regions.Header"
+             xmlns:footer="clr-namespace:Stylebook.Components.Regions.Footer"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
@@ -22,21 +24,28 @@
 
     <!--
         De opgeslagen paginacompositie voor Jabasoft's hoofdscherm - een
-        Basis. Header en Footer staan tijdelijk leeg: HpoHeader en
-        Footerbalk zijn weggehaald (niet meer in gebruik) - daar komt op
-        een later moment een nieuw component in te staan. Voor de Footer
-        liggen de losse pillen Footer-01 t/m Footer-05 klaar in Controls/.
-        Menu/Inhoud/Actie zijn BEWUST niet
-        gebakken: in de echte, draaiende Jabasoft.App zijn dat de
-        FUNCTIONELE app-launcherlijst en de instellingen-knop (code-
-        behind, zie Jabasoft.App/MainWindow.xaml.cs) - dit component geeft
-        die drie slots gewoon door aan zijn eigen MenuContent/MainContent/
+        Basis met de Header en de Footer er al in gebakken: Hoofdbalk en
+        Statusbalk. Die twee rekken mee in de breedte maar nooit in de
+        hoogte (210 en 24), zie hun eigen bestanden.
+
+        Menu/Inhoud/Actie zijn BEWUST niet gebakken: die vult de echte,
+        draaiende Jabasoft.App in code-behind (het Navigatiemenu, het
+        scherm waar dat menu naartoe schakelt, en de instellingen-knop -
+        zie Jabasoft.App/MainWindow.xaml.cs). Dit component geeft die drie
+        slots gewoon door aan zijn eigen MenuContent/MainContent/
         ActionContent-properties, precies zoals Basis zelf al werkt.
 
         Bestaat vooral zodat Stylebook.Playground dit hoofdscherm kan
         tonen/beoordelen zonder een projectverwijzing naar Jabasoft.App
         nodig te hebben - zie idempotent-sauteeing-valley.md.
     -->
-    <controls:Basis x:Name="Shell" />
+    <controls:Basis x:Name="Shell">
+        <controls:Basis.HeaderContent>
+            <header:Hoofdbalk />
+        </controls:Basis.HeaderContent>
+        <controls:Basis.FooterContent>
+            <footer:Statusbalk />
+        </controls:Basis.FooterContent>
+    </controls:Basis>
 
 </UserControl>

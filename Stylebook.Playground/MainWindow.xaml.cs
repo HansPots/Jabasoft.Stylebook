@@ -490,7 +490,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// De ECHTE afmeting van elke regio in Basis.xaml (1920x1080): rijen
-    /// 210 / rest / 65 en kolommen 256 / rest / 48 - dezelfde maten als de
+    /// 210 / rest / 24 en kolommen 256 / rest / 48 - dezelfde maten als de
     /// Regions/&lt;Regio&gt;/&lt;Regio&gt;Base.xaml-startpunten. Het Regions-canvas
     /// staat hierop, zodat een samenstelling in Apps precies even groot is
     /// als waar je 'm maakte (eerder stond Header hier op 1200 breed, waardoor
@@ -499,10 +499,10 @@ public partial class MainWindow : Window
     private static (double Width, double Height) RegionBasisSize(ComponentRegion region) => region switch
     {
         ComponentRegion.Header => (1920, 210),
-        ComponentRegion.Menu => (256, 805),
-        ComponentRegion.Inhoud => (1616, 805),
-        ComponentRegion.Actie => (48, 805),
-        ComponentRegion.Footer => (1920, 65),
+        ComponentRegion.Menu => (256, 846),
+        ComponentRegion.Inhoud => (1616, 846),
+        ComponentRegion.Actie => (48, 846),
+        ComponentRegion.Footer => (1920, 24),
         _ => throw new ArgumentOutOfRangeException(nameof(region), region, null),
     };
 

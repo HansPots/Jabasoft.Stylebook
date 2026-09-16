@@ -1,7 +1,7 @@
 {
   "Header": "regioconcept:Main",
-  "Menu": null,
-  "Inhoud": null,
-  "Actie": null,
-  "Footer": null
+  "Menu": "regioconcept:Main",
+  "Inhoud": "regioconcept:Main",
+  "Actie": "regioconcept:Main",
+  "Footer": "regioconcept:Main"
 }

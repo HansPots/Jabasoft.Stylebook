@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+             mc:Ignorable="d" Width="288" Height="24">
 
     <!-- Design-time-only: geeft Visual Studio/Blend's Designer een
          thema-context (kleuren, lettertype) - deze class library heeft
@@ -27,10 +27,16 @@
         De inhoud is nu vast; het lampje (StatusLamp) en de tekst
         (StatusText) hebben een naam zodat ze later vanuit code-behind op
         interval bijgewerkt kunnen worden.
+        Breedte staat op het UserControl zelf en niet meer op de Border
+        hieronder. Zo blijft de pil op zichzelf even breed als altijd,
+        maar kan wie hem plaatst er Width="Auto" op zetten en hem laten
+        meerekken met de ruimte die hij krijgt - dat doet de footer van
+        Jabasoft (Regions/Footer/Statusbalk), waar de vijf pillen samen de
+        breedte verdelen. De HOOGTE blijft altijd 24.
     -->
-    <Border Width="288" Height="24" CornerRadius="12"
+    <Border Height="24" CornerRadius="12"
             Background="{DynamicResource TextMutedBrush}"
-            HorizontalAlignment="Left" VerticalAlignment="Center">
+            HorizontalAlignment="Stretch" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
             <Ellipse x:Name="StatusLamp" Width="8" Height="8" Opacity="0.65"
                      Fill="{DynamicResource Text01Brush}" VerticalAlignment="Center" />

@@ -1,0 +1,44 @@
+{
+  "Items": [
+    {
+      "Type": "Stylebook.Components.Controls.FileSelector",
+      "X": 0,
+      "Y": 0,
+      "Z": 0,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok2",
+      "X": 4,
+      "Y": 61,
+      "Z": 1,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok2",
+      "X": 1164,
+      "Y": 3,
+      "Z": 2,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    },
+    {
+      "Type": "Stylebook.Components.Controls.Infoblok2",
+      "X": 461,
+      "Y": 62,
+      "Z": 3,
+      "TrimLeft": 0,
+      "TrimTop": 0,
+      "TrimRight": 0,
+      "TrimBottom": 0
+    }
+  ]
+}
