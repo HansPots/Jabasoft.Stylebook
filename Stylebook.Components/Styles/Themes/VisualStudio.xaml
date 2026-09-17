@@ -64,4 +64,18 @@
     <CornerRadius x:Key="RadiusBar">0</CornerRadius>
     <CornerRadius x:Key="RadiusElbow">0</CornerRadius>
 
+    <!--
+        De drie kleuren van het bolletje in de SYSTEM HEALTH-pil: groen als
+        alles klaarstaat, oranje tijdens het controleren, rood bij een fout.
+        Per thema, want ze moeten leesbaar zijn op de achtergrond van dat
+        thema - en oranje moet niet wegvallen tegen het accent.
+    -->
+    <Color x:Key="HealthOkColor">#4EC94E</Color>
+    <Color x:Key="HealthBusyColor">#E8A33D</Color>
+    <Color x:Key="HealthErrorColor">#E05252</Color>
+
+    <SolidColorBrush x:Key="HealthOkBrush" Color="{StaticResource HealthOkColor}" />
+    <SolidColorBrush x:Key="HealthBusyBrush" Color="{StaticResource HealthBusyColor}" />
+    <SolidColorBrush x:Key="HealthErrorBrush" Color="{StaticResource HealthErrorColor}" />
+
 </ResourceDictionary>

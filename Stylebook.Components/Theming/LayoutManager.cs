@@ -27,14 +27,13 @@ public static class LayoutManager
         var clamped = Math.Clamp(pixels, MinimumGap, MaximumGap);
         target["RegionGapThickness"] = new Thickness(clamped);
 
-        // Alleen boven en onder - voor wat tegen de buitenrand van een blok
-        // ligt en daar dus al ruimte van dat blok zelf krijgt.
         // Ruimte alleen aan de kant waar een buur zit. Zo is de ruimte
         // tussen twee onderdelen precies de ingestelde waarde, in plaats
         // van het dubbele omdat ze allebei een marge meebrengen.
         target["RegionGapLeftTopThickness"] = new Thickness(clamped, clamped, 0, 0);
         target["RegionGapTopThickness"] = new Thickness(0, clamped, 0, 0);
         target["RegionGapLeftThickness"] = new Thickness(clamped, 0, 0, 0);
+        target["RegionGapRightThickness"] = new Thickness(0, 0, clamped, 0);
 
         // De onderste en rechterrand van de pagina heeft geen buur die het
         // kan doen - die komt van een opvulling om het geheel heen.

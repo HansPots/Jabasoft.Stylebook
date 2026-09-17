@@ -34,13 +34,6 @@
     <Thickness x:Key="RegionGapThickness">6</Thickness>
 
     <!--
-        Dezelfde SPACING-waarde, maar alleen boven en onder. Voor onderdelen
-        die tegen de buitenrand van hun blok aan liggen: daar zorgt het blok
-        zelf al voor de ruimte aan die kant, en zou een marge rondom die
-        ruimte verdubbelen. De LCARS-elleboogjes in de header zijn zo een
-        geval.
-    -->
-    <!--
         Afgeleiden van dezelfde SPACING-waarde, met ruimte aan maar EEN of
         TWEE kanten. Het principe: elk onderdeel geeft ruimte aan zijn
         linker- en/of bovenkant, nooit aan de kant waar de buur al ruimte
@@ -53,6 +46,7 @@
     <Thickness x:Key="RegionGapLeftTopThickness">6,6,0,0</Thickness>
     <Thickness x:Key="RegionGapTopThickness">0,6,0,0</Thickness>
     <Thickness x:Key="RegionGapLeftThickness">6,0,0,0</Thickness>
+    <Thickness x:Key="RegionGapRightThickness">0,0,6,0</Thickness>
     <Thickness x:Key="RegionGapEndThickness">0,0,6,6</Thickness>
 
     <!-- Dezelfde waarde als los getal, voor wie een hoogte of breedte moet
