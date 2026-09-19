@@ -56,6 +56,19 @@ public partial class App : System.Windows.Application
         CurrentTheme = Db.AppSettings.Single().CurrentTheme;
         _liveThemeDictionary = DbThemeBuilder.Build(Db, CurrentTheme);
         Resources.MergedDictionaries.Add(_liveThemeDictionary);
+
+        // Geen tussenruimte in het Stylebook. Die ruimte is in een applicatie
+        // een INSTELLING (de SPACING-kaart), en tekent daar als een zwarte
+        // rand tussen en om de blokken. Hier is er niemand die hem zet, dus
+        // bleef de standaard van 6 px uit Typography.xaml staan - en dan kijk
+        // je in het Stylebook naar zwarte banden die niets met het ontwerp te
+        // maken hebben.
+        //
+        // Rechtstreeks in Resources en niet in een genest woordenboek: een
+        // eigen dictionary op een dieper niveau overschaduwt het levende
+        // palet uit de database, en dat was precies wat het thema eerder
+        // sloopte.
+        Stylebook.Components.Theming.LayoutManager.ApplyRegionGap(0, Resources);
     }
 
     /// <summary>Call after saving DesignTokens changes so the edit is visible immediately, everywhere.</summary>

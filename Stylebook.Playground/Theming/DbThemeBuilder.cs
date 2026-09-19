@@ -74,7 +74,7 @@ public static class DbThemeBuilder
             Upsert(name, DesignTokenCategory.Color, value.ToString(CultureInfo.InvariantCulture));
         }
 
-        foreach (var (name, px) in DesignTokenCatalog.RadiusTokens)
+        foreach (var (name, px) in DesignTokenCatalog.GetRadii(componentsTheme))
         {
             Upsert(name, DesignTokenCategory.Radius, Format(px));
         }

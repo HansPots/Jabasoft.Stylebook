@@ -17,6 +17,12 @@ public static class DesignTokenCatalog
 {
     // Every Themes/*.xaml declares exactly these Color keys - see the
     // class comment on any one of them (e.g. Lcars.xaml).
+    //
+    // De kleuren van de kopbalk en van de gezondheidspil stonden hier niet
+    // bij, terwijl de themabestanden ze wel kennen. Gevolg: ze kwamen niet
+    // in het palet van het Stylebook terecht en vielen daar terug op het
+    // basisthema van de tool. Deze lijst hoort te zijn wat de bestanden
+    // verklaren, niet minder.
     public static readonly string[] ColorTokenNames =
     [
         "BackgroundColor",
@@ -28,15 +34,31 @@ public static class DesignTokenCatalog
         "TextPrimaryColor",
         "TextMutedColor",
         "Text01Color",
+        "HeaderGradientStartColor",
+        "HeaderGradientMidColor",
+        "HeaderGradientEndColor",
+        "HeaderSideGradientStartColor",
+        "HeaderSideGradientEndColor",
+        "HealthOkColor",
+        "HealthBusyColor",
+        "HealthErrorColor",
     ];
 
-    public static readonly (string Name, double Pixels)[] RadiusTokens =
+    // De hoekrondingen, net als de kleuren PER THEMA en uit het themabestand
+    // zelf - zie GetRadii. Ze stonden hier als vaste lijst met vijf waarden,
+    // en dat liep op twee manieren uit de pas met wat de applicaties tonen:
+    // RadiusBar en RadiusElbow ontbraken helemaal (de elleboog werd daardoor
+    // recht in het Stylebook terwijl hij in de ontwerpweergave rond is), en
+    // de lijst was themaloos terwijl Visual Studio overal 0 hoort te zijn.
+    public static readonly string[] RadiusTokenNames =
     [
-        ("RadiusSmall", 3),
-        ("RadiusMedium", 6),
-        ("RadiusLarge", 12),
-        ("RadiusXLarge", 18),
-        ("RadiusXXLarge", 24),
+        "RadiusSmall",
+        "RadiusMedium",
+        "RadiusLarge",
+        "RadiusXLarge",
+        "RadiusXXLarge",
+        "RadiusBar",
+        "RadiusElbow",
     ];
 
     public static readonly (string Name, double Pixels)[] SpacingTokens =
@@ -79,6 +101,24 @@ public static class DesignTokenCatalog
         return new ResourceDictionary { Source = uri };
     }
 
+    /// <summary>
+    /// Elke hoekronding met de waarde die in het themabestand staat, in
+    /// dezelfde volgorde als hierboven. Uit het bestand lezen en niet hier
+    /// overtypen, om dezelfde reden als bij de kleuren: zo kan dit niet uit
+    /// de pas lopen met wat de applicaties werkelijk tonen.
+    ///
+    /// Een CornerRadius heeft vier hoeken; de schaal gebruikt overal
+    /// dezelfde waarde, dus één ervan is genoeg.
+    /// </summary>
+    public static IReadOnlyList<(string Name, double Pixels)> GetRadii(Theme theme)
+    {
+        var dictionary = LoadTheme(theme);
+        return RadiusTokenNames
+            .Where(dictionary.Contains)
+            .Select(name => (name, ((CornerRadius)dictionary[name]!).TopLeft))
+            .ToList();
+    }
+
     /// <summary>Each color token's actual value for the given theme, in declared order.</summary>
     public static IReadOnlyList<(string Name, Color Value)> GetColors(Theme theme)
     {
@@ -100,7 +140,7 @@ public static class DesignTokenCatalog
     {
         var colorLines = GetColors(theme)
             .Select(c => $"  {c.Name.Replace("Color", "Brush", StringComparison.Ordinal)} = {c.Value}");
-        var radiusLines = RadiusTokens.Select(r => $"  {r.Name} = {r.Pixels}");
+        var radiusLines = GetRadii(theme).Select(r => $"  {r.Name} = {r.Pixels}");
         var spacingLines = SpacingTokens.Select(s => $"  {s.Name} = {s.Pixels}");
         var fontLines = FontSizeTokens.Select(f => $"  {f.Name} = {f.Pixels}");
 

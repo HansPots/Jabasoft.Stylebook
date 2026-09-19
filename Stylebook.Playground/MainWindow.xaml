@@ -219,26 +219,21 @@
                  Controls, Regions en Apps. -->
             <Border x:Name="LibraryCanvasArea" Background="{DynamicResource BackgroundBrush}">
                 <!--
-                    Het previewvlak heeft zijn EIGEN thema-dictionary, zoals
-                    de toelichting boven Styles/Theme.xaml voorschrijft: wat
-                    hier getoond wordt mag van thema wisselen, de tool
-                    eromheen (menustrook, keuzelijsten) niet. Dat is nodig
-                    sinds de THEMA-kaart echt werkt (Controls/Setting-01):
-                    die zoekt de dichtstbijzijnde dictionary met een thema
-                    erin en komt dus hier uit in plaats van bij
-                    Application.Resources.
+                    GEEN eigen thema-dictionary hier. Die heeft er even
+                    gestaan (een vaste VisualStudio.xaml) om te voorkomen dat
+                    de THEMA-kaart in de preview de hele tool zou omkleuren,
+                    maar dat kostte meer dan het opleverde: een dictionary op
+                    dit niveau wordt eerder geraadpleegd dan die van de
+                    applicatie, en overschaduwde daarmee het LEVENDE palet uit
+                    de database (App.xaml.cs, DbThemeBuilder.Build). Gevolg:
+                    de preview stond vast in Visual Studio-kleuren en volgde
+                    jouw paletwijzigingen niet meer.
 
-                    Hier staat bewust DEZELFDE VisualStudio.xaml als in
-                    App.xaml, zodat het previewvlak er precies zo uitziet
-                    als voorheen tot iemand die kaart daadwerkelijk gebruikt.
+                    Zonder dit blok erft het previewvlak weer gewoon het
+                    palet van de tool - LCARS met jouw eigen aanpassingen
+                    erin, en meteen bijgewerkt zodra je in de
+                    Stylebook-stand iets verandert.
                 -->
-                <Border.Resources>
-                    <ResourceDictionary>
-                        <ResourceDictionary.MergedDictionaries>
-                            <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/VisualStudio.xaml" />
-                        </ResourceDictionary.MergedDictionaries>
-                    </ResourceDictionary>
-                </Border.Resources>
                 <Grid>
                     <Grid>
                         <!-- Controls: 1 losse bouwsteen isoleren. -->
