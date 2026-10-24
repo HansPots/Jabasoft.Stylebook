@@ -15,7 +15,7 @@ public sealed class StylebookDbContextFactory : IDesignTimeDbContextFactory<Styl
     private const string ConnectionStringEnvironmentVariable = "JABASOFT_STYLEBOOK_CONNECTION_STRING";
 
     private const string DefaultConnectionString =
-        "Server=localhost;Database=JabasoftStylebook;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
+        "Server=(localdb)\\MSSQLLocalDB;Database=JabasoftStylebook;Integrated Security=True;Encrypt=True;TrustServerCertificate=True;";
 
     public StylebookDbContext CreateDbContext(string[] args)
     {
