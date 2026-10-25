@@ -1,0 +1,64 @@
+<Window x:Class="Stylebook.Components.Controls.Vraagvenster"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="False" ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight" WindowStartupLocation="CenterOwner">
+
+    <!-- Design-time-only: thema-context voor de Designer (zie Infoblok.xaml). -->
+    <d:Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Theme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Themes/Lcars.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Stylebook.Components;component/Styles/Controls.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </d:Window.Resources>
+
+    <!--
+        Een vraag aan de gebruiker in de huisstijl, in plaats van de grijze
+        Windows-MessageBox: een balk in accentkleur met de titel, daaronder de
+        vraag, eventueel een regel met details (bijv. de link waar het om gaat)
+        en de knoppen. Kleuren via DynamicResource, volgt dus het actieve thema.
+        Gebruik: Vraagvenster.Vraag(titel, tekst, ...) - zie Vraagvenster.xaml.cs.
+        Escape = de nee-knop, Enter = de ja-knop; slepen kan aan de titelbalk.
+    -->
+    <Border Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource AccentBrush}"
+            BorderThickness="2"
+            CornerRadius="{DynamicResource RadiusMedium}"
+            Padding="0,0,0,16"
+            Width="520">
+        <StackPanel>
+            <Border x:Name="Titelbalk" Background="{DynamicResource AccentBrush}"
+                    CornerRadius="{DynamicResource RadiusMedium}" Margin="6" Padding="14,8"
+                    MouseLeftButtonDown="Titelbalk_MouseLeftButtonDown">
+                <TextBlock x:Name="TitelText" FontWeight="Bold" FontSize="{DynamicResource FontSizeTitle}"
+                           Foreground="{DynamicResource AccentForegroundBrush}" TextTrimming="CharacterEllipsis" />
+            </Border>
+
+            <TextBlock x:Name="TekstBlok" Margin="20,10,20,0" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource FontSizeSmall}" />
+
+            <!-- Details: selecteerbaar, zodat je bijv. een link kunt kopiëren. -->
+            <TextBox x:Name="DetailBlok" Margin="20,10,20,0" Visibility="Collapsed" IsReadOnly="True"
+                     TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Padding="0"
+                     Foreground="{DynamicResource TextMutedBrush}" FontSize="{DynamicResource FontSizeSmall}" />
+
+            <TextBlock x:Name="LetOpBlok" Margin="20,10,20,0" TextWrapping="Wrap" Visibility="Collapsed"
+                       Foreground="{DynamicResource AccentBrush}" FontSize="{DynamicResource FontSizeSmall}" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,16,20,0">
+                <Button x:Name="JaButton" Content="Ja" IsDefault="True" MinWidth="90"
+                        Style="{DynamicResource AccentButtonStyle}" Click="JaButton_Click" />
+                <Button x:Name="NeeButton" Content="Nee" IsCancel="True" MinWidth="90" Margin="10,0,0,0"
+                        Style="{DynamicResource AccentButtonStyle}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+
+</Window>
